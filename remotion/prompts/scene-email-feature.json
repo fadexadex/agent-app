@@ -1,0 +1,109 @@
+{
+  "scene": {
+    "id": "feature-email",
+    "name": "Email Reply Feature",
+    "category": "feature",
+    "duration": 120,
+    "background": {
+      "type": "solid",
+      "color": "#FFFFFF"
+    },
+    "elements": [
+      {
+        "type": "custom",
+        "id": "voice-indicator",
+        "component": "VoiceIndicatorPill",
+        "description": "Pill-shaped voice indicator with email icon and animated sound bars. 200x60px, black background (#1A1A1A), 5 white animated bars on right, email icon on left.",
+        "props": {
+          "appIcon": "email",
+          "width": 200,
+          "height": 60
+        },
+        "position": {
+          "anchor": "center",
+          "y": -120
+        },
+        "animation": {
+          "timing": {
+            "start": 0,
+            "duration": 20,
+            "spring": "snappy"
+          },
+          "description": "Scale in from 0.5 with slight Y offset correction"
+        },
+        "exit": {
+          "frame": 100,
+          "type": "blur",
+          "duration": 15
+        }
+      },
+      {
+        "type": "mockup",
+        "id": "email-window",
+        "mockupType": "card",
+        "content": "Gmail-style compose window with: Header 'New message', To field 'Emily@voiceos.com', Subject 'Follow-Up on Project Update', email body, 'Attach a file' link, blue 'Send email' button",
+        "typewriter": {
+          "text": "Hi Emily,\n\nQuick check, would it be easier to move our call to later? Happy to work around what's best for you.\n\nBest,\nJonah",
+          "speed": 2,
+          "start": 40
+        },
+        "position": {
+          "anchor": "center",
+          "y": 20
+        },
+        "animation": {
+          "preset": "slideInUp",
+          "rotate3d": {
+            "startX": 10,
+            "startY": 0,
+            "endX": 0,
+            "endY": 0
+          },
+          "timing": {
+            "start": 20,
+            "duration": 30,
+            "spring": "smooth"
+          }
+        },
+        "exit": {
+          "frame": 100,
+          "type": "blur",
+          "duration": 15
+        }
+      },
+      {
+        "type": "custom",
+        "id": "feature-label",
+        "component": "FeaturePill",
+        "description": "Black pill (#1A1A1A) with white text 'Instantly replies for you'. Approximately 280x48px with rounded ends.",
+        "props": {
+          "text": "Instantly replies for you",
+          "backgroundColor": "#1A1A1A",
+          "textColor": "#FFFFFF"
+        },
+        "position": {
+          "anchor": "center",
+          "y": 200
+        },
+        "animation": {
+          "timing": {
+            "start": 60,
+            "duration": 20,
+            "spring": "smooth"
+          },
+          "description": "fadeBlurIn - opacity 0→1 with blur 8→0"
+        },
+        "exit": {
+          "frame": 100,
+          "type": "blur",
+          "duration": 15
+        }
+      }
+    ],
+    "transition": {
+      "type": "blur",
+      "duration": 15
+    },
+    "notes": "Exit order: mockup first, then label, voice indicator last. All exits staggered by 3 frames."
+  }
+}

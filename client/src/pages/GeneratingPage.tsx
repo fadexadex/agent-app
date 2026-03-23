@@ -1,0 +1,132 @@
+import { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check, Loader2, Film } from "lucide-react";
+
+const steps = [
+  { label: "Analyzing your product", icon: "🔍" },
+  { label: "Writing your story", icon: "✍️" },
+  { label: "Designing scenes", icon: "🎨" },
+  { label: "Composing visuals", icon: "🎬" },
+];
+
+const GeneratingPage = () => {
+  const [currentStep, setCurrentStep] = useState(0);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const prompt = (location.state as any)?.prompt || "Your product";
+
+  useEffect(() => {
+    const timers: NodeJS.Timeout[] = [];
+    steps.forEach((_, i) => {
+      timers.push(
+        setTimeout(() => setCurrentStep(i + 1), (i + 1) * 900)
+      );
+    });
+    // Navigate after all steps
+    timers.push(
+      setTimeout(() => {
+        navigate("/storyboard", { state: { prompt } });
+      }, (steps.length + 1) * 900)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [navigate, prompt]);
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center max-w-md w-full"
+      >
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
+          className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-primary/10 mb-8"
+        >
+          <Film className="h-8 w-8 text-primary" />
+        </motion.div>
+
+        <h2
+          className="text-2xl font-bold text-foreground mb-2"
+          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+        >
+          Creating your video
+        </h2>
+        <p className="text-muted-foreground mb-10 text-sm">
+          This usually takes a few seconds...
+        </p>
+
+        <div className="space-y-4 text-left">
+          {steps.map((step, i) => {
+            const done = currentStep > i;
+            const active = currentStep === i;
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.15 }}
+                className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                  done
+                    ? "bg-accent/10"
+                    : active
+                    ? "bg-primary/5"
+                    : "bg-secondary/50"
+                }`}
+              >
+                <div
+                  className={`h-8 w-8 rounded-lg flex items-center justify-center text-sm transition-colors ${
+                    done
+                      ? "bg-accent text-accent-foreground"
+                      : active
+                      ? "bg-primary/20 text-primary"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  <AnimatePresence mode="wait">
+                    {done ? (
+                      <motion.div
+                        key="check"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
+                        <Check className="h-4 w-4" />
+                      </motion.div>
+                    ) : active ? (
+                      <motion.div
+                        key="loading"
+                        animate={{ rotate: 360 }}
+                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                      >
+                        <Loader2 className="h-4 w-4" />
+                      </motion.div>
+                    ) : (
+                      <span key="icon">{step.icon}</span>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <span
+                  className={`text-sm font-medium ${
+                    done
+                      ? "text-foreground"
+                      : active
+                      ? "text-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {step.label}
+                  {active && "..."}
+                  {done && " ✓"}
+                </span>
+              </motion.div>
+            );
+          })}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+export default GeneratingPage;

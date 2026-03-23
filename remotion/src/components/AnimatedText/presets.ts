@@ -1,0 +1,362 @@
+import type { PresetDefinition, PresetType } from "./types";
+import { SPRING_CONFIGS } from "../Animation/springs";
+
+/**
+ * Animation preset definitions
+ * Each preset defines default values for various animation properties
+ *
+ * NOTE: Slide presets use springs for that magnetic "snap" at the end.
+ * This is the key difference between "smooth but soft" and "snappy and kinetic".
+ * 
+ * Spring presets used:
+ * - kinetic: Quick settle with subtle overshoot for slides
+ * - bouncy: Playful oscillation for attention-grabbing animations
+ * - pop: Quick scale with slight bounce for icons/badges
+ */
+export const presets: Record<PresetType, PresetDefinition> = {
+  // Less aggressive blur for cleaner entrance (reduced from 20px to 10px)
+  fadeBlurIn: {
+    blur: { from: 10, to: 0, duration: 20 },
+    opacity: { from: 0, to: 1, duration: 18 },
+  },
+
+  fadeBlurOut: {
+    blur: { from: 0, to: 10, duration: 20 },
+    opacity: { from: 1, to: 0, duration: 18 },
+  },
+
+  // Gentle fade for professional content - minimal blur artifact
+  softFadeIn: {
+    blur: { from: 4, to: 0, duration: 25 },
+    opacity: { from: 0, to: 1, duration: 22 },
+  },
+
+  softFadeOut: {
+    blur: { from: 0, to: 4, duration: 25 },
+    opacity: { from: 1, to: 0, duration: 22 },
+  },
+
+  scaleIn: {
+    scale: { from: 0.8, to: 1, duration: 22, easing: "backOut" },
+    opacity: { from: 0, to: 1, duration: 18 },
+    blur: { from: 10, to: 0, duration: 18 },
+  },
+
+  springIn: {
+    scale: {
+      from: 0,
+      to: 1,
+      easing: { type: "spring", ...SPRING_CONFIGS.bouncy },
+    },
+    opacity: { from: 0, to: 1, duration: 15 },
+  },
+
+  // KINETIC SLIDE PRESETS - Using springs for magnetic "snap"
+  // Uses kinetic preset: quick settle with subtle overshoot
+  slideInLeft: {
+    position: {
+      fromX: -50,
+      toX: 0,
+      easing: { type: "spring", ...SPRING_CONFIGS.kinetic },
+    },
+    opacity: { from: 0, to: 1, duration: 12 },
+  },
+
+  slideInRight: {
+    position: {
+      fromX: 50,
+      toX: 0,
+      easing: { type: "spring", ...SPRING_CONFIGS.kinetic },
+    },
+    opacity: { from: 0, to: 1, duration: 12 },
+  },
+
+  slideInUp: {
+    position: {
+      fromY: 40,
+      toY: 0,
+      easing: { type: "spring", ...SPRING_CONFIGS.kinetic },
+    },
+    opacity: { from: 0, to: 1, duration: 12 },
+  },
+
+  slideInDown: {
+    position: {
+      fromY: -40,
+      toY: 0,
+      easing: { type: "spring", ...SPRING_CONFIGS.kinetic },
+    },
+    opacity: { from: 0, to: 1, duration: 12 },
+  },
+
+  // MASKED SLIDE PRESETS - Text slides in from behind a clip mask
+  // Uses snappy preset: quick with minimal overshoot
+  maskSlideUp: {
+    position: {
+      fromY: 50,
+      toY: 0,
+      easing: { type: "spring", ...SPRING_CONFIGS.snappy },
+    },
+    opacity: { from: 0, to: 1, duration: 8 },
+  },
+
+  maskSlideDown: {
+    position: {
+      fromY: -50,
+      toY: 0,
+      easing: { type: "spring", ...SPRING_CONFIGS.snappy },
+    },
+    opacity: { from: 0, to: 1, duration: 8 },
+  },
+
+  maskSlideLeft: {
+    position: {
+      fromX: 60,
+      toX: 0,
+      easing: { type: "spring", ...SPRING_CONFIGS.snappy },
+    },
+    opacity: { from: 0, to: 1, duration: 8 },
+  },
+
+  maskSlideRight: {
+    position: {
+      fromX: -60,
+      toX: 0,
+      easing: { type: "spring", ...SPRING_CONFIGS.snappy },
+    },
+    opacity: { from: 0, to: 1, duration: 8 },
+  },
+
+  // GLITCH REVEAL - Chaotic, tech-inspired reveal
+  glitchReveal: {
+    scale: {
+      from: 1.1,
+      to: 1,
+      duration: 18,
+      easing: "backOut",
+    },
+    blur: { from: 8, to: 0, duration: 12 },
+    opacity: { from: 0, to: 1, duration: 6 },
+  },
+
+  typewriter: {
+    typewriter: { cursor: true, cursorChar: "|", cursorBlinkSpeed: 16 },
+    animationUnit: "character",
+  },
+
+  // VoiceOS Style: Clean word reveal - no blur, snappy kinetic feel
+  // Inspired by VoiceOS motion design: crisp text with magnetic spring settle
+  voiceOsReveal: {
+    position: {
+      fromY: 20,
+      toY: 0,
+      easing: { type: "spring", ...SPRING_CONFIGS.kinetic },
+    },
+    opacity: { from: 0, to: 1, duration: 10 },
+    animationUnit: "word",
+  },
+
+  // Soft Dreamy Fade: Gentle blur reveal with soft feel
+  // Inspired by simple-breakdown style: aesthetic, dreamy entrance
+  softDreamyFade: {
+    blur: { from: 8, to: 0, duration: 30 },
+    opacity: { from: 0, to: 1, duration: 25 },
+    animationUnit: "full",
+  },
+
+  // =============================================
+  // NEW CREATIVE PRESETS
+  // =============================================
+
+  // SLIDE PRESETS WITH SPRING PHYSICS
+  // Smooth slide from right with spring (like SlideText example)
+  slideFromRight: {
+    position: {
+      fromX: 200,
+      toX: 0,
+      easing: { type: "spring", damping: 12, mass: 0.5 },
+    },
+    opacity: { from: 0, to: 1, duration: 30 },
+  },
+
+  slideFromLeft: {
+    position: {
+      fromX: -200,
+      toX: 0,
+      easing: { type: "spring", damping: 12, mass: 0.5 },
+    },
+    opacity: { from: 0, to: 1, duration: 30 },
+  },
+
+  // KINETIC WORD REVEALS
+  // Bouncy word pop (playful)
+  bouncyWordPop: {
+    scale: {
+      from: 0,
+      to: 1,
+      easing: { type: "spring", damping: 8, stiffness: 200 },
+    },
+    opacity: { from: 0, to: 1, duration: 8 },
+    animationUnit: "word",
+  },
+
+  // Elastic word entrance (dynamic)
+  elasticReveal: {
+    position: {
+      fromY: 30,
+      toY: 0,
+      easing: { type: "spring", damping: 6, stiffness: 150 },
+    },
+    scale: {
+      from: 0.8,
+      to: 1,
+      easing: { type: "spring", damping: 6, stiffness: 150 },
+    },
+    opacity: { from: 0, to: 1, duration: 10 },
+    animationUnit: "word",
+  },
+
+  // Snappy kinetic (very quick, professional)
+  snappyKinetic: {
+    position: {
+      fromY: 15,
+      toY: 0,
+      easing: { type: "spring", damping: 20, stiffness: 300 },
+    },
+    opacity: { from: 0, to: 1, duration: 6 },
+    animationUnit: "word",
+  },
+
+  // FADE/BLUR VARIANTS
+  // Dreamy float (gentle rise with blur)
+  dreamyFloat: {
+    position: {
+      fromY: 10,
+      toY: 0,
+      duration: 40,
+      easing: "easeOut",
+    },
+    blur: { from: 12, to: 0, duration: 35 },
+    opacity: { from: 0, to: 1, duration: 30 },
+  },
+
+  // Quick focus (fast blur resolve)
+  quickFocus: {
+    blur: { from: 15, to: 0, duration: 12 },
+    opacity: { from: 0, to: 1, duration: 10 },
+  },
+
+  // Gentle materialize (subtle, professional)
+  gentleMaterialize: {
+    scale: {
+      from: 0.95,
+      to: 1,
+      duration: 25,
+      easing: "easeOut",
+    },
+    blur: { from: 3, to: 0, duration: 20 },
+    opacity: { from: 0, to: 1, duration: 20 },
+  },
+
+  // CHARACTER-LEVEL EFFECTS
+  // Wave reveal (characters ripple in)
+  waveReveal: {
+    position: {
+      fromY: 20,
+      toY: 0,
+      easing: { type: "spring", damping: 10, stiffness: 200 },
+    },
+    opacity: { from: 0, to: 1, duration: 8 },
+    animationUnit: "character",
+  },
+
+  // Cascade drop (characters fall into place)
+  cascadeDrop: {
+    position: {
+      fromY: -30,
+      toY: 0,
+      easing: { type: "spring", damping: 12, stiffness: 180 },
+    },
+    opacity: { from: 0, to: 1, duration: 10 },
+    animationUnit: "character",
+  },
+
+  // DRAMATIC ENTRANCE EFFECTS
+  // Punch in (scale from large with quick settle)
+  punchIn: {
+    scale: {
+      from: 1.5,
+      to: 1,
+      easing: { type: "spring", damping: 15, stiffness: 200 },
+    },
+    blur: { from: 8, to: 0, duration: 15 },
+    opacity: { from: 0, to: 1, duration: 8 },
+  },
+
+  // Rise and shine (gentle scale up with glow feel)
+  riseAndShine: {
+    scale: {
+      from: 0.9,
+      to: 1,
+      duration: 30,
+      easing: "easeOut",
+    },
+    position: {
+      fromY: 20,
+      toY: 0,
+      duration: 30,
+      easing: "easeOut",
+    },
+    opacity: { from: 0, to: 1, duration: 25 },
+  },
+
+  none: {},
+};
+
+/**
+ * Get preset definition by name
+ */
+export const getPreset = (presetName: PresetType): PresetDefinition => {
+  return presets[presetName] || presets.none;
+};
+
+/**
+ * Default animation durations
+ */
+export const DEFAULTS = {
+  blur: {
+    from: 20,
+    to: 0,
+    duration: 15,
+    delay: 0,
+  },
+  opacity: {
+    from: 0,
+    to: 1,
+    duration: 15,
+    delay: 0,
+  },
+  scale: {
+    from: 1,
+    to: 1,
+    duration: 20,
+    delay: 0,
+  },
+  position: {
+    fromX: 0,
+    toX: 0,
+    fromY: 0,
+    toY: 0,
+    duration: 20,
+    delay: 0,
+  },
+  typewriter: {
+    cursor: true,
+    cursorChar: "|",
+    cursorBlinkSpeed: 16,
+  },
+  stagger: {
+    delay: 5,
+    reverse: false,
+  },
+};
