@@ -89,19 +89,11 @@ const StoryboardPage = () => {
             <Palette className="h-3.5 w-3.5" /> Style
           </Button>
           <Button
-            variant="outline"
             size="sm"
-            className="gap-2 rounded-xl"
-            onClick={() => navigate("/export", { state: { prompt, scenes } })}
+            className="gap-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
+            onClick={() => navigate("/editor", { state: { prompt, scenes } })}
           >
-            <Play className="h-3.5 w-3.5" /> Preview
-          </Button>
-          <Button
-            size="sm"
-            className="gap-2 rounded-xl"
-            onClick={() => navigate("/export", { state: { prompt, scenes } })}
-          >
-            <Download className="h-3.5 w-3.5" /> Export
+            Generate Video <ArrowRight className="h-3.5 w-3.5" />
           </Button>
         </div>
       </header>
