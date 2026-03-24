@@ -156,13 +156,13 @@ const SingleSceneTimeline = ({
                 <MonitorPlay className="h-4 w-4 text-foreground/70" />
               </div>
               <p className="text-[9px] font-bold uppercase tracking-widest text-primary mb-0.5">
-                {scene.type}
+                {scene.category}
               </p>
               <h3
                 className="text-sm font-bold text-foreground leading-snug"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
-                {scene.title}
+                {scene.name}
               </h3>
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {scene.duration}s

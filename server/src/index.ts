@@ -4,6 +4,7 @@ import cors from "cors";
 import path from "path";
 import { mkdir } from "fs/promises";
 import agentRouter from "./routes/agent.js";
+import scenesRouter from "./routes/scenes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -44,6 +45,9 @@ app.get("/api/health", (req, res) => {
 
 // Agent routes
 app.use("/api/agent", agentRouter);
+
+// Scene generation routes
+app.use("/api/scenes", scenesRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

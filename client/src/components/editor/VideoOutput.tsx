@@ -176,15 +176,15 @@ const SortableScene = ({
         {/* Scene info */}
         <div className="absolute bottom-0 left-0 right-0 p-2">
           <span className="text-[9px] font-medium text-white/90 truncate block drop-shadow">
-            {scene.title}
+            {scene.name}
           </span>
-          <span className="text-[8px] text-white/60">{scene.duration}s</span>
+          <span className="text-[8px] text-white/60">{Math.round(scene.duration / 30)}s</span>
         </div>
 
         {/* Scene type badge */}
         {status.status === "complete" && (
           <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[7px] font-semibold uppercase tracking-wide bg-black/50 text-white/80 backdrop-blur-sm">
-            {scene.type}
+            {scene.category}
           </span>
         )}
       </button>

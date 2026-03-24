@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Loader2, Film } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { RichScene } from "@/lib/mockData";
 
 const steps = [
   { label: "Analyzing your product", icon: "🔍" },
@@ -12,25 +14,75 @@ const steps = [
 
 const GeneratingPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const collectedScenesRef = useRef<RichScene[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
   const prompt = (location.state as any)?.prompt || "Your product";
 
   useEffect(() => {
-    const timers: NodeJS.Timeout[] = [];
-    steps.forEach((_, i) => {
-      timers.push(
-        setTimeout(() => setCurrentStep(i + 1), (i + 1) * 900)
-      );
+    const controller = new AbortController();
+
+    async function streamGeneration() {
+      const response = await fetch("/api/scenes/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop()!;
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          let event: any;
+          try {
+            event = JSON.parse(line.slice(6));
+          } catch {
+            continue;
+          }
+
+          if (event.step === "analyzing") setCurrentStep(1);
+          if (event.step === "writing") setCurrentStep(2);
+          if (event.step === "designing") setCurrentStep(3);
+          if (event.step === "scene") {
+            collectedScenesRef.current.push(event.scene);
+            setCurrentStep((s) => Math.max(s, 3));
+          }
+          if (event.step === "complete") {
+            setCurrentStep(4);
+            navigate("/storyboard", {
+              state: { prompt, scenes: collectedScenesRef.current },
+            });
+          }
+          if (event.step === "error") {
+            setError(event.message || "Generation failed");
+          }
+        }
+      }
+    }
+
+    streamGeneration().catch((e) => {
+      if (e.name !== "AbortError") {
+        setError(e.message || "Something went wrong");
+      }
     });
-    // Navigate after all steps
-    timers.push(
-      setTimeout(() => {
-        navigate("/storyboard", { state: { prompt } });
-      }, (steps.length + 1) * 900)
-    );
-    return () => timers.forEach(clearTimeout);
-  }, [navigate, prompt]);
+
+    return () => controller.abort();
+  }, [prompt, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
@@ -124,6 +176,19 @@ const GeneratingPage = () => {
             );
           })}
         </div>
+
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6 text-center"
+          >
+            <p className="text-sm text-destructive mb-3">Generation failed: {error}</p>
+            <Button variant="outline" onClick={() => navigate("/")}>
+              Try Again
+            </Button>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   );

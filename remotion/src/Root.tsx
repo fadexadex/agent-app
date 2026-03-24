@@ -3,7 +3,7 @@ import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 import { EmailReplyFeature } from "./EmailReplyFeature";
 
-import { IntegrationTestScene, HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction } from "./scenes";
+import { IntegrationTestScene, HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction, HookStudentStruggle, IntroAppSolution, FeatureCampusMap } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -75,6 +75,30 @@ export const RemotionRoot: React.FC = () => {
         id="cta-start-free"
         component={CallToAction}
         durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="hook-student-struggle"
+        component={HookStudentStruggle}
+        durationInFrames={100}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="intro-app-solution"
+        component={IntroAppSolution}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-campus-map"
+        component={FeatureCampusMap}
+        durationInFrames={130}
         fps={30}
         width={1920}
         height={1080}

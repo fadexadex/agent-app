@@ -7,3 +7,6 @@ export { TheProblem } from "./TheProblem";
 export { TheSolution } from "./TheSolution";
 export { KeyFeatures } from "./KeyFeatures";
 export { CallToAction } from "./CallToAction";
+export { HookStudentStruggle } from "./HookStudentStruggle";
+export { IntroAppSolution } from "./IntroAppSolution";
+export { FeatureCampusMap } from "./FeatureCampusMap";

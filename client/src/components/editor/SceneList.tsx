@@ -41,7 +41,7 @@ const SceneList = ({ scenes, selectedScene, onSelectScene }: SceneListProps) => 
                 )}
               >
                 <PlaySquare className={cn("h-4 w-4 shrink-0", isSelected ? "text-primary-foreground" : "text-muted-foreground")} />
-                <span className="truncate">{scene.title}</span>
+                <span className="truncate">{scene.name}</span>
               </button>
             );
           })}

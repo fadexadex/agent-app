@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Play, Pause, Download, Loader2, Check, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Scene } from "@/lib/mockData";
+import { Scene, framesToSeconds } from "@/lib/mockData";
 import { AgentStep } from "@/lib/agentTypes";
 import { useAgent } from "@/hooks/useAgent";
 import {
@@ -55,7 +55,7 @@ const EditorPage = () => {
   // Track steps per scene from agent
   const [sceneSteps, setSceneSteps] = useState<Record<number, AgentStep[]>>({});
 
-  const totalDuration = scenes.reduce((a, s) => a + s.duration, 0);
+  const totalDuration = scenes.reduce((a, s) => a + framesToSeconds(s.duration), 0);
 
   // Track whether the user manually overrode scene selection
   const userOverrodeSelectionRef = useRef(false);
@@ -251,34 +251,35 @@ const EditorPage = () => {
 
       // Pass scene data directly to avoid stale closure issues during transitions
       sendMessage(scenePrompt, {
-        sceneId: scene.id.toString(),
+        sceneId: String(scene.id),
         sceneContext: {
-          title: scene.title,
-          description: scene.script,
-          duration: scene.duration,
+          title: scene.name,
+          description: scene.notes || scene.elements.map((e) => e.description).join(" "),
+          duration: framesToSeconds(scene.duration),
         },
       });
     },
     [scenes, sendMessage],
   );
 
-  // Build a detailed prompt for the agent to generate a scene
+  // Build a structured prompt for the agent using the full scene JSON
   const buildScenePrompt = (scene: Scene): string => {
-    return `Generate a Remotion scene for: "${scene.title}"
+    const durationSeconds = framesToSeconds(scene.duration);
+    return `Generate a Remotion scene based on this structured specification:
 
-Scene Details:
-- Type: ${scene.type}
-- Headline: ${scene.headline}
-- Script/Description: ${scene.script}
-- Duration: ${scene.duration} seconds (at 30fps = ${scene.duration * 30} frames)
+${JSON.stringify({ scene }, null, 2)}
 
 Requirements:
-1. Create a visually engaging scene that matches the description
-2. Use appropriate components from the library (AnimatedText, Background, MockupFrame, etc.)
-3. Ensure smooth animations using spring() and interpolate()
-4. The scene should fit within the duration specified
+1. Scene ID: "${scene.id}" — use this exact value for writeSceneCode fileName and triggerPreview sceneId
+2. Duration: ${scene.duration} frames (${durationSeconds}s at 30fps)
+3. Implement each element using the component name in element.component (if specified)
+4. Apply animation timing from element.animation.timing (start frame, duration, spring preset)
+5. Apply exit animations from element.exit config (frame, type, duration)
+6. Use the Background component configured with: ${JSON.stringify(scene.background)}
+7. Apply scene transition: ${JSON.stringify(scene.transition ?? { type: "blur", duration: 15 })}
+8. Follow the notes: "${scene.notes ?? "Exit elements in order, stagger by 3 frames."}"
 
-Generate the scene code and register it for preview.`;
+Start with the think tool to plan your approach, then writeSceneCode → triggerPreview → renderScene.`;
   };
 
   // Playhead animation

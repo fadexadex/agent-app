@@ -5,7 +5,7 @@ import { ArrowLeft, Download, Link2, Play, Pause, Film, Check } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Scene, generateMockScenes } from "@/lib/mockData";
+import { Scene, generateMockScenes, framesToSeconds } from "@/lib/mockData";
 import { toast } from "sonner";
 
 const ExportPage = () => {
@@ -20,7 +20,7 @@ const ExportPage = () => {
   const [playing, setPlaying] = useState(false);
   const [activeScene, setActiveScene] = useState(0);
 
-  const totalDuration = scenes.reduce((a, s) => a + s.duration, 0);
+  const totalDuration = scenes.reduce((a, s) => a + framesToSeconds(s.duration), 0);
 
   const handleDownload = () => {
     toast.success("Your video is being rendered! Download will start shortly.", {
@@ -104,13 +104,13 @@ const ExportPage = () => {
                 <button
                   key={scene.id}
                   onClick={() => setActiveScene(i)}
-                  className={`shrink-0 w-20 h-12 rounded-lg bg-gradient-to-br ${scene.gradient} border-2 transition-all flex items-center justify-center ${
+                  className={`shrink-0 w-20 h-12 rounded-lg bg-gradient-to-br ${scene.gradient ?? "from-primary/20 to-primary/5"} border-2 transition-all flex items-center justify-center ${
                     activeScene === i
                       ? "border-primary shadow-md scale-105"
                       : "border-transparent opacity-60 hover:opacity-100"
                   }`}
                 >
-                  <span className="text-[10px] font-bold text-foreground">{scene.type}</span>
+                  <span className="text-[10px] font-bold text-foreground">{scene.category}</span>
                 </button>
               ))}
             </div>

@@ -1,10 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Play, Download, RefreshCw, Pencil, Film, Palette, Wand2, ArrowRight } from "lucide-react";
+import {
+  ArrowLeft,
+  Play,
+  Download,
+  RefreshCw,
+  Pencil,
+  Film,
+  Palette,
+  Wand2,
+  ArrowRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Scene, generateMockScenes, stylePresets } from "@/lib/mockData";
+import {
+  RichScene,
+  framesToSeconds,
+  backgroundToGradient,
+  stylePresets,
+} from "@/lib/mockData";
 import SceneEditor from "@/components/SceneEditor";
+
+const categoryColors: Record<string, string> = {
+  hook: "text-purple-500",
+  intro: "text-blue-500",
+  feature: "text-primary",
+  benefit: "text-green-500",
+  cta: "text-accent",
+  transition: "text-muted-foreground",
+};
 
 const StoryboardPage = () => {
   const navigate = useNavigate();
@@ -12,16 +36,22 @@ const StoryboardPage = () => {
   const prompt = (location.state as any)?.prompt || "Your product";
   const productName = prompt.split(" ").slice(0, 4).join(" ");
 
-  const [scenes, setScenes] = useState<Scene[]>(() => generateMockScenes(productName));
-  const [editingScene, setEditingScene] = useState<Scene | null>(null);
+  const passedScenes: RichScene[] = (location.state as any)?.scenes || [];
+  const [scenes, setScenes] = useState<RichScene[]>(passedScenes);
+  const [editingScene, setEditingScene] = useState<RichScene | null>(null);
   const [activeStyle, setActiveStyle] = useState(0);
   const [showStylePanel, setShowStylePanel] = useState(false);
 
-  const handleSaveScene = (updated: Scene) => {
+  // Redirect to home if we arrived without scenes (direct navigation)
+  useEffect(() => {
+    if (scenes.length === 0) navigate("/");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSaveScene = (updated: RichScene) => {
     setScenes((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
   };
 
-  const totalDuration = scenes.reduce((a, s) => a + s.duration, 0);
+  const totalDuration = scenes.reduce((a, s) => a + framesToSeconds(s.duration), 0);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -80,74 +110,108 @@ const StoryboardPage = () => {
         {/* Scene cards */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="max-w-3xl mx-auto space-y-4">
-            {scenes.map((scene, i) => (
-              <motion.div
-                key={scene.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
-                className="bg-card border rounded-2xl overflow-hidden hover:shadow-md transition-shadow group"
-              >
-                <div className="flex flex-col sm:flex-row">
-                  {/* Scene visual */}
-                  <div
-                    className={`sm:w-56 aspect-video sm:aspect-auto bg-gradient-to-br ${scene.gradient} flex items-center justify-center p-6 shrink-0`}
-                  >
-                    <div className="text-center">
-                      <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-card/60 backdrop-blur text-foreground font-bold text-sm mb-2">
-                        {scene.id}
-                      </div>
-                      <p
-                        className="text-sm font-bold text-foreground"
-                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                      >
-                        {scene.headline}
-                      </p>
-                    </div>
-                  </div>
+            {scenes.map((scene, i) => {
+              const gradient = scene.gradient || backgroundToGradient(scene.background);
+              const displayScript =
+                scene.notes ||
+                scene.elements
+                  .map((e) => e.description)
+                  .join(" ")
+                  .slice(0, 140);
 
-                  {/* Scene info */}
-                  <div className="flex-1 p-4 sm:p-5 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-primary">
-                          {scene.type}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          · {scene.duration}s · {scene.animation}
-                        </span>
+              return (
+                <motion.div
+                  key={scene.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  className="bg-card border rounded-2xl overflow-hidden hover:shadow-md transition-shadow group"
+                >
+                  <div className="flex flex-col sm:flex-row">
+                    {/* Scene visual */}
+                    <div
+                      className={`sm:w-56 aspect-video sm:aspect-auto bg-gradient-to-br ${gradient} flex items-center justify-center p-6 shrink-0`}
+                    >
+                      <div className="text-center">
+                        <div className="inline-flex items-center justify-center h-10 w-10 rounded-full bg-card/60 backdrop-blur text-foreground font-bold text-sm mb-2">
+                          {i + 1}
+                        </div>
+                        <p
+                          className="text-sm font-bold text-foreground"
+                          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                        >
+                          {scene.name}
+                        </p>
                       </div>
-                      <h3
-                        className="font-bold text-foreground mb-1"
-                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                      >
-                        {scene.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">
-                        {scene.script}
-                      </p>
                     </div>
-                    <div className="flex gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 rounded-lg text-xs"
-                        onClick={() => setEditingScene(scene)}
-                      >
-                        <Pencil className="h-3 w-3" /> Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1.5 rounded-lg text-xs"
-                      >
-                        <RefreshCw className="h-3 w-3" /> Regenerate
-                      </Button>
+
+                    {/* Scene info */}
+                    <div className="flex-1 p-4 sm:p-5 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span
+                            className={`text-[10px] font-bold uppercase tracking-widest ${
+                              categoryColors[scene.category] ?? "text-primary"
+                            }`}
+                          >
+                            {scene.category}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            · {framesToSeconds(scene.duration)}s
+                          </span>
+                          {scene.transition && (
+                            <span className="text-[10px] text-muted-foreground">
+                              · {scene.transition.type} out
+                            </span>
+                          )}
+                        </div>
+                        <h3
+                          className="font-bold text-foreground mb-1"
+                          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                        >
+                          {scene.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
+                          {displayScript}
+                        </p>
+
+                        {/* Element chips */}
+                        {scene.elements.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {scene.elements.map((el) => (
+                              <span
+                                key={el.id}
+                                className="text-[10px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full"
+                              >
+                                {el.component || el.type}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 rounded-lg text-xs"
+                          onClick={() => setEditingScene(scene)}
+                        >
+                          <Pencil className="h-3 w-3" /> Edit
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1.5 rounded-lg text-xs"
+                        >
+                          <RefreshCw className="h-3 w-3" /> Regenerate
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
 
             {/* Generate Video CTA */}
             <motion.div

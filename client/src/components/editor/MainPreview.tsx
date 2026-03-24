@@ -102,7 +102,7 @@ const MainPreview = ({
       >
         {isGenerating ? (
           // ── Agent is writing / rendering ──
-          <GeneratingAnimation sceneTitle={scene.title} message={generatingMessage} />
+          <GeneratingAnimation sceneTitle={scene.name} message={generatingMessage} />
         ) : isQueued ? (
           // ── Waiting in queue ──
           <div className="absolute inset-0 flex items-center justify-center">
@@ -113,12 +113,12 @@ const MainPreview = ({
           </div>
         ) : isComplete && videoUrl ? (
           // ── Best path: rendered MP4 available ──
-          <RenderedVideoPlayer videoUrl={videoUrl} sceneTitle={scene.title} />
+          <RenderedVideoPlayer videoUrl={videoUrl} sceneTitle={scene.name} />
         ) : isComplete && previewUrl ? (
           // ── Fallback: Remotion Studio iframe (video not yet rendered) ──
           <RemotionStudioPreview
             previewUrl={previewUrl}
-            sceneTitle={scene.title}
+            sceneTitle={scene.name}
             previewSceneId={previewSceneId}
           />
         ) : isComplete ? (
@@ -128,21 +128,21 @@ const MainPreview = ({
           // ── Idle / storyboard state ──
           <div
             className={`absolute inset-0 flex items-center justify-center p-8 bg-gradient-to-br ${
-              scene.gradient || "from-primary/10 to-primary/5"
+              scene.gradient ?? "from-primary/10 to-primary/5"
             }`}
           >
             <div className="text-center">
               <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-3">
-                {scene.type}
+                {scene.category}
               </p>
               <h2
                 className="text-2xl font-bold text-foreground mb-3"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
-                {scene.headline}
+                {scene.name}
               </h2>
               <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                {scene.script}
+                {scene.notes ?? scene.elements.map((e) => e.description).join(" ")}
               </p>
             </div>
           </div>
@@ -372,7 +372,7 @@ const SceneReadyState = ({ scene }: SceneReadyStateProps) => (
         className="text-xl font-bold text-foreground mb-2"
         style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
       >
-        {scene.title}
+        {scene.name}
       </h2>
       <p className="text-xs text-muted-foreground max-w-xs mx-auto">
         Waiting for video render to complete…

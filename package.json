@@ -11,7 +11,8 @@
     "dev:all": "concurrently \"npm run dev -w server\" \"npm run dev -w client\" \"npm run dev -w remotion\"",
     "dev:remotion": "npm run dev -w remotion",
     "build": "npm run build -w client",
-    "install:all": "npm install"
+    "install:all": "npm install",
+    "test:models": "npx tsx scripts/test-gemini-models.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"
