@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interswitch WebPay Test</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .checkout-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            max-width: 420px;
+            width: 100%;
+        }
+        .checkout-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .checkout-header h1 {
+            margin: 0 0 8px 0;
+            font-size: 24px;
+            color: #1a1a1a;
+        }
+        .checkout-header p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .test-badge {
+            display: inline-block;
+            background: #fff3cd;
+            color: #856404;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #e85d04;
+        }
+        .amount-display {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        .amount-display .label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .amount-display .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-top: 4px;
+        }
+        .pay-button {
+            width: 100%;
+            padding: 16px;
+            background: #e85d04;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .pay-button:hover {
+            background: #d45203;
+        }
+        .pay-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .response-section {
+            margin-top: 24px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: none;
+        }
+        .response-section.show {
+            display: block;
+        }
+        .response-section h3 {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: #333;
+        }
+        .response-section pre {
+            margin: 0;
+            padding: 12px;
+            background: #1a1a1a;
+            color: #00ff88;
+            border-radius: 6px;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .info-section {
+            margin-top: 24px;
+            padding: 16px;
+            background: #e7f3ff;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #0066cc;
+        }
+        .info-section strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+        .info-section code {
+            background: rgba(0, 102, 204, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="checkout-card">
+        <div class="checkout-header">
+            <span class="test-badge">TEST MODE</span>
+            <h1>Interswitch WebPay</h1>
+            <p>Inline Checkout Integration Test</p>
+        </div>
+
+        <div class="form-group">
+            <label for="custName">Customer Name</label>
+            <input type="text" id="custName" placeholder="John Doe" value="Test Customer">
+        </div>
+
+        <div class="form-group">
+            <label for="custEmail">Customer Email</label>
+            <input type="email" id="custEmail" placeholder="john@example.com" value="test@example.com">
+        </div>
+
+        <div class="amount-display">
+            <div class="label">Amount to Pay</div>
+            <div class="value">NGN 100.00</div>
+        </div>
+
+        <button class="pay-button" id="payButton" onclick="initiatePayment()">
+            Pay Now
+        </button>
+
+        <div class="response-section" id="responseSection">
+            <h3>Payment Response:</h3>
+            <pre id="responseData"></pre>
+        </div>
+
+        <div class="info-section">
+            <strong>Test Card Details:</strong>
+            Card: <code>5060 9905 8000 0217 499</code><br>
+            Expiry: <code>03/50</code><br>
+            CVV: <code>111</code><br>
+            PIN: <code>1111</code><br>
+            OTP: <code>123456</code>
+        </div>
+    </div>
+
+    <!-- Interswitch Inline Checkout Script (TEST environment) -->
+    <script src="https://newwebpay.qa.interswitchng.com/inline-checkout.js"></script>
+
+    <script>
+        // ==============================================
+        // CONFIGURATION - Replace with your actual values
+        // ==============================================
+        const CONFIG = {
+            merchant_code: "MX6072",      // TODO: Replace with your merchant_code
+            pay_item_id: "9405967",       // TODO: Replace with your pay_item_id
+            currency: 566,                // NGN ISO 4217 numeric code
+            amount: 10000,                // Amount in minor (10000 = NGN 100.00)
+            mode: "TEST"                  // Change to "LIVE" for production
+        };
+
+        // Generate unique transaction reference
+        function generateTxnRef() {
+            return 'TXN_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Payment callback function
+        function paymentCallback(response) {
+            console.log('Payment Response:', response);
+            
+            // Show response section
+            const responseSection = document.getElementById('responseSection');
+            const responseData = document.getElementById('responseData');
+            
+            responseSection.classList.add('show');
+            responseData.textContent = JSON.stringify(response, null, 2);
+
+            // Re-enable button
+            document.getElementById('payButton').disabled = false;
+            document.getElementById('payButton').textContent = 'Pay Again';
+
+            // Handle response
+            if (response.resp === '00') {
+                alert('Payment Successful!\n\nTransaction Reference: ' + response.txnref + 
+                      '\n\nNote: Always verify transaction status server-side before giving value.');
+            } else {
+                alert('Payment ' + (response.resp ? 'Failed' : 'Cancelled') + 
+                      '\n\nResponse: ' + (response.desc || 'Transaction was cancelled'));
+            }
+        }
+
+        // Initiate payment
+        function initiatePayment() {
+            const custName = document.getElementById('custName').value.trim();
+            const custEmail = document.getElementById('custEmail').value.trim();
+
+            // Basic validation
+            if (!custName) {
+                alert('Please enter customer name');
+                return;
+            }
+            if (!custEmail || !custEmail.includes('@')) {
+                alert('Please enter a valid email address');
+                return;
+            }
+
+            // Disable button during payment
+            const payButton = document.getElementById('payButton');
+            payButton.disabled = true;
+            payButton.textContent = 'Processing...';
+
+            // Hide previous response
+            document.getElementById('responseSection').classList.remove('show');
+
+            // Build payment request
+            const paymentRequest = {
+                merchant_code: CONFIG.merchant_code,
+                pay_item_id: CONFIG.pay_item_id,
+                txn_ref: generateTxnRef(),
+                amount: CONFIG.amount,
+                currency: CONFIG.currency,
+                cust_name: custName,
+                cust_email: custEmail,
+                site_redirect_url: window.location.href,
+                onComplete: paymentCallback,
+                mode: CONFIG.mode
+            };
+
+            console.log('Initiating payment with:', paymentRequest);
+
+            // Call Interswitch inline checkout
+            try {
+                window.webpayCheckout(paymentRequest);
+            } catch (error) {
+                console.error('Payment initiation failed:', error);
+                alert('Failed to initiate payment. Check console for details.');
+                payButton.disabled = false;
+                payButton.textContent = 'Pay Now';
+            }
+        }
+    </script>
+</body>
+</html>
