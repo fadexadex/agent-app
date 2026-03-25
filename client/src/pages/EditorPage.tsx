@@ -10,7 +10,9 @@ import {
   getProject,
   updateProjectSceneStatus,
   updateProjectAgentSteps,
+  updateProjectSceneAudioTrack,
   StoredProject,
+  AudioTrack,
 } from "@/lib/storage";
 import { useAgent } from "@/hooks/useAgent";
 import {
@@ -21,6 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SceneList from "@/components/editor/SceneList";
 import AssetList from "@/components/editor/AssetList";
+import AudioTrackSelector from "@/components/editor/AudioTrackSelector";
 import MainPreview from "@/components/editor/MainPreview";
 import VideoOutput from "@/components/editor/VideoOutput";
 import AgentThoughts from "@/components/editor/AgentThoughts";
@@ -74,6 +77,9 @@ const EditorPage = () => {
 
   // Track steps per scene from agent
   const [sceneSteps, setSceneSteps] = useState<Record<number, AgentStep[]>>({});
+
+  // Audio track state
+  const [audioTrack, setAudioTrack] = useState<AudioTrack | undefined>(undefined);
 
   const totalDuration = scenes.reduce((a, s) => a + framesToSeconds(s.duration), 0);
 
@@ -362,7 +368,7 @@ const EditorPage = () => {
   // Build a structured prompt for the agent using the full scene JSON
   const buildScenePrompt = (scene: Scene): string => {
     const durationSeconds = framesToSeconds(scene.duration);
-    return `Generate a Remotion scene based on this structured specification:
+    let prompt = `Generate a Remotion scene based on this structured specification:
 
 ${JSON.stringify({ scene }, null, 2)}
 
@@ -374,29 +380,79 @@ Requirements:
 5. Apply exit animations from element.exit config (frame, type, duration)
 6. Use the Background component configured with: ${JSON.stringify(scene.background)}
 7. Apply scene transition: ${JSON.stringify(scene.transition ?? { type: "blur", duration: 15 })}
-8. Follow the notes: "${scene.notes ?? "Exit elements in order, stagger by 3 frames."}"
+8. Follow the notes: "${scene.notes ?? "Exit elements in order, stagger by 3 frames."}"`;
 
-Start with the think tool to plan your approach, then writeSceneCode → triggerPreview → renderScene.`;
+    if (scene.audioTrack) {
+      prompt += `\n9. AUDIO REQUIREMENT: Include this audio component anywhere in the scene JSX: <Audio src={staticFile("audio/${scene.audioTrack.trackId}.mp3")} volume={${scene.audioTrack.volume}} />. Import Audio and staticFile from "remotion".`;
+    }
+
+    prompt += `\n\nStart with the think tool to plan your approach, then writeSceneCode → triggerPreview → renderScene.`;
+    return prompt;
   };
 
-  // Playhead animation
+  const sceneStarts = useRef<number[]>([]);
   useEffect(() => {
-    if (!isPlaying || !allDone) return;
-    const interval = setInterval(() => {
-      setPlayheadTime((t) => {
-        if (t >= totalDuration) {
-          setIsPlaying(false);
-          return totalDuration;
+    const starts: number[] = [];
+    let acc = 0;
+    for (const scene of scenes) {
+      starts.push(acc);
+      acc += framesToSeconds(scene.duration);
+    }
+    sceneStarts.current = starts;
+  }, [scenes]);
+
+  // Delete audio playhead sync logic since we're rendering it per-scene natively in remotion now.
+  // We'll keep the AudioTrack state around purely for the UI selection, but playback is handled
+  // by Remotion Studio and the final rendered MP4s.
+
+  // Playhead animation and Video sync loop
+  useEffect(() => {
+    let animationFrameId: number;
+    
+    const tick = () => {
+      // 1. Sync single scene time from video if available
+      if (selectedScene !== "all" && typeof selectedScene === "number" && videoRef.current) {
+        const vTime = videoRef.current.currentTime;
+        setSingleSceneTime(vTime);
+        
+        // Sync isPlaying with video's play state
+        const videoPlaying = !videoRef.current.paused;
+        if (videoPlaying !== isPlaying) {
+          setIsPlaying(videoPlaying);
         }
-        return t + 0.1;
-      });
-    }, 100);
-    return () => clearInterval(interval);
-  }, [isPlaying, allDone, totalDuration]);
+      } 
+      // 2. Global playhead fallback when no video playing
+      else if (selectedScene === "all") {
+        if (isPlaying && allDone) {
+          setPlayheadTime((t) => {
+            const next = t + 16.66 / 1000; // rough 60fps delta
+            if (next >= totalDuration) {
+              setIsPlaying(false);
+              return totalDuration;
+            }
+            return next;
+          });
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(tick);
+    };
+
+    animationFrameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [selectedScene, isPlaying, allDone, totalDuration, playheadTime]);
 
   const handleTogglePlay = () => {
     setIsPlaying(!isPlaying);
     if (playheadTime >= totalDuration) setPlayheadTime(0);
+    // Sync video if we have the reference
+    if (videoRef.current) {
+      if (!isPlaying) {
+        videoRef.current.play();
+      } else {
+        videoRef.current.pause();
+      }
+    }
   };
 
   const handleReset = () => {
@@ -434,6 +490,11 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
     setSelectedScene(scene);
     setSingleSceneTime(0);
     setSelectedTimestamp(null);
+    if (scene !== "all" && typeof scene === "number") {
+      setAudioTrack(scenes[scene]?.audioTrack);
+    } else {
+      setAudioTrack(undefined);
+    }
   };
 
   const handleAddScene = (type: "ai" | "upload", data: string, assets?: string[]) => {
@@ -473,6 +534,36 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
       startProcessingScene(scenes.length, overrides);
     }
   };
+
+  const handleSelectAudioTrack = (trackId: string | null) => {
+    if (selectedScene === "all" || typeof selectedScene !== "number") return;
+    
+    const newTrack = trackId ? { trackId, volume: audioTrack?.volume ?? 0.3 } : undefined;
+    setAudioTrack(newTrack);
+    
+    // Update local scenes state
+    setScenes(prev => prev.map((s, i) => i === selectedScene ? { ...s, audioTrack: newTrack } : s));
+
+    if (currentProjectIdRef.current) {
+      updateProjectSceneAudioTrack(currentProjectIdRef.current, selectedScene, newTrack);
+    }
+  };
+
+  const handleAudioVolumeChange = (volume: number) => {
+    if (!audioTrack || selectedScene === "all" || typeof selectedScene !== "number") return;
+    
+    const newTrack = { ...audioTrack, volume };
+    setAudioTrack(newTrack);
+    
+    // Update local scenes state
+    setScenes(prev => prev.map((s, i) => i === selectedScene ? { ...s, audioTrack: newTrack } : s));
+
+    if (currentProjectIdRef.current) {
+      updateProjectSceneAudioTrack(currentProjectIdRef.current, selectedScene, newTrack);
+    }
+  };
+
+
 
   const displayScene = selectedScene === "all" ? null : scenes[selectedScene];
   const displaySteps =
@@ -555,6 +646,7 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
                       scenes,
                       projectId: currentProjectIdRef.current,
                       sceneStatuses,
+                      audioTrack,
                     },
                   })
                 }
@@ -584,6 +676,12 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
               >
                 Assets
               </TabsTrigger>
+              <TabsTrigger 
+                value="music" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-1"
+              >
+                Music
+              </TabsTrigger>
             </TabsList>
             
             <TabsContent value="scenes" className="flex-1 mt-0 overflow-hidden outline-none">
@@ -598,6 +696,15 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
             
             <TabsContent value="assets" className="flex-1 mt-0 overflow-hidden outline-none">
               <AssetList />
+            </TabsContent>
+
+            <TabsContent value="music" className="flex-1 mt-0 overflow-hidden outline-none">
+              <AudioTrackSelector
+                selectedTrackId={audioTrack?.trackId || null}
+                volume={audioTrack?.volume ?? 0.3}
+                onSelectTrack={handleSelectAudioTrack}
+                onVolumeChange={handleAudioVolumeChange}
+              />
             </TabsContent>
           </Tabs>
         </ResizablePanel>
@@ -652,6 +759,8 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
                 selectedTimestamp={selectedTimestamp}
                 onTimestampSelect={handleTimestampSelect}
                 onScrub={handleScrub}
+                audioUrl={audioTrack ? `/audio/${audioTrack.trackId}.mp3` : undefined}
+                audioTrackName={audioTrack ? audioTrack.trackId : undefined}
               />
             </ResizablePanel>
           </ResizablePanelGroup>
@@ -693,6 +802,7 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
         onClose={() => setIsAddSceneModalOpen(false)}
         onAdd={handleAddScene}
       />
+
     </div>
   );
 };

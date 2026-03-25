@@ -34,6 +34,8 @@ interface ExportRequest {
   resolution: string; // "720p" | "1080p" | "4K"
   format: string; // "MP4" | "WebM" | "GIF"
   aspectRatio: string; // "16:9" | "9:16" | "1:1"
+  audioTrackId?: string;
+  audioVolume?: number;
 }
 
 // Create FFmpeg concat file
@@ -98,16 +100,21 @@ router.post("/", async (req: Request, res: Response) => {
     const ffmpegArgs = [
       "-f", "concat",
       "-safe", "0",
-      "-i", concatFile,
-      "-c", "copy",  // Copy without re-encoding for speed
-      "-y",  // Overwrite output
-      outputFile
+      "-i", concatFile
     ];
 
+    // Add audio track if provided
+    // PER-SCENE AUDIO PHASE 2: This is no longer needed since audio is injected natively in Remotion scenes.
+    // Kept the parameter for backward compatibility, but we just use copy/re-encode
+    
     // For WebM, we need to re-encode since concat copy may not work
     if (format === "WebM") {
-      ffmpegArgs.splice(4, 2, "-c:v", "libvpx", "-c:a", "libvorbis");
+      ffmpegArgs.push("-c:v", "libvpx", "-c:a", "libvorbis");
+    } else {
+      ffmpegArgs.push("-c", "copy");  // Copy without re-encoding for speed
     }
+
+    ffmpegArgs.push("-y", outputFile); // Overwrite output
 
     console.log(`[export/${exportId}] FFmpeg: ffmpeg ${ffmpegArgs.join(" ")}`);
 

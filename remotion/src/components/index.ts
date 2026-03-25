@@ -286,3 +286,8 @@ export type {
   ResultSceneProps,
   BrandRevealSceneProps,
 } from "./SceneTemplates";
+
+// ============================================
+// Audio - Background music components
+// ============================================
+export { BackgroundMusic } from "./Audio/BackgroundMusic";

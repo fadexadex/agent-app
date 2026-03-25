@@ -23,9 +23,13 @@ mkdir(EXPORTS_DIR, { recursive: true }).catch((err) =>
 );
 
 // Middleware
+const corsOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean)
+  : ["http://localhost:8080", "http://localhost:5173"];
+
 app.use(
   cors({
-    origin: ["http://localhost:8080", "http://localhost:5173"],
+    origin: corsOrigins,
     credentials: true,
   }),
 );

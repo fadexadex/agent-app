@@ -14,7 +14,7 @@ interface VideoOutputProps {
   totalDuration: number;
   onTogglePlay: () => void;
   onReset: () => void;
-  onSelectScene: (scene: number) => void;
+  onSelectScene: (scene: number | "all") => void;
   onReorderScenes: (scenes: Scene[]) => void;
   onSeek: (time: number) => void;
   onScrub?: (time: number) => void;
@@ -32,6 +32,8 @@ interface VideoOutputProps {
   selectedTimestamp?: number | null;
   onTimestampSelect?: (time: number | null) => void;
   onSpeedChange?: (speed: number) => void;
+  audioUrl?: string;
+  audioTrackName?: string;
 }
 
 const formatTime = (seconds: number): string => {
@@ -63,6 +65,8 @@ const VideoOutput = ({
   selectedTimestamp = null,
   onTimestampSelect,
   onSpeedChange,
+  audioUrl,
+  audioTrackName,
 }: VideoOutputProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
@@ -177,8 +181,8 @@ const VideoOutput = ({
   }
 
   // Show single scene timeline for a completed single scene
-  if (showSingleSceneTimeline && selectedScene !== "all") {
-    const sceneIndex = selectedScene as number;
+  if (showSingleSceneTimeline && typeof selectedScene === "number") {
+    const sceneIndex = selectedScene;
     return (
       <SingleSceneTimeline
         scene={scenes[sceneIndex]}
@@ -193,6 +197,8 @@ const VideoOutput = ({
         videoUrl={sceneStatuses[sceneIndex]?.videoUrl}
         speed={speed}
         onSpeedChange={handleSpeedChange}
+        audioUrl={audioUrl}
+        audioTrackName={audioTrackName}
       />
     );
   }

@@ -9,6 +9,11 @@ export interface StoredScene extends Scene {
   previewUrl?: string;
 }
 
+export interface AudioTrack {
+  trackId: string;
+  volume: number; // 0-1
+}
+
 export interface StoredProject {
   id: string;
   prompt: string;
@@ -146,6 +151,18 @@ export function updateProjectAgentSteps(
   const project = getProject(projectId);
   if (!project) return;
   project.agentSteps = { ...project.agentSteps, ...agentSteps };
+  project.updatedAt = Date.now();
+  saveProject(project);
+}
+
+export function updateProjectSceneAudioTrack(
+  projectId: string,
+  sceneIndex: number,
+  audioTrack: AudioTrack | undefined
+): void {
+  const project = getProject(projectId);
+  if (!project || !project.scenes[sceneIndex]) return;
+  project.scenes[sceneIndex].audioTrack = audioTrack;
   project.updatedAt = Date.now();
   saveProject(project);
 }

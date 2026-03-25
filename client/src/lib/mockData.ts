@@ -35,6 +35,8 @@ export interface RichScene {
   notes?: string;
   // Optional display helper — derived from background if absent
   gradient?: string;
+  // Optional per-scene audio track
+  audioTrack?: { trackId: string; volume: number };
 }
 
 /** Backward-compat alias so existing imports of `Scene` keep working */

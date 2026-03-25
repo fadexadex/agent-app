@@ -1,8 +1,9 @@
 import { useRef, useState, useCallback } from "react";
-import { Play, Pause, SkipBack, RotateCcw } from "lucide-react";
+import { Play, Pause, SkipBack, RotateCcw, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Scene, framesToSeconds } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
+import AudioWaveform from "./AudioWaveform";
 
 interface SingleSceneTimelineProps {
   scene: Scene;
@@ -17,6 +18,8 @@ interface SingleSceneTimelineProps {
   videoUrl?: string | null;
   speed?: 0.5 | 1 | 2;
   onSpeedChange?: (speed: 0.5 | 1 | 2) => void;
+  audioUrl?: string | null;
+  audioTrackName?: string | null;
 }
 
 const formatTime = (seconds: number): string => {
@@ -42,6 +45,8 @@ const SingleSceneTimeline = ({
   videoUrl,
   speed = 1,
   onSpeedChange,
+  audioUrl,
+  audioTrackName,
 }: SingleSceneTimelineProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
@@ -283,6 +288,34 @@ const SingleSceneTimeline = ({
                 </div>
               )}
             </div>
+
+            {/* Audio track row */}
+            {audioUrl && (
+              <div className="h-7 shrink-0 relative border-t border-white/10">
+                {/* Track label */}
+                <div className="absolute left-0 top-0 bottom-0 w-6 flex items-center justify-center bg-emerald-500/10 border-r border-white/10">
+                  <Music className="h-3 w-3 text-emerald-400" />
+                </div>
+                {/* Waveform container */}
+                <div className="absolute left-6 right-0 top-0 bottom-0 overflow-hidden">
+                  <AudioWaveform
+                    audioUrl={audioUrl}
+                    width={scrollContainerRef.current?.scrollWidth || 800}
+                    height={28}
+                    currentTime={currentTime}
+                    duration={duration}
+                    color="#10B981"
+                    backgroundColor="rgba(16, 185, 129, 0.15)"
+                  />
+                </div>
+                {/* Track name tooltip */}
+                {audioTrackName && (
+                  <div className="absolute left-8 top-1/2 -translate-y-1/2 text-[9px] text-emerald-400/90 truncate max-w-[150px] pointer-events-none bg-background/80 px-1.5 py-0.5 rounded backdrop-blur-sm z-10 border border-emerald-500/20">
+                    {audioTrackName}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

@@ -6,7 +6,11 @@
     "server",
     "remotion"
   ],
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
+    "start": "npm run start -w server",
     "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w client\"",
     "dev:all": "concurrently \"npm run dev -w server\" \"npm run dev -w client\" \"npm run dev -w remotion\"",
     "dev:remotion": "npm run dev -w remotion",

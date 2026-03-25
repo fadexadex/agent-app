@@ -62,6 +62,16 @@ exit?: {
 
 **Layer Types:** `solid`, `linear`, `radial`, `mesh`, `noise`, `blur`, `vignette`, `glow`, `grid`
 
+### BackgroundMusic
+**Import:** `import { Audio, staticFile } from "remotion";`
+
+**Usage Patterns:**
+```typescript
+// Insert at the root of a scene if it needs background music directly
+<Audio src={staticFile("audio/track-id.mp3")} volume={0.3} />
+// Available tracks: eliveta, nastelbom, sigmamusicart
+```
+
 ### MockupFrame
 **Import:** `import { MockupFrame } from "@/components/MockupFrame";`
 

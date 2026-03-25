@@ -16,6 +16,7 @@ const ExportPage = () => {
   const scenes: Scene[] = (location.state as any)?.scenes || generateMockScenes(prompt);
   const projectId: string | undefined = (location.state as any)?.projectId;
   const sceneStatuses = (location.state as any)?.sceneStatuses;
+  const audioTrack = (location.state as any)?.audioTrack;
 
   const [resolution, setResolution] = useState("1080p");
   const [format, setFormat] = useState("MP4");
@@ -111,6 +112,8 @@ const ExportPage = () => {
           resolution,
           format,
           aspectRatio: aspect,
+          audioTrackId: audioTrack?.trackId,
+          audioVolume: audioTrack?.volume,
         }),
       });
 

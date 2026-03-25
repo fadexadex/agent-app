@@ -3,7 +3,7 @@ import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 import { EmailReplyFeature } from "./EmailReplyFeature";
 
-import { HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction, HookStudentStruggle, IntroAppSolution, FeatureCampusMap, HookManualCodingPain, IntroProductReveal, FeatureSeamlessConversion, FeatureComponentLibrary, BenefitSpeedEfficiency, CtaTryDevflow } from "./scenes";
+import { HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction, HookStudentStruggle, IntroAppSolution, FeatureCampusMap, HookManualCodingPain, IntroProductReveal, FeatureSeamlessConversion, FeatureComponentLibrary, BenefitSpeedEfficiency, CtaTryDevflow, FlowPilotIntroduction, Scene03FeatureAIPrioritization, BenefitProductivity, Scene06CtaSignup, Scene01HookChallenge, Scene02IntroProduct, AITaskPrioritization, FeatureTeamCollaboration, Scene05BenefitProductivity } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -95,7 +95,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                <Composition
+                                  <Composition
         id="hook-manual-coding-pain"
         component={HookManualCodingPain}
         durationInFrames={135}
@@ -103,7 +103,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+                            <Composition
         id="intro-product-reveal"
         component={IntroProductReveal}
         durationInFrames={120}
@@ -111,7 +111,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                <Composition
+                            <Composition
         id="feature-seamless-conversion"
         component={FeatureSeamlessConversion}
         durationInFrames={150}
@@ -139,6 +139,54 @@ export const RemotionRoot: React.FC = () => {
         id="cta-try-devflow"
         component={CtaTryDevflow}
         durationInFrames={90}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="scene-02-intro-product"
+        component={Scene02IntroProduct}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="scene-03-feature-ai-prioritization"
+        component={AITaskPrioritization}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="scene-05-benefit-productivity"
+        component={Scene05BenefitProductivity}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="scene-06-cta-signup"
+        component={Scene06CtaSignup}
+        durationInFrames={100}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="scene-01-hook-challenge"
+        component={Scene01HookChallenge}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="scene-04-feature-team-collaboration"
+        component={FeatureTeamCollaboration}
+        durationInFrames={150}
         fps={30}
         width={1920}
         height={1080}

@@ -1,0 +1,28 @@
+{
+  "tracks": [
+    {
+      "id": "eliveta",
+      "name": "Eliveta Background",
+      "file": "eliveta-background-music-491190.mp3",
+      "duration": 142,
+      "mood": "upbeat",
+      "bpm": 120
+    },
+    {
+      "id": "nastelbom",
+      "name": "Nastelbom Background",
+      "file": "nastelbom-background-music-463062.mp3",
+      "duration": 145,
+      "mood": "calm",
+      "bpm": 85
+    },
+    {
+      "id": "sigmamusicart",
+      "name": "Sigma Music Art",
+      "file": "sigmamusicart-background-music-504004.mp3",
+      "duration": 164,
+      "mood": "inspiring",
+      "bpm": 72
+    }
+  ]
+}
