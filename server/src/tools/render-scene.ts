@@ -108,8 +108,6 @@ to check completion status.`,
       "--overwrite",
       "--log",
       "verbose",
-      "--concurrency",
-      "1", // Limit concurrency to prevent Heroku memory (R15) errors
     ];
 
     console.log(
