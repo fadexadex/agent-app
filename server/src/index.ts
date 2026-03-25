@@ -91,6 +91,15 @@ app.use("/api/upload", uploadRouter);
 // Assets routes
 app.use("/api/assets", assetsRouter);
 
+// Serve the React frontend (client/dist)
+const CLIENT_DIST_DIR = path.resolve(process.cwd(), "../client/dist");
+app.use(express.static(CLIENT_DIST_DIR));
+
+// Catch-all route to serve index.html for React Router
+app.get("*", (req, res) => {
+  res.sendFile(path.join(CLIENT_DIST_DIR, "index.html"));
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Preview videos served from ${PREVIEWS_DIR}`);
