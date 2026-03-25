@@ -1,18 +1,46 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Zap, Film } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Film, FolderOpen, Paperclip, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { examplePrompts } from "@/lib/mockData";
+import { uploadFile } from "@/lib/upload";
 
 const Index = () => {
   const [prompt, setPrompt] = useState("");
+  const [assets, setAssets] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const handleGenerate = () => {
-    if (!prompt.trim()) return;
-    navigate("/generating", { state: { prompt } });
+    if (!prompt.trim() && assets.length === 0) return;
+    navigate("/generating", { state: { prompt, assets } });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    try {
+      const newAssets = [];
+      for (let i = 0; i < files.length; i++) {
+        const url = await uploadFile(files[i]);
+        newAssets.push(url);
+      }
+      setAssets((prev) => [...prev, ...newAssets]);
+    } catch (err) {
+      console.error("Upload failed", err);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const removeAsset = (index: number) => {
+    setAssets((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -27,6 +55,14 @@ const Index = () => {
             MotionAI
           </span>
         </div>
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/videos")}
+          className="gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <FolderOpen className="h-4 w-4" />
+          My Videos
+        </Button>
       </header>
 
       {/* Hero */}
@@ -61,18 +97,61 @@ const Index = () => {
           </p>
 
           {/* Input area */}
-          <div className="bg-card rounded-2xl border shadow-lg p-2 mb-6">
+          <div className="bg-card rounded-2xl border shadow-lg p-2 mb-6 text-left">
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Describe your product or brand... e.g. 'A productivity app for remote teams that uses AI to automate daily standups'"
               className="border-0 shadow-none focus-visible:ring-0 resize-none text-base min-h-[100px] bg-transparent"
             />
-            <div className="flex justify-end pt-1 pr-1">
+            
+            {/* Asset Thumbnails */}
+            {assets.length > 0 && (
+              <div className="flex flex-wrap gap-2 px-3 pb-3">
+                {assets.map((asset, i) => (
+                  <div key={i} className="relative group rounded-md border overflow-hidden bg-muted h-16 w-16 flex items-center justify-center">
+                    {asset.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
+                      <img src={asset} alt="upload" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-xs text-muted-foreground break-all p-1 text-center leading-tight">
+                        {asset.split('/').pop()?.slice(-10)}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => removeAsset(i)}
+                      className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex justify-between items-end pt-1 pr-1 pl-2">
+              <div>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileChange} 
+                  className="hidden" 
+                  multiple 
+                />
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  title="Upload assets"
+                >
+                  {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
+                </Button>
+              </div>
               <Button
                 size="lg"
                 onClick={handleGenerate}
-                disabled={!prompt.trim()}
+                disabled={(!prompt.trim() && assets.length === 0) || isUploading}
                 className="rounded-xl gap-2 px-6 font-semibold"
               >
                 Generate My Video

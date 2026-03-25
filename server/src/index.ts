@@ -5,14 +5,21 @@ import path from "path";
 import { mkdir } from "fs/promises";
 import agentRouter from "./routes/agent.js";
 import scenesRouter from "./routes/scenes.js";
+import exportRouter from "./routes/export.js";
+import uploadRouter from "./routes/upload.js";
+import assetsRouter from "./routes/assets.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Ensure the previews output directory exists on startup
 const PREVIEWS_DIR = path.resolve(process.cwd(), "public", "previews");
+const EXPORTS_DIR = path.resolve(process.cwd(), "public", "exports");
 mkdir(PREVIEWS_DIR, { recursive: true }).catch((err) =>
   console.warn("[server] Could not create previews dir:", err),
+);
+mkdir(EXPORTS_DIR, { recursive: true }).catch((err) =>
+  console.warn("[server] Could not create exports dir:", err),
 );
 
 // Middleware
@@ -38,6 +45,28 @@ app.use(
   }),
 );
 
+// Serve exports
+app.use(
+  "/exports",
+  express.static(EXPORTS_DIR, {
+    setHeaders: (res) => {
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+    },
+  }),
+);
+
+const UPLOADS_DIR = path.resolve(process.cwd(), "public", "uploads");
+app.use(
+  "/uploads",
+  express.static(UPLOADS_DIR, {
+    setHeaders: (res) => {
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+    },
+  }),
+);
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
@@ -48,6 +77,15 @@ app.use("/api/agent", agentRouter);
 
 // Scene generation routes
 app.use("/api/scenes", scenesRouter);
+
+// Export routes
+app.use("/api/export", exportRouter);
+
+// Upload routes
+app.use("/api/upload", uploadRouter);
+
+// Assets routes
+app.use("/api/assets", assetsRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

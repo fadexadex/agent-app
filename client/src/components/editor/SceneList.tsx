@@ -1,4 +1,4 @@
-import { PlaySquare, Layers } from "lucide-react";
+import { PlaySquare, Layers, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Scene } from "@/lib/mockData";
 
@@ -13,11 +13,12 @@ interface SceneListProps {
   selectedScene: number | "all";
   onSelectScene: (scene: number | "all") => void;
   sceneStatuses: SceneStatus[];
+  onOpenAddScene: () => void;
 }
 
-const SceneList = ({ scenes, selectedScene, onSelectScene }: SceneListProps) => {
+const SceneList = ({ scenes, selectedScene, onSelectScene, onOpenAddScene }: SceneListProps) => {
   return (
-    <div className="flex flex-col h-full bg-card">
+    <div className="flex flex-col h-full bg-card overflow-hidden">
       <div className="p-3 border-b border-border">
         <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Scenes
@@ -49,7 +50,14 @@ const SceneList = ({ scenes, selectedScene, onSelectScene }: SceneListProps) => 
       </div>
 
       {/* All Scenes button */}
-      <div className="p-2 border-t border-border">
+      <div className="p-2 border-t border-border flex flex-col gap-1.5">
+        <button
+          onClick={onOpenAddScene}
+          className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-gray-900 text-white rounded-md text-sm font-medium hover:bg-gray-800 transition-all shadow-sm active:scale-[0.98] dark:bg-primary dark:text-primary-foreground dark:hover:bg-primary/90"
+        >
+          <Plus className="w-4 h-4" />
+          Add Scene
+        </button>
         <button
           onClick={() => onSelectScene("all")}
           className={cn(

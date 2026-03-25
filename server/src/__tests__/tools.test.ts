@@ -124,7 +124,9 @@ export const TestSceneVitest: React.FC = () => {
       // Clean up test file
       try {
         const scenesDir = join(process.cwd(), "../remotion/src/scenes");
-        await rm(join(scenesDir, `${testFileName}.tsx`), { force: true });
+        await rm(join(scenesDir, testFileName), { recursive: true, force: true });
+        const sanitizedBadName = "Testetcpasswd";
+        await rm(join(scenesDir, sanitizedBadName), { recursive: true, force: true });
       } catch {
         // Ignore cleanup errors
       }
@@ -133,6 +135,7 @@ export const TestSceneVitest: React.FC = () => {
     it("should write scene code to scenes directory", async () => {
       const result = (await writeSceneCodeTool.execute!(
         {
+          projectFolder: "test-project",
           sceneId: testSceneId,
           fileName: testFileName,
           content: testContent,
@@ -148,7 +151,7 @@ export const TestSceneVitest: React.FC = () => {
       // Verify file was actually written
       const scenesDir = join(process.cwd(), "../remotion/src/scenes");
       const writtenContent = await readFile(
-        join(scenesDir, `${testFileName}.tsx`),
+        join(scenesDir, "test-project", `${testFileName}.tsx`),
         "utf-8"
       );
       expect(writtenContent).toBe(testContent);
@@ -157,17 +160,19 @@ export const TestSceneVitest: React.FC = () => {
     it("should sanitize filename", async () => {
       const result = (await writeSceneCodeTool.execute!(
         {
+          projectFolder: "bad-folder-../",
           sceneId: "test",
           fileName: "Test../../../etc/passwd",
           content: "malicious",
         },
         toolOpts
-      )) as { success: boolean; fileName?: string };
+      )) as { success: boolean; fileName?: string; projectFolder?: string };
 
       // Should sanitize to just alphanumeric
       expect(result.success).toBe(true);
       expect(result.fileName).not.toContain("..");
       expect(result.fileName).not.toContain("/");
+      expect(result.projectFolder).toBe("bad-folder-");
     });
   });
 });

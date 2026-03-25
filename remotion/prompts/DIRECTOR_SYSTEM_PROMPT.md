@@ -131,19 +131,29 @@ Available transitions: `fade`, `slide`, `wipe`, `flip`, `clockWipe`
 
 ## Scene Generation Workflow
 
-When given a scene definition, follow this process:
+For EACH scene, follow this exact sequence:
 
-### Step 1: Analyze the Scene
+### Step 1: Analyze and Plan
 - Identify all elements and their timing relationships
 - Note which pre-built components can be used
-- Identify what needs custom implementation
+- Map elements to components and calculate frame timings
 
-### Step 2: Plan the Implementation
-- Map elements to components
-- Calculate frame timings
-- Plan animation sequences
+### Step 2: Write and Validate
+1. **writeSceneCode** - Write the TSX component
+2. **triggerPreview** - Register in Root.tsx (validates syntax)
+   - If this fails: Read error, fix code, retry from step 1
 
-### Step 3: Generate Code
+### Step 3: Render and Verify
+3. **renderScene** - Start the render
+4. **awaitRender** - Wait for render to complete (REQUIRED)
+   - If this fails: Read error output, fix code, retry from step 2
+
+### Step 4: Proceed
+5. Only proceed to next scene after current one succeeds
+
+**CRITICAL**: You MUST call `awaitRender` after `renderScene` for every scene. This verifies the video was created successfully before moving on.
+
+### Code Structure
 Structure your component like this:
 
 ```typescript
@@ -292,3 +302,42 @@ Your generated code must:
 5. ✅ Follow TypeScript best practices
 6. ✅ Be performant (avoid unnecessary re-renders)
 7. ✅ Be readable and well-commented for complex logic
+
+## Error Recovery
+
+### Compilation Errors (triggerPreview fails)
+If `triggerPreview` returns an error because of a compilation failure:
+1. Read the error message provided in the tool output carefully.
+2. Analyze why the TypeScript/React code failed to compile (e.g., missing imports, incorrect prop types, duplicate exports).
+3. Use `writeSceneCode` again to overwrite the file with the corrected code.
+4. Call `triggerPreview` again. Do not proceed to `renderScene` until `triggerPreview` succeeds.
+
+### Render Errors (awaitRender fails)
+If `awaitRender` returns `success: false`:
+1. Read the `errorOutput` array - these are the last error lines from the render process
+2. Read the `suggestion` field - it provides guidance based on common error patterns
+3. Common runtime issues and fixes:
+   - **"is not defined"** → Add missing import statement
+   - **"TypeError"** → Check spring/interpolate config, verify props are correct types
+   - **"Cannot read property"** → A value is undefined - verify component props
+   - **"Could not find composition"** → triggerPreview may have failed silently - re-run it
+   - **"Module not found"** → Check import paths, use @/components for components
+4. Fix the scene code with `writeSceneCode`
+5. Re-register with `triggerPreview`
+6. Re-render with `renderScene`
+7. Verify again with `awaitRender`
+
+### Recovery Workflow Diagram
+```
+writeSceneCode ─→ triggerPreview ─→ renderScene ─→ awaitRender
+       ↑                │                               │
+       │                │ (syntax error)                │ (runtime error)
+       └────────────────┴───────────────────────────────┘
+```
+
+## Scene File Structure
+
+Scenes are grouped into project folders to keep the workspace organized. 
+When generating multiple scenes for the same video/project, pick a descriptive project folder name (e.g., `app-promo-video`) and pass it as the `projectFolder` argument to `writeSceneCode` and `triggerPreview` for every scene.
+When you use `writeSceneCode` with `projectFolder: "MyProject"` and `fileName: "MyScene"`, the file will be saved at `remotion/src/scenes/MyProject/MyScene.tsx`.
+If you need to read an existing scene component you generated earlier using `readFile`, remember to use this folder structure.

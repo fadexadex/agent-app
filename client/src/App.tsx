@@ -8,6 +8,7 @@ import GeneratingPage from "./pages/GeneratingPage.tsx";
 import StoryboardPage from "./pages/StoryboardPage.tsx";
 import EditorPage from "./pages/EditorPage.tsx";
 import ExportPage from "./pages/ExportPage.tsx";
+import VideosPage from "./pages/VideosPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/videos" element={<VideosPage />} />
           <Route path="/generating" element={<GeneratingPage />} />
           <Route path="/storyboard" element={<StoryboardPage />} />
           <Route path="/editor" element={<EditorPage />} />

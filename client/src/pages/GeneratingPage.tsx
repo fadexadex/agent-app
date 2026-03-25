@@ -19,6 +19,7 @@ const GeneratingPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const prompt = (location.state as any)?.prompt || "Your product";
+  const assets = (location.state as any)?.assets || [];
 
   useEffect(() => {
     const controller = new AbortController();
@@ -27,7 +28,7 @@ const GeneratingPage = () => {
       const response = await fetch("/api/scenes/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({ prompt, assets }),
         signal: controller.signal,
       });
 

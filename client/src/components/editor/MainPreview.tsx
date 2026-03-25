@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, forwardRef } from "react";
 import { motion } from "framer-motion";
 import {
   ExternalLink,
@@ -24,6 +24,7 @@ interface MainPreviewProps {
   previewSceneId?: string | null;
   videoUrl?: string | null;
   generatingMessage?: string;
+  videoRef?: React.RefObject<HTMLVideoElement>;
 }
 
 const MainPreview = ({
@@ -37,6 +38,7 @@ const MainPreview = ({
   previewSceneId,
   videoUrl,
   generatingMessage,
+  videoRef,
 }: MainPreviewProps) => {
   // ── All scenes view ──────────────────────────────────────────────────────────
   if (isAllScenes) {
@@ -113,7 +115,7 @@ const MainPreview = ({
           </div>
         ) : isComplete && videoUrl ? (
           // ── Best path: rendered MP4 available ──
-          <RenderedVideoPlayer videoUrl={videoUrl} sceneTitle={scene.name} />
+          <RenderedVideoPlayer ref={videoRef} videoUrl={videoUrl} sceneTitle={scene.name} />
         ) : isComplete && previewUrl ? (
           // ── Fallback: Remotion Studio iframe (video not yet rendered) ──
           <RemotionStudioPreview
@@ -159,11 +161,10 @@ interface RenderedVideoPlayerProps {
   sceneTitle?: string;
 }
 
-const RenderedVideoPlayer = ({
-  videoUrl,
-  sceneTitle,
-}: RenderedVideoPlayerProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
+const RenderedVideoPlayer = forwardRef<HTMLVideoElement, RenderedVideoPlayerProps>(
+  function RenderedVideoPlayer({ videoUrl, sceneTitle }, ref) {
+  const internalRef = useRef<HTMLVideoElement>(null);
+  const videoRef = (ref as React.RefObject<HTMLVideoElement>) ?? internalRef;
   const [error, setError] = useState(false);
 
   const handleReplay = () => {
@@ -228,7 +229,7 @@ const RenderedVideoPlayer = ({
       />
     </motion.div>
   );
-};
+});
 
 // ─── Remotion Studio iframe fallback ─────────────────────────────────────────
 

@@ -1,19 +1,31 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Play, Pause, Download, Loader2, Check, ArrowLeft } from "lucide-react";
+import { Play, Pause, Download, Loader2, Check, ArrowLeft, Maximize } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Scene, framesToSeconds } from "@/lib/mockData";
 import { AgentStep } from "@/lib/agentTypes";
+import {
+  createProjectFromScenes,
+  saveProject,
+  getProject,
+  updateProjectSceneStatus,
+  updateProjectAgentSteps,
+  StoredProject,
+} from "@/lib/storage";
 import { useAgent } from "@/hooks/useAgent";
 import {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
 } from "@/components/ui/resizable";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SceneList from "@/components/editor/SceneList";
+import AssetList from "@/components/editor/AssetList";
 import MainPreview from "@/components/editor/MainPreview";
 import VideoOutput from "@/components/editor/VideoOutput";
 import AgentThoughts from "@/components/editor/AgentThoughts";
+import FullscreenPreviewModal from "@/components/editor/FullscreenPreviewModal";
+import AddSceneModal from "@/components/editor/AddSceneModal";
 
 interface SceneStatus {
   status: "queued" | "generating" | "complete";
@@ -28,6 +40,9 @@ const EditorPage = () => {
   const location = useLocation();
   const prompt = (location.state as any)?.prompt || "Your product";
   const passedScenes: Scene[] = (location.state as any)?.scenes || [];
+  const passedProjectId: string | undefined = (location.state as any)?.projectId;
+  const fromVideos: boolean = (location.state as any)?.fromVideos || false;
+  const passedSceneStatuses: SceneStatus[] | undefined = (location.state as any)?.sceneStatuses;
 
   const [scenes, setScenes] = useState<Scene[]>(passedScenes);
   const [selectedScene, setSelectedScene] = useState<number | "all">(0);
@@ -46,22 +61,38 @@ const EditorPage = () => {
   // Panel size for responsive layout
   const [videoPanelSize, setVideoPanelSize] = useState(30);
 
+  // Ref to the HTML video element inside MainPreview — used for real-time scrubbing
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   // Single scene timeline state
   const [singleSceneTime, setSingleSceneTime] = useState(0);
   const [selectedTimestamp, setSelectedTimestamp] = useState<number | null>(
     null,
   );
+  const [isFullscreenPreviewOpen, setIsFullscreenPreviewOpen] = useState(false);
+  const [isAddSceneModalOpen, setIsAddSceneModalOpen] = useState(false);
 
   // Track steps per scene from agent
   const [sceneSteps, setSceneSteps] = useState<Record<number, AgentStep[]>>({});
 
   const totalDuration = scenes.reduce((a, s) => a + framesToSeconds(s.duration), 0);
 
+  // All renders complete — for loaded/completed projects trust the "complete" status directly
+  // (videoUrl may not be in localStorage if the user navigated away before polling finished).
+  // For fresh generations, require videoUrl to confirm the Remotion render finished this session.
+  const allRendered = allDone && (
+    (passedProjectId != null && sceneStatuses.every(s => s.status === "complete")) ||
+    sceneStatuses.every(s => s.status === "complete" && !!s.videoUrl)
+  );
+
   // Track whether the user manually overrode scene selection
   const userOverrodeSelectionRef = useRef(false);
 
   // Map from Remotion composition ID → scene index (for render tracking)
   const renderingScenesByIdRef = useRef<Map<string, number>>(new Map());
+
+  // Current project ID for localStorage persistence
+  const currentProjectIdRef = useRef<string | null>(passedProjectId || null);
 
   // Callback fired by useAgent polling when a background render finishes
   const handleRenderComplete = useCallback(
@@ -74,6 +105,16 @@ const EditorPage = () => {
           ),
         );
         renderingScenesByIdRef.current.delete(renderSceneId);
+
+        // Save to localStorage
+        if (currentProjectIdRef.current) {
+          updateProjectSceneStatus(
+            currentProjectIdRef.current,
+            sceneIndex,
+            "complete",
+            videoUrl
+          );
+        }
       }
     },
     [],
@@ -93,8 +134,8 @@ const EditorPage = () => {
     sceneId: currentScene?.id?.toString() || "unknown",
     sceneContext: currentScene
       ? {
-          title: currentScene.title,
-          description: currentScene.script,
+          title: currentScene.name,
+          description: currentScene.notes || currentScene.elements.map(e => e.description).join(" "),
           duration: currentScene.duration,
         }
       : undefined,
@@ -109,7 +150,48 @@ const EditorPage = () => {
   // Track if we're transitioning between scenes (prevents using stale agentSteps)
   const transitioningRef = useRef(false);
 
-  // Start processing the first scene
+  // Initialize project in localStorage on mount
+  useEffect(() => {
+    // Case 1: Coming back from ExportPage with sceneStatuses already in state
+    if (passedProjectId && passedSceneStatuses) {
+      currentProjectIdRef.current = passedProjectId;
+      setSceneStatuses(passedSceneStatuses);
+      const allComplete = passedSceneStatuses.every((s) => s.status === "complete");
+      if (allComplete) {
+        setAllDone(true);
+        hasStartedRef.current = true;
+      }
+    }
+    // Case 2: Coming from VideosPage - load from localStorage
+    else if (passedProjectId) {
+      const savedProject = getProject(passedProjectId);
+      if (savedProject) {
+        currentProjectIdRef.current = savedProject.id;
+        const restoredStatuses = savedProject.scenes.map((s) => ({
+          status: s.generationStatus,
+          progress: s.generationStatus === "complete" ? 100 : 0,
+          videoUrl: s.videoUrl,
+          previewUrl: s.previewUrl,
+        }));
+        setSceneStatuses(restoredStatuses);
+        if (savedProject.agentSteps) {
+          setSceneSteps(savedProject.agentSteps);
+        }
+        if (savedProject.status === "complete") {
+          setAllDone(true);
+          hasStartedRef.current = true;
+        }
+      }
+    }
+    // Case 3: New generation - create project
+    else if (passedScenes.length > 0 && !currentProjectIdRef.current) {
+      const newProject = createProjectFromScenes(prompt, passedScenes);
+      saveProject(newProject);
+      currentProjectIdRef.current = newProject.id;
+    }
+  }, []);
+
+  // Start processing the first scene (only for new projects)
   useEffect(() => {
     if (!hasStartedRef.current && scenes.length > 0) {
       hasStartedRef.current = true;
@@ -210,6 +292,20 @@ const EditorPage = () => {
           ),
         );
 
+        // Save to localStorage (videoUrl may arrive later via handleRenderComplete)
+        if (currentProjectIdRef.current) {
+          updateProjectSceneStatus(
+            currentProjectIdRef.current,
+            sceneIndex,
+            "complete",
+            latestVideoUrl || undefined,
+            latestPreviewUrl || undefined
+          );
+          updateProjectAgentSteps(currentProjectIdRef.current, {
+            [sceneIndex]: agentSteps,
+          });
+        }
+
         // Move to next scene immediately (don't wait for render)
         const nextIndex = sceneIndex + 1;
         if (nextIndex < scenes.length) {
@@ -232,7 +328,7 @@ const EditorPage = () => {
   ]);
 
   const startProcessingScene = useCallback(
-    (sceneIndex: number) => {
+    (sceneIndex: number, overrides?: { assets?: string[] }) => {
       const scene = scenes[sceneIndex];
       if (!scene) return;
 
@@ -257,6 +353,7 @@ const EditorPage = () => {
           description: scene.notes || scene.elements.map((e) => e.description).join(" "),
           duration: framesToSeconds(scene.duration),
         },
+        assets: overrides?.assets
       });
     },
     [scenes, sendMessage],
@@ -319,6 +416,14 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
     setSingleSceneTime(time);
   };
 
+  // Real-time scrub: directly mutates video currentTime — no React state, no re-renders
+  const handleScrub = useCallback((timeInSeconds: number) => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = timeInSeconds;
+    }
+  }, []);
+
   const handleTimestampSelect = (time: number | null) => {
     setSelectedTimestamp(time);
   };
@@ -329,6 +434,44 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
     setSelectedScene(scene);
     setSingleSceneTime(0);
     setSelectedTimestamp(null);
+  };
+
+  const handleAddScene = (type: "ai" | "upload", data: string, assets?: string[]) => {
+    // Generate a basic scene structure
+    const newSceneId = `scene-${Date.now()}`;
+    const newScene: Scene = {
+      id: newSceneId,
+      name: type === "ai" ? "New Generated Scene" : "Uploaded Scene",
+      category: "transition",
+      duration: 150, // default 5 seconds
+      background: { type: "gradient", colors: ["#4F46E5", "#10B981"] },
+      elements: [],
+      notes: type === "ai" ? data : `Uploaded asset: ${data}`
+    };
+
+    setScenes(prev => [...prev, newScene]);
+    setSceneStatuses(prev => [...prev, { status: "queued", progress: 0 }]);
+    
+    // Save to local storage
+    if (currentProjectIdRef.current) {
+      const project = getProject(currentProjectIdRef.current);
+      if (project) {
+        project.scenes.push({
+          ...newScene,
+          generationStatus: "queued"
+        });
+        saveProject(project);
+      }
+    }
+
+    // Pass assets as overrides if present
+    const overrides = assets ? { assets } : undefined;
+
+    // If nothing is currently generating, we can start it.
+    if (allDone && processingSceneRef.current === null) {
+      setAllDone(false); // Reset allDone
+      startProcessingScene(scenes.length, overrides);
+    }
   };
 
   const displayScene = selectedScene === "all" ? null : scenes[selectedScene];
@@ -356,7 +499,11 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate("/storyboard", { state: { prompt } })}
+            onClick={() =>
+              fromVideos
+                ? navigate("/videos")
+                : navigate("/storyboard", { state: { prompt, scenes } })
+            }
             className="text-background/60 hover:text-background hover:bg-background/10"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -381,26 +528,35 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
           )}
         </div>
         <div className="flex items-center gap-2">
-          {allDone && (
+          {allDone && !allRendered && (
+            <span className="flex items-center gap-1.5 text-xs text-background/70">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Rendering videos...
+            </span>
+          )}
+          {allRendered && (
             <>
               <Button
                 variant="outline"
                 size="sm"
                 className="gap-1.5 rounded-lg border-background/50 bg-background/10 text-background hover:bg-background/20"
-                onClick={handleTogglePlay}
+                onClick={() => setIsFullscreenPreviewOpen(true)}
               >
-                {isPlaying ? (
-                  <Pause className="h-3.5 w-3.5" />
-                ) : (
-                  <Play className="h-3.5 w-3.5" />
-                )}
-                {isPlaying ? "Pause" : "Preview"}
+                <Maximize className="h-3.5 w-3.5" />
+                Fullscreen Preview
               </Button>
               <Button
                 size="sm"
                 className="gap-1.5 rounded-lg bg-accent hover:bg-accent/90 text-accent-foreground"
                 onClick={() =>
-                  navigate("/export", { state: { prompt, scenes } })
+                  navigate("/export", {
+                    state: {
+                      prompt,
+                      scenes,
+                      projectId: currentProjectIdRef.current,
+                      sceneStatuses,
+                    },
+                  })
                 }
               >
                 <Download className="h-3.5 w-3.5" /> Export
@@ -414,12 +570,36 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         {/* Left: Scene List */}
         <ResizablePanel defaultSize={15} minSize={12} maxSize={25}>
-          <SceneList
-            scenes={scenes}
-            selectedScene={selectedScene}
-            onSelectScene={handleSelectScene}
-            sceneStatuses={sceneStatuses}
-          />
+          <Tabs defaultValue="scenes" className="h-full flex flex-col w-full border-r border-border">
+            <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent h-12 p-0">
+              <TabsTrigger 
+                value="scenes" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-1"
+              >
+                Scenes
+              </TabsTrigger>
+              <TabsTrigger 
+                value="assets" 
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none flex-1"
+              >
+                Assets
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="scenes" className="flex-1 mt-0 overflow-hidden outline-none">
+              <SceneList
+                scenes={scenes}
+                selectedScene={selectedScene}
+                onSelectScene={handleSelectScene}
+                sceneStatuses={sceneStatuses}
+                onOpenAddScene={() => setIsAddSceneModalOpen(true)}
+              />
+            </TabsContent>
+            
+            <TabsContent value="assets" className="flex-1 mt-0 overflow-hidden outline-none">
+              <AssetList />
+            </TabsContent>
+          </Tabs>
         </ResizablePanel>
 
         <ResizableHandle withHandle />
@@ -440,6 +620,7 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
                 previewSceneId={displayPreviewSceneId}
                 videoUrl={displayVideoUrl}
                 generatingMessage={generatingMessage}
+                videoRef={videoRef}
               />
             </ResizablePanel>
 
@@ -447,8 +628,9 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
 
             {/* Video Output / Timeline */}
             <ResizablePanel
-              defaultSize={30}
-              minSize={15}
+              defaultSize={18}
+              minSize={8}
+              maxSize={40}
               onResize={setVideoPanelSize}
             >
               <VideoOutput
@@ -469,6 +651,7 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
                 onSingleSceneSeek={handleSingleSceneSeek}
                 selectedTimestamp={selectedTimestamp}
                 onTimestampSelect={handleTimestampSelect}
+                onScrub={handleScrub}
               />
             </ResizablePanel>
           </ResizablePanelGroup>
@@ -489,8 +672,8 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
             sceneContext={
               displayScene
                 ? {
-                    title: displayScene.title,
-                    description: displayScene.script,
+                    title: displayScene.name,
+                    description: displayScene.notes || displayScene.elements.map(e => e.description).join(" "),
                     duration: displayScene.duration,
                   }
                 : undefined
@@ -498,6 +681,18 @@ Start with the think tool to plan your approach, then writeSceneCode → trigger
           />
         </ResizablePanel>
       </ResizablePanelGroup>
+
+      <FullscreenPreviewModal
+        isOpen={isFullscreenPreviewOpen}
+        onClose={() => setIsFullscreenPreviewOpen(false)}
+        scenes={scenes}
+        sceneStatuses={sceneStatuses}
+      />
+      <AddSceneModal
+        isOpen={isAddSceneModalOpen}
+        onClose={() => setIsAddSceneModalOpen(false)}
+        onAdd={handleAddScene}
+      />
     </div>
   );
 };

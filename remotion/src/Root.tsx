@@ -3,7 +3,7 @@ import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 import { EmailReplyFeature } from "./EmailReplyFeature";
 
-import { IntegrationTestScene, HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction, HookStudentStruggle, IntroAppSolution, FeatureCampusMap } from "./scenes";
+import { HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction, HookStudentStruggle, IntroAppSolution, FeatureCampusMap, HookManualCodingPain, IntroProductReveal, FeatureSeamlessConversion, FeatureComponentLibrary, BenefitSpeedEfficiency, CtaTryDevflow } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -23,15 +23,7 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1080}
       />
-                            <Composition
-        id="integration-test-scene"
-        component={IntegrationTestScene}
-        durationInFrames={90}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
+      <Composition
         id="hello-world-intro"
         component={HelloWorldIntro}
         durationInFrames={90}
@@ -39,7 +31,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                                                                                                                                              <Composition
+      <Composition
         id="the-hook"
         component={TheHook}
         durationInFrames={120}
@@ -47,7 +39,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                <Composition
+      <Composition
         id="the-problem"
         component={TheProblem}
         durationInFrames={150}
@@ -55,7 +47,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                <Composition
+      <Composition
         id="the-solution"
         component={TheSolution}
         durationInFrames={150}
@@ -63,7 +55,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+      <Composition
         id="key-features"
         component={KeyFeatures}
         durationInFrames={180}
@@ -71,7 +63,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+      <Composition
         id="cta-start-free"
         component={CallToAction}
         durationInFrames={120}
@@ -79,7 +71,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                <Composition
+      <Composition
         id="hook-student-struggle"
         component={HookStudentStruggle}
         durationInFrames={100}
@@ -87,7 +79,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+      <Composition
         id="intro-app-solution"
         component={IntroAppSolution}
         durationInFrames={120}
@@ -95,10 +87,58 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+      <Composition
         id="feature-campus-map"
         component={FeatureCampusMap}
         durationInFrames={130}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="hook-manual-coding-pain"
+        component={HookManualCodingPain}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="intro-product-reveal"
+        component={IntroProductReveal}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="feature-seamless-conversion"
+        component={FeatureSeamlessConversion}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-component-library"
+        component={FeatureComponentLibrary}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="benefit-speed-efficiency"
+        component={BenefitSpeedEfficiency}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="cta-try-devflow"
+        component={CtaTryDevflow}
+        durationInFrames={90}
         fps={30}
         width={1920}
         height={1080}

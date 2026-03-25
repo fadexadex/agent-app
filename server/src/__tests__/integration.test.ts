@@ -116,6 +116,7 @@ export const IntegrationTestScene: React.FC = () => {
 
     const writeResult = (await writeSceneCodeTool.execute!(
       {
+        projectFolder: "integration-test",
         sceneId: "integration-test-scene",
         fileName: "IntegrationTestScene",
         content: sceneCode,
@@ -128,6 +129,7 @@ export const IntegrationTestScene: React.FC = () => {
     // Step 5: Trigger preview (this will update Root.tsx)
     const previewResult = (await triggerPreviewTool.execute!(
       {
+        projectFolder: "integration-test",
         sceneId: "integration-test-scene",
         componentName: "IntegrationTestScene",
         fileName: "IntegrationTestScene",
@@ -137,7 +139,12 @@ export const IntegrationTestScene: React.FC = () => {
         fps: 30,
       },
       toolOpts
-    )) as { success: boolean; previewUrl: string };
+    )) as { success: boolean; previewUrl: string; error?: string };
+    
+    if (!previewResult.success) {
+      console.error(previewResult.error);
+    }
+    
     expect(previewResult.success).toBe(true);
     expect(previewResult.previewUrl).toBe(
       "http://localhost:3100/preview/integration-test-scene"

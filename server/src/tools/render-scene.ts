@@ -3,6 +3,13 @@ import { z } from "zod";
 import { spawn, ChildProcess } from "child_process";
 import { mkdir, access } from "fs/promises";
 import { join, resolve } from "path";
+import {
+  initRenderState,
+  appendErrorOutput,
+  appendOutputLog,
+  markRenderComplete,
+  markRenderFailed,
+} from "../lib/render-state.js";
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 
@@ -115,14 +122,23 @@ to check completion status.`,
 
     activeRenders.set(sceneId, { startTime: startMs, process: child });
 
+    // Initialize render state for tracking
+    initRenderState(sceneId);
+
     child.stdout?.on("data", (chunk: Buffer) => {
       const lines = chunk.toString().trim();
-      if (lines) console.log(`[Remotion/${sceneId}] ${lines}`);
+      if (lines) {
+        console.log(`[Remotion/${sceneId}] ${lines}`);
+        appendOutputLog(sceneId, lines);
+      }
     });
 
     child.stderr?.on("data", (chunk: Buffer) => {
       const lines = chunk.toString().trim();
-      if (lines) console.log(`[Remotion/${sceneId}] ${lines}`);
+      if (lines) {
+        console.log(`[Remotion/${sceneId}] ${lines}`);
+        appendErrorOutput(sceneId, lines);
+      }
     });
 
     child.on("error", (err: Error) => {
@@ -130,6 +146,8 @@ to check completion status.`,
         `[renderScene] Spawn error for ${sceneId}: ${err.message}`
       );
       activeRenders.delete(sceneId);
+      appendErrorOutput(sceneId, `Spawn error: ${err.message}`);
+      markRenderFailed(sceneId, null);
     });
 
     child.on("close", (code: number | null) => {
@@ -138,8 +156,10 @@ to check completion status.`,
 
       if (code === 0) {
         console.log(`[renderScene] ✅ ${sceneId} rendered in ${elapsed}s → ${outputFile}`);
+        markRenderComplete(sceneId, `/previews/${sceneId}.mp4`);
       } else {
         console.error(`[renderScene] ❌ ${sceneId} failed with exit code ${code}`);
+        markRenderFailed(sceneId, code);
       }
     });
 

@@ -27,3 +27,6 @@ server/output
 *.njsproj
 *.sln
 *.sw?
+
+server/public
+

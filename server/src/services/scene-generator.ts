@@ -123,7 +123,12 @@ export type ProgressEvent =
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(assets: string[] = []): string {
+  let assetInstruction = "";
+  if (assets.length > 0) {
+    assetInstruction = `\n\nThe user has uploaded the following assets:\n${assets.join("\n")}\nYou can reference these exact URLs in the scene elements (e.g., for MockupFrame, Image, or custom components). Utilize these assets directly in the scenes.`;
+  }
+
   return `You are a video scene scriptwriter for Remotion animations.
 
 Generate exactly 5-6 scenes for a product demo video. Follow EXACTLY this JSON structure (the schema of one scene object — do not include the outer "scene" wrapper key):
@@ -140,7 +145,7 @@ Rules:
 - For custom elements, set component to a Remotion component name (e.g. "FeaturePill", "VoiceIndicatorPill", "AnimatedText", "MockupFrame")
 - notes: concise exit order + stagger timing guidance (e.g. "Exit order: mockup first, label last. Stagger 3 frames.")
 - id: unique kebab-case slug per scene
-- Make element descriptions vivid and specific — the Remotion developer uses them to build the component`;
+- Make element descriptions vivid and specific — the Remotion developer uses them to build the component${assetInstruction}`;
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
@@ -148,6 +153,7 @@ Rules:
 export async function generateSceneScript(
   prompt: string,
   modelId: string = "gemini-2.5-flash",
+  assets: string[] = [],
   onProgress: (event: ProgressEvent) => void,
 ): Promise<void> {
   const google = createGoogleGenerativeAI({
@@ -156,12 +162,50 @@ export async function generateSceneScript(
 
   onProgress({ step: "analyzing", message: "Analyzing your product..." });
 
+  const UPLOADS_DIR = resolve(process.cwd(), "public");
+  const contentParts: any[] = [{ type: "text", text: `Generate 5-6 Remotion video scenes for this product: ${prompt}` }];
+
+  // Inject base64 data for each asset so Gemini can "see" them
+  if (assets.length > 0) {
+    const fs = await import("fs/promises");
+    const mime = await import("mime-types");
+    for (const assetUrl of assets) {
+      try {
+        const localPath = resolve(UPLOADS_DIR, assetUrl.replace(/^\//, ""));
+        const fileData = await fs.readFile(localPath);
+        const base64Data = fileData.toString("base64");
+        const mimeType = mime.lookup(localPath) || "application/octet-stream";
+        contentParts.push({
+          type: "file",
+          data: base64Data, // Some models might need data URL format depending on AI SDK version, but google sdk usually expects base64 or DataURL. We'll use data URL to be safe, per documentation.
+          mimeType,
+        });
+      } catch (err) {
+        console.error(`[scene-generator] Failed to read asset ${assetUrl}:`, err);
+      }
+    }
+  }
+
+  // We map file part correctly for AI SDK Core
+  const mappedParts = contentParts.map(part => {
+    if (part.type === "file") {
+      return {
+        type: "file",
+        data: `data:${part.mimeType};base64,${part.data}`,
+        mimeType: part.mimeType,
+      };
+    }
+    return part;
+  });
+
   const result = streamObject({
     model: google(modelId),
     output: "array",
     schema: SceneSchema,
-    system: buildSystemPrompt(),
-    prompt: `Generate 5-6 Remotion video scenes for this product: ${prompt}`,
+    system: buildSystemPrompt(assets),
+    messages: [
+      { role: "user", content: mappedParts as any }
+    ],
   });
 
   onProgress({ step: "writing", message: "Writing your story arc..." });

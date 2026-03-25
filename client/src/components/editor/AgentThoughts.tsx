@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Loader2, Send, Clock, AlertCircle } from "lucide-react";
+import { Brain, Loader2, Send, Clock, AlertCircle, Paperclip, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { AgentStep } from "@/lib/agentTypes";
 import { useAgent } from "@/hooks/useAgent";
 import { useState, Fragment, useEffect, useRef } from "react";
 import AgentStepItem from "./AgentStepItem";
+import { uploadFile } from "@/lib/upload";
 
 interface AgentThoughtsProps {
   steps: AgentStep[];
@@ -58,6 +59,9 @@ const RefinementChat = ({
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [messageIdCounter, setMessageIdCounter] = useState(0);
+  const [assets, setAssets] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     steps: agentSteps,
@@ -69,10 +73,34 @@ const RefinementChat = ({
     sceneContext,
   });
 
-  const handleChat = () => {
-    if (!chatInput.trim() || isProcessing) return;
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const message = chatInput;
+    setIsUploading(true);
+    try {
+      const newAssets = [];
+      for (let i = 0; i < files.length; i++) {
+        const url = await uploadFile(files[i]);
+        newAssets.push(url);
+      }
+      setAssets((prev) => [...prev, ...newAssets]);
+    } catch (err) {
+      console.error("Upload failed", err);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const removeAsset = (index: number) => {
+    setAssets((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleChat = () => {
+    if ((!chatInput.trim() && assets.length === 0) || isProcessing || isUploading) return;
+
+    const message = chatInput || (assets.length > 0 ? "Use these assets." : "");
     const newId = messageIdCounter;
     setMessageIdCounter((c) => c + 1);
 
@@ -80,9 +108,13 @@ const RefinementChat = ({
       ...prev,
       { id: newId, role: "user", text: message },
     ]);
+    
+    // Store current assets to send, then clear input
+    const currentAssets = [...assets];
     setChatInput("");
+    setAssets([]);
 
-    sendMessage(message);
+    sendMessage(message, { assets: currentAssets });
   };
 
   return (
@@ -163,7 +195,7 @@ const RefinementChat = ({
       )}
 
       {/* Chat input */}
-      <div className="border-t border-border p-3">
+      <div className="border-t border-border p-3 shrink-0 bg-background z-10 sticky bottom-0">
         {selectedTimestamp !== null && (
           <div className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1 bg-muted/50 px-2 py-1 rounded">
             <Clock className="h-3 w-3" />
@@ -178,8 +210,47 @@ const RefinementChat = ({
             )}
           </div>
         )}
+        
+        {assets.length > 0 && (
+          <div className="flex flex-wrap gap-2 pb-2">
+            {assets.map((asset, i) => (
+              <div key={i} className="relative group rounded-md border overflow-hidden bg-muted h-10 w-10 flex items-center justify-center">
+                {asset.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
+                  <img src={asset} alt="upload" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="text-[8px] text-muted-foreground break-all p-1 text-center leading-tight">
+                    {asset.split('/').pop()?.slice(-6)}
+                  </div>
+                )}
+                <button
+                  onClick={() => removeAsset(i)}
+                  className="absolute top-0 right-0 bg-black/50 text-white rounded-bl-sm p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="flex gap-1.5">
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileChange} 
+            className="hidden" 
+            multiple 
+          />
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="h-8 w-8 shrink-0 text-muted-foreground"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isProcessing || isUploading}
+            title="Upload assets"
+          >
+            {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
+          </Button>
           <Input
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
@@ -198,7 +269,7 @@ const RefinementChat = ({
             size="icon"
             className="h-8 w-8 shrink-0 bg-primary hover:bg-primary/90"
             onClick={handleChat}
-            disabled={isProcessing || !chatInput.trim()}
+            disabled={isProcessing || isUploading || (!chatInput.trim() && assets.length === 0)}
           >
             {isProcessing ? (
               <Loader2 className="h-3 w-3 animate-spin" />
@@ -239,9 +310,9 @@ const AgentThoughts = ({
   const showRefinement = allDone && (isComplete || selectedScene === "all");
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col h-full bg-background overflow-hidden">
       {/* Header */}
-      <div className="p-3 border-b border-border flex items-center gap-2">
+      <div className="p-3 border-b border-border flex items-center gap-2 shrink-0">
         <Brain className="h-4 w-4 text-muted-foreground" />
         <span
           className="text-xs font-bold text-foreground"
