@@ -12,6 +12,7 @@
     "@ai-sdk/anthropic": "^3.0.63",
     "@ai-sdk/google": "^3.0.52",
     "@ai-sdk/google-vertex": "^4.0.93",
+    "@remotion/lambda": "^4.0.440",
     "ai": "^6.0.116",
     "concurrently": "^9.2.1",
     "cors": "^2.8.5",

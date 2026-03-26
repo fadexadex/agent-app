@@ -1,8 +1,10 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { spawn, ChildProcess } from "child_process";
 import { mkdir, access } from "fs/promises";
 import { join, resolve } from "path";
+import * as fs from "fs";
+import { Readable } from "stream";
+import { finished } from "stream/promises";
 import {
   initRenderState,
   appendErrorOutput,
@@ -10,20 +12,18 @@ import {
   markRenderComplete,
   markRenderFailed,
 } from "../lib/render-state.js";
+import {
+  deploySite,
+  getOrCreateBucket,
+  getFunctions,
+  renderMediaOnLambda,
+  getRenderProgress,
+} from "@remotion/lambda";
 
 // ─── Paths ────────────────────────────────────────────────────────────────────
 
 const REMOTION_DIR = resolve(process.cwd(), "../remotion");
 export const PREVIEWS_DIR = resolve(process.cwd(), "public", "previews");
-
-// ─── Active render tracking ───────────────────────────────────────────────────
-
-interface ActiveRender {
-  startTime: number;
-  process: ChildProcess;
-}
-
-export const activeRenders = new Map<string, ActiveRender>();
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -77,8 +77,6 @@ to check completion status.`,
   }),
 
   execute: async ({ sceneId }) => {
-    const startMs = Date.now();
-
     // 1. Sanity-check: composition must be registered before rendering
     try {
       await assertSceneExists(sceneId);
@@ -99,71 +97,121 @@ to check completion status.`,
 
     const outputFile = join(PREVIEWS_DIR, `${sceneId}.mp4`);
 
-    // 3. Spawn the Remotion CLI but DON'T await — render runs in background
-    const args = [
-      "remotion",
-      "render",
-      sceneId,
-      outputFile,
-      "--overwrite",
-      "--log",
-      "verbose",
-      "--concurrency",
-      "1", // Limit concurrency to prevent Heroku memory (R15) errors
-    ];
-
-    console.log(
-      `[renderScene] Spawning (non-blocking): npx ${args.join(" ")}\n             cwd: ${REMOTION_DIR}`
-    );
-
-    const child = spawn("npx", args, {
-      cwd: REMOTION_DIR,
-      stdio: ["ignore", "pipe", "pipe"],
-      shell: process.platform === "win32",
-    });
-
-    activeRenders.set(sceneId, { startTime: startMs, process: child });
-
     // Initialize render state for tracking
     initRenderState(sceneId);
+    appendOutputLog(sceneId, `Starting Lambda render process for ${sceneId}...`);
 
-    child.stdout?.on("data", (chunk: Buffer) => {
-      const lines = chunk.toString().trim();
-      if (lines) {
-        console.log(`[Remotion/${sceneId}] ${lines}`);
-        appendOutputLog(sceneId, lines);
-      }
-    });
+    // 3. Run the Lambda render process in the background
+    (async () => {
+      try {
+        const region = (process.env.AWS_REGION || "us-east-1") as any;
 
-    child.stderr?.on("data", (chunk: Buffer) => {
-      const lines = chunk.toString().trim();
-      if (lines) {
-        console.log(`[Remotion/${sceneId}] ${lines}`);
-        appendErrorOutput(sceneId, lines);
-      }
-    });
+        // 1. Setup / Identify bucket
+        appendOutputLog(sceneId, "Checking S3 bucket...");
+        const { bucketName } = await getOrCreateBucket({ region });
 
-    child.on("error", (err: Error) => {
-      console.error(
-        `[renderScene] Spawn error for ${sceneId}: ${err.message}`
-      );
-      activeRenders.delete(sceneId);
-      appendErrorOutput(sceneId, `Spawn error: ${err.message}`);
-      markRenderFailed(sceneId, null);
-    });
+        appendOutputLog(sceneId, "Bundling and uploading site to S3...");
 
-    child.on("close", (code: number | null) => {
-      const elapsed = ((Date.now() - startMs) / 1000).toFixed(1);
-      activeRenders.delete(sceneId);
+        // 2. Deploy the dynamically updated site
+        const { serveUrl } = await deploySite({
+          bucketName,
+          entryPoint: join(REMOTION_DIR, "src", "index.ts"),
+          region,
+          siteName: `agent-ui-${sceneId}`,
+          options: {
+            publicDir: join(REMOTION_DIR, "public"),
+            webpackOverride: (config) => {
+              return {
+                ...config,
+                resolve: {
+                  ...config.resolve,
+                  alias: {
+                    ...(config.resolve?.alias || {}),
+                    "@": join(REMOTION_DIR, "src"),
+                  },
+                },
+              };
+            },
+          }
+        });
 
-      if (code === 0) {
-        console.log(`[renderScene] ✅ ${sceneId} rendered in ${elapsed}s → ${outputFile}`);
+        // 3. Find the Lambda function we deployed earlier
+        appendOutputLog(sceneId, "Finding compatible Lambda function...");
+        const functions = await getFunctions({ region, compatibleOnly: true });
+        
+        if (functions.length === 0) {
+            throw new Error(`No compatible Remotion Lambda function found in region ${region}. Did you deploy one?`);
+        }
+        
+        const functionName = functions[0].functionName;
+
+        appendOutputLog(sceneId, `Triggering Lambda render for ${sceneId}...`);
+
+        // 4. Trigger the Render on AWS
+        const { renderId } = await renderMediaOnLambda({
+          region,
+          functionName,
+          serveUrl,
+          composition: sceneId,
+          inputProps: {},
+          codec: "h264",
+          imageFormat: "jpeg",
+          privacy: "public",
+        });
+
+        appendOutputLog(sceneId, `Render started with ID: ${renderId}`);
+
+        // 5. Poll for completion
+        let done = false;
+        let s3Url = "";
+        while (!done) {
+          await new Promise((res) => setTimeout(res, 2000));
+          const progress = await getRenderProgress({ renderId, bucketName, functionName, region });
+          
+          if (progress.fatalErrorEncountered) {
+              const errMsgs = progress.errors.map(e => e.message).join(", ");
+              throw new Error(`Lambda render failed: ${errMsgs}`);
+          }
+          if (progress.done) {
+              s3Url = progress.outputFile!;
+              done = true;
+          } else {
+              appendOutputLog(sceneId, `Render progress: ${Math.round(progress.overallProgress * 100)}%`);
+          }
+        }
+
+        // 6. Download the file from S3 to local public/previews
+        appendOutputLog(sceneId, `Downloading rendered video from ${s3Url}...`);
+        const res = await fetch(s3Url);
+        if (!res.ok) {
+            throw new Error(`Failed to download from S3: ${res.statusText}`);
+        }
+        
+        const fileStream = fs.createWriteStream(outputFile);
+        if (res.body) {
+            // Convert Web Stream to Node Stream
+            const reader = res.body.getReader();
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                fileStream.write(value);
+            }
+            fileStream.end();
+            await finished(fileStream);
+        } else {
+            throw new Error("No response body from S3 download");
+        }
+        
+        appendOutputLog(sceneId, `Successfully downloaded to ${outputFile}`);
         markRenderComplete(sceneId, `/previews/${sceneId}.mp4`);
-      } else {
-        console.error(`[renderScene] ❌ ${sceneId} failed with exit code ${code}`);
-        markRenderFailed(sceneId, code);
+
+      } catch (error) {
+        console.error(`[renderScene] Lambda render error for ${sceneId}:`, error);
+        markRenderFailed(sceneId, 1);
+        appendErrorOutput(sceneId, String(error));
       }
-    });
+    })();
 
     // Return immediately — render continues in background
     const videoUrl = `/previews/${sceneId}.mp4`;
@@ -173,7 +221,7 @@ to check completion status.`,
       status: "rendering",
       sceneId,
       videoUrl,
-      message: `Render started for "${sceneId}". Video will be available at ${videoUrl} when complete.`,
+      message: `Lambda render started for "${sceneId}". Video will be available at ${videoUrl} when complete.`,
     };
   },
 });

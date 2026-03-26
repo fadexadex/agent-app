@@ -24,3 +24,9 @@ export { AITaskPrioritization } from "./feature-ai-prioritization/AITaskPrioriti
 export { FeatureTeamCollaboration } from "./FeatureTeamCollaboration/scene-04-feature-team-collaboration";
 export { Scene05BenefitProductivity } from "./flowpilot/scene-05-benefit-productivity";
 export { Scene06CtaSignup } from "./scene-06-cta-signup/Scene06CtaSignup";
+export { RemoteChaosHook } from "./remote-work-video/RemoteChaosHook";
+export { FocusFlowIntro } from "./app-promo-video/FocusFlowIntro";
+export { AiPrioritizeFeature } from "./feature-showcase/AiPrioritizeFeature";
+export { RemoteCollabFeature } from "./product-demo/RemoteCollabFeature";
+export { ClarityProductivityBenefit } from "./benefit-scenes/ClarityProductivityBenefit";
+export { CtaGetStarted } from "./focusflow-ai-promo/CtaGetStarted";

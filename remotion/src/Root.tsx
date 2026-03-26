@@ -3,7 +3,7 @@ import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 import { EmailReplyFeature } from "./EmailReplyFeature";
 
-import { HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction, HookStudentStruggle, IntroAppSolution, FeatureCampusMap, HookManualCodingPain, IntroProductReveal, FeatureSeamlessConversion, FeatureComponentLibrary, BenefitSpeedEfficiency, CtaTryDevflow, FlowPilotIntroduction, Scene03FeatureAIPrioritization, BenefitProductivity, Scene06CtaSignup, Scene01HookChallenge, Scene02IntroProduct, AITaskPrioritization, FeatureTeamCollaboration, Scene05BenefitProductivity } from "./scenes";
+import { HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction, HookStudentStruggle, IntroAppSolution, FeatureCampusMap, HookManualCodingPain, IntroProductReveal, FeatureSeamlessConversion, FeatureComponentLibrary, BenefitSpeedEfficiency, CtaTryDevflow, FlowPilotIntroduction, Scene03FeatureAIPrioritization, BenefitProductivity, Scene06CtaSignup, Scene01HookChallenge, Scene02IntroProduct, AITaskPrioritization, FeatureTeamCollaboration, Scene05BenefitProductivity, RemoteChaosHook, FocusFlowIntro, AiPrioritizeFeature, RemoteCollabFeature, ClarityProductivityBenefit, CtaGetStarted } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -191,6 +191,57 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
+                <Composition
+        id="remote-chaos-hook"
+        component={RemoteChaosHook}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="focusflow-intro"
+        component={FocusFlowIntro}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="ai-prioritize-feature"
+        component={AiPrioritizeFeature}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="remote-collab-feature"
+        component={RemoteCollabFeature}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="clarity-productivity-benefit"
+        component={ClarityProductivityBenefit}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="cta-get-started"
+        component={CtaGetStarted}
+        durationInFrames={100}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
     </>
   );
 };
+
+// Test block
+<Composition id="test-comp-123" />
