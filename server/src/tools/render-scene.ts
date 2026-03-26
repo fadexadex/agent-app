@@ -104,7 +104,7 @@ to check completion status.`,
     // 3. Run the Lambda render process in the background
     (async () => {
       try {
-        const region = (process.env.AWS_REGION || "us-east-1") as any;
+        const region = (process.env.REMOTION_AWS_REGION || process.env.AWS_REGION || "us-east-1") as any;
 
         // 1. Setup / Identify bucket
         appendOutputLog(sceneId, "Checking S3 bucket...");

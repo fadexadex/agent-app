@@ -175,7 +175,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+                <Composition
         id="scene-01-hook-challenge"
         component={Scene01HookChallenge}
         durationInFrames={120}
@@ -191,7 +191,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                <Composition
+                      <Composition
         id="remote-chaos-hook"
         component={RemoteChaosHook}
         durationInFrames={120}
