@@ -8,6 +8,7 @@ import scenesRouter from "./routes/scenes.js";
 import exportRouter from "./routes/export.js";
 import uploadRouter from "./routes/upload.js";
 import assetsRouter from "./routes/assets.js";
+import brandRouter from "./routes/brand.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -90,6 +91,9 @@ app.use("/api/upload", uploadRouter);
 
 // Assets routes
 app.use("/api/assets", assetsRouter);
+
+// Brand color extraction routes
+app.use("/api/brand", brandRouter);
 
 // Serve the React frontend (client/dist)
 const CLIENT_DIST_DIR = path.resolve(process.cwd(), "../client/dist");

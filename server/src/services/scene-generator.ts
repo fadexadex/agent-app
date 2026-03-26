@@ -123,10 +123,18 @@ export type ProgressEvent =
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(assets: string[] = []): string {
+function buildSystemPrompt(assets: string[] = [], brandColors: string[] = []): string {
   let assetInstruction = "";
   if (assets.length > 0) {
     assetInstruction = `\n\nThe user has uploaded the following assets:\n${assets.join("\n")}\nYou can reference these exact URLs in the scene elements (e.g., for MockupFrame, Image, or custom components). Utilize these assets directly in the scenes.`;
+  }
+
+  let colorInstruction = "";
+  if (brandColors.length > 0) {
+    colorInstruction = `\n\nBrand Colors (REQUIRED): ${brandColors.join(", ")}
+YOU MUST use these colors in scene backgrounds. For solid backgrounds, pick one of these colors.
+For gradient backgrounds, combine 2-3 of these colors. DO NOT use random colors when brand colors are provided.
+Use these colors for text accents and UI elements where appropriate.`;
   }
 
   return `You are a video scene scriptwriter for Remotion animations.
@@ -145,7 +153,7 @@ Rules:
 - For custom elements, set component to a Remotion component name (e.g. "FeaturePill", "VoiceIndicatorPill", "AnimatedText", "MockupFrame")
 - notes: concise exit order + stagger timing guidance (e.g. "Exit order: mockup first, label last. Stagger 3 frames.")
 - id: unique kebab-case slug per scene
-- Make element descriptions vivid and specific — the Remotion developer uses them to build the component${assetInstruction}`;
+- Make element descriptions vivid and specific — the Remotion developer uses them to build the component${assetInstruction}${colorInstruction}`;
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
@@ -154,6 +162,7 @@ export async function generateSceneScript(
   prompt: string,
   modelId: string = "gemini-2.5-flash",
   assets: string[] = [],
+  brandColors: string[] = [],
   onProgress: (event: ProgressEvent) => void,
 ): Promise<void> {
   const google = createGoogleGenerativeAI({
@@ -202,7 +211,7 @@ export async function generateSceneScript(
     model: google(modelId),
     output: "array",
     schema: SceneSchema,
-    system: buildSystemPrompt(assets),
+    system: buildSystemPrompt(assets, brandColors),
     messages: [
       { role: "user", content: mappedParts as any }
     ],
