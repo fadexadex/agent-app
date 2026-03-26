@@ -1,9 +1,11 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Zap, Film, FolderOpen, Paperclip, X, Loader2 } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Film, FolderOpen, Paperclip, X, Loader2, Palette } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import BrandColorExtractor from "@/components/BrandColorExtractor";
 import { examplePrompts } from "@/lib/mockData";
 import { uploadFile } from "@/lib/upload";
 
@@ -11,12 +13,15 @@ const Index = () => {
   const [prompt, setPrompt] = useState("");
   const [assets, setAssets] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [brandColors, setBrandColors] = useState<string[]>([]);
+  const [brandName, setBrandName] = useState<string | undefined>();
+  const [isBrandDialogOpen, setIsBrandDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const handleGenerate = () => {
     if (!prompt.trim() && assets.length === 0) return;
-    navigate("/generating", { state: { prompt, assets } });
+    navigate("/generating", { state: { prompt, assets, brandColors, brandName } });
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -129,17 +134,17 @@ const Index = () => {
             )}
 
             <div className="flex justify-between items-end pt-1 pr-1 pl-2">
-              <div>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange} 
-                  className="hidden" 
-                  multiple 
+              <div className="flex items-center gap-1">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  multiple
                 />
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="text-muted-foreground hover:text-foreground"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
@@ -147,6 +152,38 @@ const Index = () => {
                 >
                   {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
                 </Button>
+
+                <Dialog open={isBrandDialogOpen} onOpenChange={setIsBrandDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-foreground relative"
+                      title="Extract brand colors"
+                    >
+                      <Palette className="w-5 h-5" />
+                      {brandColors.length > 0 && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full text-[10px] text-primary-foreground flex items-center justify-center font-semibold">
+                          {brandColors.length}
+                        </span>
+                      )}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[480px]">
+                    <DialogHeader>
+                      <DialogTitle>Extract Brand Colors</DialogTitle>
+                    </DialogHeader>
+                    <BrandColorExtractor
+                      onColorsExtracted={(colors, name) => {
+                        setBrandColors(colors);
+                        setBrandName(name);
+                        if (colors.length > 0) {
+                          setIsBrandDialogOpen(false);
+                        }
+                      }}
+                    />
+                  </DialogContent>
+                </Dialog>
               </div>
               <Button
                 size="lg"

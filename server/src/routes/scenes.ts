@@ -4,7 +4,12 @@ import { generateSceneScript, ProgressEvent } from "../services/scene-generator.
 const router = Router();
 
 router.post("/generate", async (req: Request, res: Response) => {
-  const { prompt, model, assets } = req.body as { prompt?: string; model?: string; assets?: string[] };
+  const { prompt, model, assets, brandColors } = req.body as {
+    prompt?: string;
+    model?: string;
+    assets?: string[];
+    brandColors?: string[];
+  };
 
   if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
     res.status(400).json({ error: "prompt is required" });
@@ -23,7 +28,7 @@ router.post("/generate", async (req: Request, res: Response) => {
   };
 
   try {
-    await generateSceneScript(prompt.trim(), model, assets || [], send);
+    await generateSceneScript(prompt.trim(), model, assets || [], brandColors || [], send);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[scenes/generate] error:", message);

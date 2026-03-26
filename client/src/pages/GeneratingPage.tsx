@@ -20,6 +20,7 @@ const GeneratingPage = () => {
   const location = useLocation();
   const prompt = (location.state as any)?.prompt || "Your product";
   const assets = (location.state as any)?.assets || [];
+  const brandColors = (location.state as any)?.brandColors || [];
 
   useEffect(() => {
     const controller = new AbortController();
@@ -28,7 +29,7 @@ const GeneratingPage = () => {
       const response = await fetch("/api/scenes/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, assets }),
+        body: JSON.stringify({ prompt, assets, brandColors }),
         signal: controller.signal,
       });
 
