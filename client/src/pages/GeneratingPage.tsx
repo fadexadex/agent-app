@@ -116,7 +116,7 @@ const GeneratingPage = () => {
           className="text-2xl font-bold text-foreground mb-2"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
-          Creating your video
+          {generationMode === "animate-media" ? "Creating your animation" : "Creating your video"}
         </h2>
         <p className="text-muted-foreground mb-10 text-sm">
           This usually takes a few seconds...

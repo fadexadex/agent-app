@@ -217,7 +217,7 @@ const Index = () => {
                 disabled={(!prompt.trim() && assets.length === 0) || isUploading}
                 className="rounded-xl gap-2 px-6 font-semibold"
               >
-                Generate My Video
+                {generationMode === "animate-media" ? "Generate Animation" : "Generate My Video"}
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </div>
