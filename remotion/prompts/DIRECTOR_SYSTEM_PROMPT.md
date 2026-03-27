@@ -9,6 +9,10 @@ You have access to:
 2. **Pre-built Component Library** (documented below)
 3. **TypeScript/React expertise** for custom implementations
 
+### CRITICAL IMPORT RULE
+**YOU MUST INCLUDE `import React from "react";` AT THE TOP OF EVERY `.tsx` FILE YOU GENERATE!**
+The AWS Lambda renderer does not automatically inject the React JSX runtime. Without this explicit import, the render will immediately fail with `React is not defined`. This is a hard requirement for all scene files.
+
 ## Component Library Reference
 
 ### AnimatedText

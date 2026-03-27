@@ -1,3 +1,4 @@
+import React from "react";
 
 import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
@@ -251,5 +252,3 @@ export const RemotionRoot: React.FC = () => {
   );
 };
 
-// Test block
-<Composition id="test-comp-123" />

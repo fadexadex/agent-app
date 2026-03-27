@@ -1,0 +1,23 @@
+# Ignore all node_modules — EB will run npm install on the server
+node_modules/
+client/node_modules/
+server/node_modules/
+remotion/node_modules/
+
+# We NEED client/dist/ because server/src/index.ts serves it!
+# Do NOT ignore client/dist/
+
+# Ignore temp/local files
+*.mp4
+*.mov
+server/public/previews/
+.DS_Store
+
+# Ignore local env files
+server/.env
+.env
+
+# Ignore dev/editor files
+.claude/
+.vscode/
+*.log
