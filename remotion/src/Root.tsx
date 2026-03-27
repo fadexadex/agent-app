@@ -3,7 +3,7 @@ import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 import { EmailReplyFeature } from "./EmailReplyFeature";
 
-import { HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction, HookStudentStruggle, IntroAppSolution, FeatureCampusMap, HookManualCodingPain, IntroProductReveal, FeatureSeamlessConversion, FeatureComponentLibrary, BenefitSpeedEfficiency, CtaTryDevflow, FlowPilotIntroduction, Scene03FeatureAIPrioritization, BenefitProductivity, Scene06CtaSignup, Scene01HookChallenge, Scene02IntroProduct, AITaskPrioritization, FeatureTeamCollaboration, Scene05BenefitProductivity, RemoteChaosHook, FocusFlowIntro, AiPrioritizeFeature, RemoteCollabFeature, ClarityProductivityBenefit, CtaGetStarted } from "./scenes";
+import { HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction, HookStudentStruggle, IntroAppSolution, FeatureCampusMap, HookManualCodingPain, IntroProductReveal, FeatureSeamlessConversion, FeatureComponentLibrary, BenefitSpeedEfficiency, CtaTryDevflow, FlowPilotIntroduction, Scene03FeatureAIPrioritization, BenefitProductivity, Scene06CtaSignup, Scene01HookChallenge, Scene02IntroProduct, AITaskPrioritization, FeatureTeamCollaboration, Scene05BenefitProductivity, RemoteChaosHook, FocusFlowIntro, AiPrioritizeFeature, RemoteCollabFeature, ClarityProductivityBenefit, CtaGetStarted, IntegrationTestScene } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -235,6 +235,14 @@ export const RemotionRoot: React.FC = () => {
         id="cta-get-started"
         component={CtaGetStarted}
         durationInFrames={100}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="integration-test-scene"
+        component={IntegrationTestScene}
+        durationInFrames={90}
         fps={30}
         width={1920}
         height={1080}

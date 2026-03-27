@@ -30,3 +30,4 @@ export { AiPrioritizeFeature } from "./feature-showcase/AiPrioritizeFeature";
 export { RemoteCollabFeature } from "./product-demo/RemoteCollabFeature";
 export { ClarityProductivityBenefit } from "./benefit-scenes/ClarityProductivityBenefit";
 export { CtaGetStarted } from "./focusflow-ai-promo/CtaGetStarted";
+export { IntegrationTestScene } from "./integration-test/IntegrationTestScene";

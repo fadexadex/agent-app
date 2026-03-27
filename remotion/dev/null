@@ -1,0 +1,2587 @@
+"use strict";
+(() => {
+  var __create = Object.create;
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getProtoOf = Object.getPrototypeOf;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+  }) : x)(function(x) {
+    if (typeof require !== "undefined") return require.apply(this, arguments);
+    throw Error('Dynamic require of "' + x + '" is not supported');
+  });
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+    // If the importer is in node compatibility mode or this is not an ESM
+    // file that has been converted to a CommonJS file using a Babel-
+    // compatible transform (i.e. "__esModule" has not been set), then set
+    // "default" to the CommonJS "module.exports" for node compatibility.
+    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+    mod
+  ));
+
+  // src/scenes/integration-test/IntegrationTestScene.tsx
+  var import_remotion18 = __require("remotion");
+
+  // src/components/AnimatedText/hooks/useTextSplitter.ts
+  var import_react = __require("react");
+
+  // src/components/AnimatedText/icons.ts
+  var iconMap = {
+    // Bullets & shapes
+    circle: "\u25CF",
+    circleFilled: "\u25CF",
+    circleOutline: "\u25CB",
+    square: "\u25A0",
+    squareOutline: "\u25A1",
+    diamond: "\u25C6",
+    diamondOutline: "\u25C7",
+    triangle: "\u25B2",
+    triangleDown: "\u25BC",
+    triangleRight: "\u25B6",
+    triangleLeft: "\u25C0",
+    // Arrows
+    arrowRight: "\u2192",
+    arrowLeft: "\u2190",
+    arrowUp: "\u2191",
+    arrowDown: "\u2193",
+    arrowUpRight: "\u2197",
+    arrowDownRight: "\u2198",
+    arrowUpLeft: "\u2196",
+    arrowDownLeft: "\u2199",
+    doubleArrowRight: "\xBB",
+    doubleArrowLeft: "\xAB",
+    // Common symbols
+    check: "\u2713",
+    checkBold: "\u2714",
+    cross: "\u2715",
+    crossBold: "\u2716",
+    star: "\u2605",
+    starOutline: "\u2606",
+    heart: "\u2665",
+    heartOutline: "\u2661",
+    sparkle: "\u2726",
+    sparkles: "\u2727",
+    bullet: "\u2022",
+    dash: "\u2014",
+    ellipsis: "\u2026",
+    // Tech/UI symbols
+    keyboard: "\u2328",
+    cursor: "\u25B6",
+    play: "\u25B6",
+    pause: "\u23F8",
+    stop: "\u25A0",
+    record: "\u25CF",
+    power: "\u23FB",
+    settings: "\u2699",
+    search: "\u{1F50D}",
+    link: "\u{1F517}",
+    lock: "\u{1F512}",
+    unlock: "\u{1F513}",
+    eye: "\u{1F441}",
+    pin: "\u{1F4CC}",
+    lightning: "\u26A1",
+    fire: "\u{1F525}",
+    // Math & logic
+    plus: "+",
+    minus: "\u2212",
+    multiply: "\xD7",
+    divide: "\xF7",
+    equals: "=",
+    notEquals: "\u2260",
+    lessThan: "<",
+    greaterThan: ">",
+    infinity: "\u221E",
+    // Misc
+    sun: "\u2600",
+    moon: "\u263D",
+    cloud: "\u2601",
+    umbrella: "\u2602",
+    music: "\u266A",
+    musicNotes: "\u266B"
+  };
+  var getIcon = (name) => iconMap[name] || name;
+  var availableIcons = Object.keys(iconMap);
+
+  // src/components/AnimatedText/hooks/useTextSplitter.ts
+  var useTextSplitter = (text, unit) => {
+    return (0, import_react.useMemo)(() => {
+      if (unit === "full") {
+        return [{ text, index: 0 }];
+      }
+      if (unit === "line") {
+        return text.split("\n").map((line, index) => ({
+          text: line,
+          index
+        }));
+      }
+      if (unit === "word") {
+        const units = [];
+        let index = 0;
+        const parts = text.split(/(\s+)/);
+        parts.forEach((part) => {
+          if (part.length === 0) return;
+          if (/^\s+$/.test(part)) {
+            units.push({ text: part, index: index++, isSpace: true });
+          } else {
+            units.push({ text: part, index: index++ });
+          }
+        });
+        return units;
+      }
+      if (unit === "character") {
+        return text.split("").map((char, index) => ({
+          text: char,
+          index,
+          isSpace: char === " "
+        }));
+      }
+      return [{ text, index: 0 }];
+    }, [text, unit]);
+  };
+  var useSegmentSplitter = (segments, unit) => {
+    return (0, import_react.useMemo)(() => {
+      const units = [];
+      let globalIndex = 0;
+      segments.forEach((segment) => {
+        if (segment.icon) {
+          units.push({
+            text: getIcon(segment.icon),
+            index: globalIndex++,
+            isIcon: true,
+            color: segment.color,
+            fontWeight: segment.fontWeight,
+            fontSize: segment.fontSize,
+            highlight: segment.highlight
+          });
+          return;
+        }
+        const text = segment.text || "";
+        if (unit === "full") {
+          if (text.length > 0) {
+            units.push({
+              text,
+              index: globalIndex++,
+              color: segment.color,
+              fontWeight: segment.fontWeight,
+              fontSize: segment.fontSize,
+              highlight: segment.highlight
+            });
+          }
+          return;
+        }
+        if (unit === "line") {
+          const lines = text.split("\n");
+          lines.forEach((line) => {
+            if (line.length > 0) {
+              units.push({
+                text: line,
+                index: globalIndex++,
+                color: segment.color,
+                fontWeight: segment.fontWeight,
+                fontSize: segment.fontSize,
+                highlight: segment.highlight
+              });
+            }
+          });
+          return;
+        }
+        if (unit === "word") {
+          const parts = text.split(/(\s+)/);
+          parts.forEach((part) => {
+            if (part.length === 0) return;
+            if (/^\s+$/.test(part)) {
+              units.push({ text: part, index: globalIndex++, isSpace: true });
+            } else {
+              units.push({
+                text: part,
+                index: globalIndex++,
+                color: segment.color,
+                fontWeight: segment.fontWeight,
+                fontSize: segment.fontSize,
+                highlight: segment.highlight
+              });
+            }
+          });
+          return;
+        }
+        if (unit === "character") {
+          text.split("").forEach((char) => {
+            units.push({
+              text: char,
+              index: globalIndex++,
+              isSpace: char === " ",
+              // Only apply styles to non-space characters
+              ...char !== " " && {
+                color: segment.color,
+                fontWeight: segment.fontWeight,
+                fontSize: segment.fontSize,
+                highlight: segment.highlight
+              }
+            });
+          });
+          return;
+        }
+      });
+      return units;
+    }, [segments, unit]);
+  };
+  var useAnimatableUnitCount = (units) => {
+    return (0, import_react.useMemo)(() => {
+      return units.filter((u) => !u.isSpace).length;
+    }, [units]);
+  };
+
+  // src/components/AnimatedText/hooks/useAnimationCalculator.ts
+  var import_remotion2 = __require("remotion");
+  var import_react2 = __require("react");
+
+  // src/components/AnimatedText/utils/interpolation.ts
+  var import_remotion = __require("remotion");
+  var mapEasing = (easing) => {
+    if (!easing) return void 0;
+    switch (easing) {
+      case "linear":
+        return import_remotion.Easing.linear;
+      case "easeIn":
+        return import_remotion.Easing.in(import_remotion.Easing.quad);
+      case "easeOut":
+        return import_remotion.Easing.out(import_remotion.Easing.quad);
+      case "easeInOut":
+        return import_remotion.Easing.inOut(import_remotion.Easing.quad);
+      case "cubicIn":
+        return import_remotion.Easing.in(import_remotion.Easing.cubic);
+      case "cubicOut":
+        return import_remotion.Easing.out(import_remotion.Easing.cubic);
+      case "cubicInOut":
+        return import_remotion.Easing.inOut(import_remotion.Easing.cubic);
+      case "backIn":
+        return import_remotion.Easing.in(import_remotion.Easing.back(1.7));
+      case "backOut":
+        return import_remotion.Easing.out(import_remotion.Easing.back(1.7));
+      case "backInOut":
+        return import_remotion.Easing.inOut(import_remotion.Easing.back(1.7));
+      default:
+        return void 0;
+    }
+  };
+  var safeInterpolate = (frame, inputRange, outputRange, easing) => {
+    return (0, import_remotion.interpolate)(frame, inputRange, outputRange, {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: mapEasing(easing)
+    });
+  };
+  var interpolateWithDelay = (frame, delay, duration, from, to, easing) => {
+    const startFrame = delay;
+    const endFrame = delay + duration;
+    return safeInterpolate(frame, [startFrame, endFrame], [from, to], easing);
+  };
+
+  // src/components/Animation/springs.ts
+  var SPRING_CONFIGS = {
+    /**
+     * Smooth, no bounce - ideal for subtle reveals and fades.
+     * High damping prevents any oscillation.
+     */
+    smooth: {
+      damping: 100,
+      stiffness: 100,
+      mass: 1
+    },
+    /**
+     * Snappy with minimal bounce - ideal for UI elements and buttons.
+     * Quick response with controlled overshoot.
+     */
+    snappy: {
+      damping: 20,
+      stiffness: 200,
+      mass: 1
+    },
+    /**
+     * Bouncy entrance - ideal for playful animations and callouts.
+     * Low damping creates visible oscillation.
+     */
+    bouncy: {
+      damping: 8,
+      stiffness: 150,
+      mass: 1,
+      overshootClamping: false
+    },
+    /**
+     * Heavy, slow, small bounce - ideal for large elements and dramatic reveals.
+     * High mass creates a weighty, deliberate feel.
+     */
+    heavy: {
+      damping: 15,
+      stiffness: 80,
+      mass: 2
+    },
+    /**
+     * Tight with no overshoot - ideal for precise positioning.
+     * Clamps overshoot for exact landing.
+     */
+    tight: {
+      damping: 30,
+      stiffness: 300,
+      mass: 1,
+      overshootClamping: true
+    },
+    /**
+     * Elastic with significant overshoot - ideal for attention-grabbing elements.
+     * Very low damping creates multiple oscillations.
+     */
+    elastic: {
+      damping: 6,
+      stiffness: 150,
+      mass: 1,
+      overshootClamping: false
+    },
+    /**
+     * Kinetic slide - used for text reveals and masked slides.
+     * Quick settle with subtle overshoot for a "magnetic snap" feel.
+     */
+    kinetic: {
+      damping: 18,
+      stiffness: 220,
+      mass: 1
+    },
+    /**
+     * Gentle - slow, graceful motion for cinematic reveals.
+     * Low stiffness creates a floating, dreamy feel.
+     */
+    gentle: {
+      damping: 25,
+      stiffness: 60,
+      mass: 1.5
+    },
+    /**
+     * Pop - quick scale animations with slight bounce.
+     * Good for notification badges, icons appearing.
+     */
+    pop: {
+      damping: 12,
+      stiffness: 200,
+      mass: 0.8,
+      overshootClamping: false
+    }
+  };
+
+  // src/components/AnimatedText/presets.ts
+  var presets = {
+    // Less aggressive blur for cleaner entrance (reduced from 20px to 10px)
+    fadeBlurIn: {
+      blur: { from: 10, to: 0, duration: 20 },
+      opacity: { from: 0, to: 1, duration: 18 }
+    },
+    fadeBlurOut: {
+      blur: { from: 0, to: 10, duration: 20 },
+      opacity: { from: 1, to: 0, duration: 18 }
+    },
+    // Gentle fade for professional content - minimal blur artifact
+    softFadeIn: {
+      blur: { from: 4, to: 0, duration: 25 },
+      opacity: { from: 0, to: 1, duration: 22 }
+    },
+    softFadeOut: {
+      blur: { from: 0, to: 4, duration: 25 },
+      opacity: { from: 1, to: 0, duration: 22 }
+    },
+    scaleIn: {
+      scale: { from: 0.8, to: 1, duration: 22, easing: "backOut" },
+      opacity: { from: 0, to: 1, duration: 18 },
+      blur: { from: 10, to: 0, duration: 18 }
+    },
+    springIn: {
+      scale: {
+        from: 0,
+        to: 1,
+        easing: { type: "spring", ...SPRING_CONFIGS.bouncy }
+      },
+      opacity: { from: 0, to: 1, duration: 15 }
+    },
+    // KINETIC SLIDE PRESETS - Using springs for magnetic "snap"
+    // Uses kinetic preset: quick settle with subtle overshoot
+    slideInLeft: {
+      position: {
+        fromX: -50,
+        toX: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.kinetic }
+      },
+      opacity: { from: 0, to: 1, duration: 12 }
+    },
+    slideInRight: {
+      position: {
+        fromX: 50,
+        toX: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.kinetic }
+      },
+      opacity: { from: 0, to: 1, duration: 12 }
+    },
+    slideInUp: {
+      position: {
+        fromY: 40,
+        toY: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.kinetic }
+      },
+      opacity: { from: 0, to: 1, duration: 12 }
+    },
+    slideInDown: {
+      position: {
+        fromY: -40,
+        toY: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.kinetic }
+      },
+      opacity: { from: 0, to: 1, duration: 12 }
+    },
+    // MASKED SLIDE PRESETS - Text slides in from behind a clip mask
+    // Uses snappy preset: quick with minimal overshoot
+    maskSlideUp: {
+      position: {
+        fromY: 50,
+        toY: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.snappy }
+      },
+      opacity: { from: 0, to: 1, duration: 8 }
+    },
+    maskSlideDown: {
+      position: {
+        fromY: -50,
+        toY: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.snappy }
+      },
+      opacity: { from: 0, to: 1, duration: 8 }
+    },
+    maskSlideLeft: {
+      position: {
+        fromX: 60,
+        toX: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.snappy }
+      },
+      opacity: { from: 0, to: 1, duration: 8 }
+    },
+    maskSlideRight: {
+      position: {
+        fromX: -60,
+        toX: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.snappy }
+      },
+      opacity: { from: 0, to: 1, duration: 8 }
+    },
+    // GLITCH REVEAL - Chaotic, tech-inspired reveal
+    glitchReveal: {
+      scale: {
+        from: 1.1,
+        to: 1,
+        duration: 18,
+        easing: "backOut"
+      },
+      blur: { from: 8, to: 0, duration: 12 },
+      opacity: { from: 0, to: 1, duration: 6 }
+    },
+    typewriter: {
+      typewriter: { cursor: true, cursorChar: "|", cursorBlinkSpeed: 16 },
+      animationUnit: "character"
+    },
+    // VoiceOS Style: Clean word reveal - no blur, snappy kinetic feel
+    // Inspired by VoiceOS motion design: crisp text with magnetic spring settle
+    voiceOsReveal: {
+      position: {
+        fromY: 20,
+        toY: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.kinetic }
+      },
+      opacity: { from: 0, to: 1, duration: 10 },
+      animationUnit: "word"
+    },
+    // Soft Dreamy Fade: Gentle blur reveal with soft feel
+    // Inspired by simple-breakdown style: aesthetic, dreamy entrance
+    softDreamyFade: {
+      blur: { from: 8, to: 0, duration: 30 },
+      opacity: { from: 0, to: 1, duration: 25 },
+      animationUnit: "full"
+    },
+    // =============================================
+    // NEW CREATIVE PRESETS
+    // =============================================
+    // SLIDE PRESETS WITH SPRING PHYSICS
+    // Smooth slide from right with spring (like SlideText example)
+    slideFromRight: {
+      position: {
+        fromX: 200,
+        toX: 0,
+        easing: { type: "spring", damping: 12, mass: 0.5 }
+      },
+      opacity: { from: 0, to: 1, duration: 30 }
+    },
+    slideFromLeft: {
+      position: {
+        fromX: -200,
+        toX: 0,
+        easing: { type: "spring", damping: 12, mass: 0.5 }
+      },
+      opacity: { from: 0, to: 1, duration: 30 }
+    },
+    // KINETIC WORD REVEALS
+    // Bouncy word pop (playful)
+    bouncyWordPop: {
+      scale: {
+        from: 0,
+        to: 1,
+        easing: { type: "spring", damping: 8, stiffness: 200 }
+      },
+      opacity: { from: 0, to: 1, duration: 8 },
+      animationUnit: "word"
+    },
+    // Elastic word entrance (dynamic)
+    elasticReveal: {
+      position: {
+        fromY: 30,
+        toY: 0,
+        easing: { type: "spring", damping: 6, stiffness: 150 }
+      },
+      scale: {
+        from: 0.8,
+        to: 1,
+        easing: { type: "spring", damping: 6, stiffness: 150 }
+      },
+      opacity: { from: 0, to: 1, duration: 10 },
+      animationUnit: "word"
+    },
+    // Snappy kinetic (very quick, professional)
+    snappyKinetic: {
+      position: {
+        fromY: 15,
+        toY: 0,
+        easing: { type: "spring", damping: 20, stiffness: 300 }
+      },
+      opacity: { from: 0, to: 1, duration: 6 },
+      animationUnit: "word"
+    },
+    // FADE/BLUR VARIANTS
+    // Dreamy float (gentle rise with blur)
+    dreamyFloat: {
+      position: {
+        fromY: 10,
+        toY: 0,
+        duration: 40,
+        easing: "easeOut"
+      },
+      blur: { from: 12, to: 0, duration: 35 },
+      opacity: { from: 0, to: 1, duration: 30 }
+    },
+    // Quick focus (fast blur resolve)
+    quickFocus: {
+      blur: { from: 15, to: 0, duration: 12 },
+      opacity: { from: 0, to: 1, duration: 10 }
+    },
+    // Gentle materialize (subtle, professional)
+    gentleMaterialize: {
+      scale: {
+        from: 0.95,
+        to: 1,
+        duration: 25,
+        easing: "easeOut"
+      },
+      blur: { from: 3, to: 0, duration: 20 },
+      opacity: { from: 0, to: 1, duration: 20 }
+    },
+    // CHARACTER-LEVEL EFFECTS
+    // Wave reveal (characters ripple in)
+    waveReveal: {
+      position: {
+        fromY: 20,
+        toY: 0,
+        easing: { type: "spring", damping: 10, stiffness: 200 }
+      },
+      opacity: { from: 0, to: 1, duration: 8 },
+      animationUnit: "character"
+    },
+    // Cascade drop (characters fall into place)
+    cascadeDrop: {
+      position: {
+        fromY: -30,
+        toY: 0,
+        easing: { type: "spring", damping: 12, stiffness: 180 }
+      },
+      opacity: { from: 0, to: 1, duration: 10 },
+      animationUnit: "character"
+    },
+    // DRAMATIC ENTRANCE EFFECTS
+    // Punch in (scale from large with quick settle)
+    punchIn: {
+      scale: {
+        from: 1.5,
+        to: 1,
+        easing: { type: "spring", damping: 15, stiffness: 200 }
+      },
+      blur: { from: 8, to: 0, duration: 15 },
+      opacity: { from: 0, to: 1, duration: 8 }
+    },
+    // Rise and shine (gentle scale up with glow feel)
+    riseAndShine: {
+      scale: {
+        from: 0.9,
+        to: 1,
+        duration: 30,
+        easing: "easeOut"
+      },
+      position: {
+        fromY: 20,
+        toY: 0,
+        duration: 30,
+        easing: "easeOut"
+      },
+      opacity: { from: 0, to: 1, duration: 25 }
+    },
+    none: {}
+  };
+  var getPreset = (presetName) => {
+    return presets[presetName] || presets.none;
+  };
+  var DEFAULTS = {
+    blur: {
+      from: 20,
+      to: 0,
+      duration: 15,
+      delay: 0
+    },
+    opacity: {
+      from: 0,
+      to: 1,
+      duration: 15,
+      delay: 0
+    },
+    scale: {
+      from: 1,
+      to: 1,
+      duration: 20,
+      delay: 0
+    },
+    position: {
+      fromX: 0,
+      toX: 0,
+      fromY: 0,
+      toY: 0,
+      duration: 20,
+      delay: 0
+    },
+    typewriter: {
+      cursor: true,
+      cursorChar: "|",
+      cursorBlinkSpeed: 16
+    },
+    stagger: {
+      delay: 5,
+      reverse: false
+    }
+  };
+
+  // src/components/AnimatedText/hooks/useAnimationCalculator.ts
+  var normalizeConfig = (config, defaults) => {
+    if (config === void 0 || config === false) return null;
+    if (config === true) return defaults;
+    return { ...defaults, ...config };
+  };
+  var isSpringConfig = (easing) => {
+    return typeof easing === "object" && easing?.type === "spring";
+  };
+  var getSpringValues = (config) => {
+    return {
+      damping: config.damping ?? SPRING_CONFIGS.kinetic.damping,
+      stiffness: config.stiffness ?? SPRING_CONFIGS.kinetic.stiffness,
+      mass: config.mass ?? SPRING_CONFIGS.kinetic.mass
+    };
+  };
+  var parseStagger = (stagger) => {
+    if (typeof stagger === "number") {
+      return { delay: stagger, reverse: false };
+    }
+    return { ...DEFAULTS.stagger, ...stagger };
+  };
+  var useAnimationCalculator = (props, totalUnits) => {
+    const frame = (0, import_remotion2.useCurrentFrame)();
+    const { fps } = (0, import_remotion2.useVideoConfig)();
+    return (0, import_react2.useMemo)(() => {
+      const {
+        preset = "none",
+        delay: globalDelay = 0,
+        blur: blurProp,
+        opacity: opacityProp,
+        scale: scaleProp,
+        position: positionProp,
+        typewriter: typewriterProp,
+        stagger: staggerProp,
+        exit
+      } = props;
+      const presetValues = getPreset(preset);
+      const blurConfig = normalizeConfig(
+        blurProp ?? presetValues.blur,
+        DEFAULTS.blur
+      );
+      const opacityConfig = normalizeConfig(
+        opacityProp ?? presetValues.opacity,
+        DEFAULTS.opacity
+      );
+      const scaleConfig = normalizeConfig(
+        scaleProp ?? presetValues.scale,
+        DEFAULTS.scale
+      );
+      const positionConfig = normalizeConfig(
+        positionProp ?? presetValues.position,
+        DEFAULTS.position
+      );
+      const typewriterConfig = normalizeConfig(
+        typewriterProp ?? presetValues.typewriter,
+        DEFAULTS.typewriter
+      );
+      const stagger = parseStagger(staggerProp);
+      let typewriterVisibleChars = Infinity;
+      let showCursor = false;
+      if (typewriterConfig && preset === "typewriter") {
+        const effectiveFrame = Math.max(0, frame - globalDelay);
+        const charsPerFrame = 0.5;
+        typewriterVisibleChars = Math.floor(effectiveFrame * charsPerFrame);
+        if (typewriterConfig.cursor) {
+          const blinkCycle = typewriterConfig.cursorBlinkSpeed || 16;
+          showCursor = Math.floor(effectiveFrame / (blinkCycle / 2)) % 2 === 0;
+        }
+      }
+      const getValuesForUnit = (unitIndex, isSpace) => {
+        if (isSpace) {
+          return {
+            blur: 0,
+            opacity: 1,
+            scale: 1,
+            translateX: 0,
+            translateY: 0
+          };
+        }
+        const staggerDelay = stagger.reverse ? (totalUnits - 1 - unitIndex) * (stagger.delay || 0) + globalDelay : unitIndex * (stagger.delay || 0) + globalDelay;
+        let blur = 0;
+        let opacity = 1;
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        if (blurConfig) {
+          const delay = (blurConfig.delay || 0) + staggerDelay;
+          blur = interpolateWithDelay(
+            frame,
+            delay,
+            blurConfig.duration || 15,
+            blurConfig.from ?? 20,
+            blurConfig.to ?? 0,
+            blurConfig.easing
+          );
+        }
+        if (opacityConfig) {
+          const delay = (opacityConfig.delay || 0) + staggerDelay;
+          opacity = interpolateWithDelay(
+            frame,
+            delay,
+            opacityConfig.duration || 15,
+            opacityConfig.from ?? 0,
+            opacityConfig.to ?? 1,
+            opacityConfig.easing
+          );
+        }
+        if (scaleConfig) {
+          const delay = (scaleConfig.delay || 0) + staggerDelay;
+          if (isSpringConfig(scaleConfig.easing)) {
+            const springValues = getSpringValues(scaleConfig.easing);
+            const springValue = (0, import_remotion2.spring)({
+              frame: frame - delay,
+              fps,
+              config: springValues
+            });
+            const from = scaleConfig.from ?? 0;
+            const to = scaleConfig.to ?? 1;
+            scale = from + springValue * (to - from);
+          } else {
+            scale = interpolateWithDelay(
+              frame,
+              delay,
+              scaleConfig.duration || 20,
+              scaleConfig.from ?? 1,
+              scaleConfig.to ?? 1,
+              scaleConfig.easing
+            );
+          }
+        }
+        if (positionConfig) {
+          const delay = (positionConfig.delay || 0) + staggerDelay;
+          if (isSpringConfig(positionConfig.easing)) {
+            const springValues = getSpringValues(positionConfig.easing);
+            const springValue = (0, import_remotion2.spring)({
+              frame: frame - delay,
+              fps,
+              config: springValues
+            });
+            translateX = (positionConfig.fromX ?? 0) + springValue * ((positionConfig.toX ?? 0) - (positionConfig.fromX ?? 0));
+            translateY = (positionConfig.fromY ?? 0) + springValue * ((positionConfig.toY ?? 0) - (positionConfig.fromY ?? 0));
+          } else {
+            translateX = interpolateWithDelay(
+              frame,
+              delay,
+              positionConfig.duration || 20,
+              positionConfig.fromX ?? 0,
+              positionConfig.toX ?? 0,
+              positionConfig.easing
+            );
+            translateY = interpolateWithDelay(
+              frame,
+              delay,
+              positionConfig.duration || 20,
+              positionConfig.fromY ?? 0,
+              positionConfig.toY ?? 0,
+              positionConfig.easing
+            );
+          }
+        }
+        if (exit && exit.startFrame !== void 0 && frame >= exit.startFrame) {
+          const exitFrame = frame - exit.startFrame;
+          if (exit.blur) {
+            blur = interpolateWithDelay(
+              exitFrame,
+              exit.blur.delay || 0,
+              exit.blur.duration || 15,
+              exit.blur.from ?? 0,
+              exit.blur.to ?? 20,
+              exit.blur.easing
+            );
+          }
+          if (exit.opacity) {
+            opacity = interpolateWithDelay(
+              exitFrame,
+              exit.opacity.delay || 0,
+              exit.opacity.duration || 15,
+              exit.opacity.from ?? 1,
+              exit.opacity.to ?? 0,
+              exit.opacity.easing
+            );
+          }
+          if (exit.scale) {
+            scale = interpolateWithDelay(
+              exitFrame,
+              exit.scale.delay || 0,
+              exit.scale.duration || 20,
+              exit.scale.from ?? 1,
+              exit.scale.to ?? 0.8,
+              exit.scale.easing
+            );
+          }
+          if (exit.position) {
+            translateX = interpolateWithDelay(
+              exitFrame,
+              exit.position.delay || 0,
+              exit.position.duration || 20,
+              exit.position.fromX ?? 0,
+              exit.position.toX ?? 0,
+              exit.position.easing
+            );
+            translateY = interpolateWithDelay(
+              exitFrame,
+              exit.position.delay || 0,
+              exit.position.duration || 20,
+              exit.position.fromY ?? 0,
+              exit.position.toY ?? 0,
+              exit.position.easing
+            );
+          }
+        }
+        return { blur, opacity, scale, translateX, translateY };
+      };
+      return {
+        getValuesForUnit,
+        typewriterVisibleChars,
+        showCursor
+      };
+    }, [props, frame, fps, totalUnits]);
+  };
+
+  // src/components/AnimatedText/hooks/useStyleComposer.ts
+  var useStyleComposer = () => {
+    const composeStyles = (values, scaleOrigin, positioning) => {
+      const { blur, opacity, scale, translateX, translateY } = values;
+      const animationTransforms = [];
+      if (scale !== 1) {
+        animationTransforms.push(`scale(${scale})`);
+      }
+      if (translateX !== 0) {
+        animationTransforms.push(`translateX(${translateX}px)`);
+      }
+      if (translateY !== 0) {
+        animationTransforms.push(`translateY(${translateY}px)`);
+      }
+      const styles = {
+        display: "inline-block",
+        // Required for transforms on text
+        opacity
+      };
+      if (blur > 0) {
+        styles.filter = `blur(${blur}px)`;
+      }
+      if (positioning?.isPositioned) {
+        const useCssPositioning = !!positioning.cssPosition;
+        const allTransforms = [
+          useCssPositioning ? null : positioning.positionTransform,
+          positioning.centerTransform,
+          ...animationTransforms
+        ].filter(Boolean);
+        if (allTransforms.length > 0) {
+          styles.transform = allTransforms.join(" ");
+        }
+      } else if (animationTransforms.length > 0) {
+        styles.transform = animationTransforms.join(" ");
+      }
+      if (scaleOrigin && scale !== 1) {
+        styles.transformOrigin = scaleOrigin;
+      }
+      return styles;
+    };
+    const getTransformString = (values) => {
+      const transforms = [];
+      const { scale, translateX, translateY } = values;
+      if (scale !== 1) {
+        transforms.push(`scale(${scale})`);
+      }
+      if (translateX !== 0) {
+        transforms.push(`translateX(${translateX}px)`);
+      }
+      if (translateY !== 0) {
+        transforms.push(`translateY(${translateY}px)`);
+      }
+      return transforms.join(" ");
+    };
+    return { composeStyles, getTransformString };
+  };
+  var getScaleOrigin = (scaleConfig) => {
+    if (typeof scaleConfig === "object" && scaleConfig.origin) {
+      return scaleConfig.origin;
+    }
+    return void 0;
+  };
+
+  // src/components/AnimatedText/hooks/usePositioning.ts
+  var import_remotion3 = __require("remotion");
+  var anchorToPercent = {
+    center: { x: 50, y: 50 },
+    top: { x: 50, y: 0 },
+    bottom: { x: 50, y: 100 },
+    left: { x: 0, y: 50 },
+    right: { x: 100, y: 50 },
+    "top-left": { x: 0, y: 0 },
+    "top-right": { x: 100, y: 0 },
+    "bottom-left": { x: 0, y: 100 },
+    "bottom-right": { x: 100, y: 100 }
+  };
+  var parseOffset = (offset, dimension) => {
+    if (offset === void 0) return 0;
+    if (typeof offset === "number") return offset;
+    const percentMatch = offset.match(/^(-?\d+(?:\.\d+)?)%$/);
+    if (percentMatch) {
+      return parseFloat(percentMatch[1]) / 100 * dimension;
+    }
+    const pxMatch = offset.match(/^(-?\d+(?:\.\d+)?)px$/);
+    if (pxMatch) {
+      return parseFloat(pxMatch[1]);
+    }
+    return 0;
+  };
+  var parseCoordinate = (coord, dimension) => {
+    if (coord === void 0) return void 0;
+    if (typeof coord === "number") return coord;
+    const percentMatch = coord.match(/^(-?\d+(?:\.\d+)?)%$/);
+    if (percentMatch) {
+      return parseFloat(percentMatch[1]) / 100 * dimension;
+    }
+    const pxMatch = coord.match(/^(-?\d+(?:\.\d+)?)px$/);
+    if (pxMatch) {
+      return parseFloat(pxMatch[1]);
+    }
+    return void 0;
+  };
+  var getCenterTransform = (anchor) => {
+    const offsets = {
+      center: "translate(-50%, -50%)",
+      top: "translate(-50%, 0%)",
+      bottom: "translate(-50%, -100%)",
+      left: "translate(0%, -50%)",
+      right: "translate(-100%, -50%)",
+      "top-left": "translate(0%, 0%)",
+      "top-right": "translate(-100%, 0%)",
+      "bottom-left": "translate(0%, -100%)",
+      "bottom-right": "translate(-100%, -100%)"
+    };
+    return offsets[anchor];
+  };
+  var isSpringConfig2 = (easing) => {
+    return typeof easing === "object" && easing?.type === "spring";
+  };
+  function usePositioning(props) {
+    const { width, height, fps } = (0, import_remotion3.useVideoConfig)();
+    const frame = (0, import_remotion3.useCurrentFrame)();
+    if (!props.anchor && props.x === void 0 && props.y === void 0 && !props.anchorAnimation) {
+      return {
+        positionTransform: "",
+        centerTransform: "",
+        isPositioned: false
+        // Element stays in normal flow (flexbox, etc.)
+      };
+    }
+    let finalX;
+    let finalY;
+    let effectiveAnchor;
+    const explicitX = parseCoordinate(props.x, width);
+    const explicitY = parseCoordinate(props.y, height);
+    if (explicitX !== void 0 || explicitY !== void 0) {
+      finalX = explicitX ?? width / 2;
+      finalY = explicitY ?? height / 2;
+      effectiveAnchor = props.anchor ?? "center";
+      finalX += parseOffset(props.offsetX, width);
+      finalY += parseOffset(props.offsetY, height);
+    } else if (props.anchorAnimation) {
+      const {
+        from,
+        to,
+        delay = 0,
+        duration = 30,
+        easing
+      } = props.anchorAnimation;
+      const fromAnchor = anchorToPercent[from] || anchorToPercent["center"];
+      const toAnchor = anchorToPercent[to] || anchorToPercent["center"];
+      const fromX = fromAnchor.x / 100 * width + parseOffset(props.anchorAnimation.fromOffsetX, width);
+      const fromY = fromAnchor.y / 100 * height + parseOffset(props.anchorAnimation.fromOffsetY, height);
+      const toX = toAnchor.x / 100 * width + parseOffset(props.anchorAnimation.toOffsetX, width);
+      const toY = toAnchor.y / 100 * height + parseOffset(props.anchorAnimation.toOffsetY, height);
+      if (isSpringConfig2(easing)) {
+        const springValue = (0, import_remotion3.spring)({
+          frame: Math.max(0, frame - delay),
+          fps,
+          config: {
+            damping: easing.damping ?? 10,
+            stiffness: easing.stiffness ?? 100,
+            mass: easing.mass ?? 1
+          }
+        });
+        finalX = (0, import_remotion3.interpolate)(springValue, [0, 1], [fromX, toX]);
+        finalY = (0, import_remotion3.interpolate)(springValue, [0, 1], [fromY, toY]);
+      } else {
+        finalX = (0, import_remotion3.interpolate)(frame, [delay, delay + duration], [fromX, toX], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+          easing: mapEasing(easing)
+        });
+        finalY = (0, import_remotion3.interpolate)(frame, [delay, delay + duration], [fromY, toY], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+          easing: mapEasing(easing)
+        });
+      }
+      effectiveAnchor = anchorToPercent[to] ? to : "center";
+    } else {
+      const anchor = props.anchor ?? "center";
+      const mappedAnchor = anchorToPercent[anchor] || anchorToPercent["center"];
+      const percentX = mappedAnchor.x;
+      const percentY = mappedAnchor.y;
+      const offsetX = props.offsetX;
+      const offsetY = props.offsetY;
+      const buildCssPosition = (percent, offset) => {
+        if (offset === void 0 || offset === 0) {
+          return `${percent}%`;
+        }
+        if (typeof offset === "number") {
+          return `calc(${percent}% + ${offset}px)`;
+        }
+        return `calc(${percent}% + ${offset})`;
+      };
+      const baseX = mappedAnchor.x / 100 * width;
+      const baseY = mappedAnchor.y / 100 * height;
+      const parsedOffsetX = parseOffset(props.offsetX, width);
+      const parsedOffsetY = parseOffset(props.offsetY, height);
+      finalX = baseX + parsedOffsetX;
+      finalY = baseY + parsedOffsetY;
+      effectiveAnchor = anchorToPercent[anchor] ? anchor : "center";
+      return {
+        positionTransform: `translate(${finalX}px, ${finalY}px)`,
+        centerTransform: getCenterTransform(effectiveAnchor),
+        isPositioned: true,
+        cssPosition: {
+          left: buildCssPosition(percentX, offsetX),
+          top: buildCssPosition(percentY, offsetY)
+        }
+      };
+    }
+    return {
+      positionTransform: `translate(${finalX}px, ${finalY}px)`,
+      // Also return centering transform based on anchor
+      centerTransform: getCenterTransform(effectiveAnchor),
+      isPositioned: true
+    };
+  }
+
+  // src/components/AnimatedText/utils/gradients.ts
+  var getGradientStyles = (gradient) => {
+    const { colors, angle = 135, type = "linear" } = gradient;
+    if (colors.length < 2) {
+      return { color: colors[0] || "inherit" };
+    }
+    const colorStops = colors.map((color, index) => {
+      const percentage = index / (colors.length - 1) * 100;
+      return `${color} ${percentage}%`;
+    }).join(", ");
+    const gradientValue = type === "radial" ? `radial-gradient(circle, ${colorStops})` : `linear-gradient(${angle}deg, ${colorStops})`;
+    return {
+      background: gradientValue,
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+      backgroundClip: "text"
+    };
+  };
+
+  // src/components/AnimatedText/AnimatedText.tsx
+  var import_jsx_runtime = __require("react/jsx-runtime");
+  var AnimatedText = (props) => {
+    const {
+      text,
+      segments,
+      animationUnit: animationUnitProp,
+      preset = "none",
+      typewriter,
+      color,
+      gradient,
+      fontSize,
+      fontWeight,
+      fontFamily,
+      letterSpacing,
+      lineHeight,
+      style,
+      containerStyle,
+      scale,
+      mask: maskProp,
+      // Spacing props
+      wordGap,
+      iconGap,
+      // Positioning props
+      anchor,
+      offsetX,
+      offsetY,
+      x,
+      y,
+      textAlign,
+      maxWidth,
+      zIndex,
+      anchorAnimation
+    } = props;
+    const useSegments = segments && segments.length > 0;
+    const presetValues = getPreset(preset);
+    const animationUnit = animationUnitProp ?? presetValues.animationUnit ?? "full";
+    const textUnits = useTextSplitter(text || "", animationUnit);
+    const segmentUnits = useSegmentSplitter(segments || [], animationUnit);
+    const units = useSegments ? segmentUnits : textUnits.map((u) => ({ ...u }));
+    const totalAnimatableUnits = useAnimatableUnitCount(units);
+    const fullText = useSegments ? segments.map((s) => s.text || "").join("") : text || "";
+    const { getValuesForUnit, typewriterVisibleChars, showCursor } = useAnimationCalculator(props, totalAnimatableUnits);
+    const { composeStyles } = useStyleComposer();
+    const positioning = usePositioning({
+      anchor,
+      offsetX,
+      offsetY,
+      x,
+      y,
+      textAlign,
+      maxWidth,
+      zIndex,
+      anchorAnimation
+    });
+    const scaleOrigin = getScaleOrigin(scale);
+    const isSlidePreset = preset?.toLowerCase().includes("slide");
+    const shouldMask = maskProp ?? isSlidePreset;
+    const baseTextStyles = {
+      ...color && { color },
+      ...fontSize && { fontSize },
+      ...fontWeight && { fontWeight },
+      ...fontFamily && { fontFamily },
+      ...letterSpacing && { letterSpacing },
+      ...lineHeight && { lineHeight },
+      ...gradient && getGradientStyles(gradient),
+      ...textAlign && { textAlign },
+      ...style
+    };
+    const useCssPositioning = positioning.isPositioned && positioning.cssPosition;
+    const positioningStyles = positioning.isPositioned ? {
+      position: "absolute",
+      left: useCssPositioning ? positioning.cssPosition.left : 0,
+      top: useCssPositioning ? positioning.cssPosition.top : 0,
+      ...maxWidth && {
+        maxWidth: typeof maxWidth === "number" ? `${maxWidth}px` : maxWidth
+      },
+      ...zIndex !== void 0 && { zIndex }
+    } : {};
+    const isTypewriter = preset === "typewriter" || typewriter !== void 0 && typewriter !== false;
+    if (isTypewriter && animationUnit === "character" && !useSegments) {
+      const displayedText = fullText.slice(0, typewriterVisibleChars);
+      const typewriterConfig = typeof typewriter === "object" ? typewriter : { cursor: true };
+      const cursorChar = typewriterConfig.cursorChar || "|";
+      const values = getValuesForUnit(0, false);
+      const animationStyles = composeStyles(values, scaleOrigin, positioning);
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsxs)(
+        "span",
+        {
+          style: {
+            ...baseTextStyles,
+            ...positioningStyles,
+            ...animationStyles,
+            ...containerStyle
+          },
+          children: [
+            displayedText,
+            typewriterConfig.cursor !== false && /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+              "span",
+              {
+                style: {
+                  opacity: showCursor ? 1 : 0,
+                  display: "inline"
+                },
+                children: cursorChar
+              }
+            )
+          ]
+        }
+      );
+    }
+    if (animationUnit === "full") {
+      const values = getValuesForUnit(0, false);
+      const renderFullContent = () => {
+        if (useSegments) {
+          return units.map((unit, index) => {
+            const unitStyles = {};
+            if (unit.color) unitStyles.color = unit.color;
+            if (unit.fontWeight) unitStyles.fontWeight = unit.fontWeight;
+            if (unit.fontSize) unitStyles.fontSize = unit.fontSize;
+            if (unit.highlight) {
+              const { backgroundColor, padding, borderRadius } = unit.highlight;
+              unitStyles.backgroundColor = backgroundColor;
+              unitStyles.padding = typeof padding === "number" ? `${padding}px` : padding;
+              if (borderRadius) unitStyles.borderRadius = `${borderRadius}px`;
+              unitStyles.display = "inline-block";
+            }
+            return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: unitStyles, children: unit.text }, `segment-${index}`);
+          });
+        }
+        return fullText;
+      };
+      if (shouldMask) {
+        const animationStylesWithoutPositioning = composeStyles(
+          values,
+          scaleOrigin
+        );
+        const { transform: animationTransform, ...otherAnimationStyles } = animationStylesWithoutPositioning;
+        const windowStyles = composeStyles(
+          { blur: 0, opacity: 1, scale: 1, translateX: 0, translateY: 0 },
+          void 0,
+          positioning
+        );
+        return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+          "span",
+          {
+            style: {
+              ...positioningStyles,
+              ...windowStyles,
+              ...containerStyle,
+              // The Window: clips content, positioned correctly
+              display: "inline-flex",
+              overflow: "hidden",
+              verticalAlign: "top"
+            },
+            children: /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+              "span",
+              {
+                style: {
+                  ...baseTextStyles,
+                  ...otherAnimationStyles,
+                  // The Actor: animation transforms only (moves within the window)
+                  display: "inline-block",
+                  transform: animationTransform
+                },
+                children: renderFullContent()
+              }
+            )
+          }
+        );
+      }
+      const animationStyles = composeStyles(values, scaleOrigin, positioning);
+      return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+        "span",
+        {
+          style: {
+            ...baseTextStyles,
+            ...positioningStyles,
+            ...animationStyles,
+            ...containerStyle
+          },
+          children: renderFullContent()
+        }
+      );
+    }
+    const containerAnimationStyles = composeStyles(
+      { blur: 0, opacity: 1, scale: 1, translateX: 0, translateY: 0 },
+      void 0,
+      positioning
+    );
+    const gapValue = wordGap !== void 0 ? typeof wordGap === "number" ? `${wordGap}px` : wordGap : "0.25em";
+    return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+      "span",
+      {
+        style: {
+          display: "inline-flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          ...positioningStyles,
+          ...containerAnimationStyles,
+          ...containerStyle
+        },
+        children: units.map((unit, index) => {
+          let animatableIndex = 0;
+          for (let i = 0; i < index; i++) {
+            if (!units[i].isSpace) {
+              animatableIndex++;
+            }
+          }
+          const unitValues = getValuesForUnit(
+            unit.isSpace ? 0 : animatableIndex,
+            !!unit.isSpace
+          );
+          const animationStyles = composeStyles(unitValues, scaleOrigin);
+          if (unit.isSpace) {
+            return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: { whiteSpace: "pre" }, children: unit.text }, `space-${index}`);
+          }
+          const unitOverrideStyles = {};
+          if (unit.color) unitOverrideStyles.color = unit.color;
+          if (unit.fontWeight) unitOverrideStyles.fontWeight = unit.fontWeight;
+          if (unit.fontSize) unitOverrideStyles.fontSize = unit.fontSize;
+          const wordGapValue = gapValue;
+          const iconGapValue = iconGap !== void 0 ? typeof iconGap === "number" ? `${iconGap}px` : iconGap : "0.3em";
+          const nextNonSpaceUnit = units.slice(index + 1).find((u) => !u.isSpace);
+          const prevNonSpaceUnit = units.slice(0, index).reverse().find((u) => !u.isSpace);
+          const isLastUnit = !nextNonSpaceUnit;
+          if (unit.isIcon) {
+            if (prevNonSpaceUnit && !prevNonSpaceUnit.isIcon) {
+              unitOverrideStyles.marginLeft = iconGapValue;
+            }
+            if (nextNonSpaceUnit && !nextNonSpaceUnit.isIcon) {
+              unitOverrideStyles.marginRight = iconGapValue;
+            }
+          } else {
+            if (!isLastUnit) {
+              if (nextNonSpaceUnit?.isIcon) {
+              } else {
+                unitOverrideStyles.marginRight = wordGapValue;
+              }
+            }
+          }
+          let highlightWrapperStyles;
+          if (unit.highlight) {
+            const { backgroundColor, padding, borderRadius } = unit.highlight;
+            highlightWrapperStyles = {
+              backgroundColor,
+              padding: typeof padding === "number" ? `${padding}px` : padding,
+              borderRadius: borderRadius ? `${borderRadius}px` : void 0,
+              display: "inline-block"
+            };
+          }
+          if (shouldMask) {
+            const { transform, ...otherAnimationStyles } = animationStyles;
+            const content2 = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+              "span",
+              {
+                style: {
+                  // The Actor: all animations happen on the inner element
+                  // This creates the "portal" effect where text moves through the mask
+                  display: "inline-block",
+                  transform,
+                  ...otherAnimationStyles,
+                  ...unitOverrideStyles
+                },
+                children: unit.text
+              }
+            );
+            return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+              "span",
+              {
+                style: {
+                  ...baseTextStyles,
+                  // The Window: clips content, defines visible area
+                  // No animations here - it just sits there
+                  display: "inline-flex",
+                  overflow: "hidden",
+                  verticalAlign: "top",
+                  ...highlightWrapperStyles
+                },
+                children: content2
+              },
+              `unit-${index}`
+            );
+          }
+          const content = /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "span",
+            {
+              style: {
+                ...baseTextStyles,
+                ...animationStyles,
+                ...unitOverrideStyles
+              },
+              children: unit.text
+            }
+          );
+          if (highlightWrapperStyles) {
+            return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("span", { style: highlightWrapperStyles, children: content }, `unit-${index}`);
+          }
+          return /* @__PURE__ */ (0, import_jsx_runtime.jsx)(
+            "span",
+            {
+              style: {
+                ...baseTextStyles,
+                ...animationStyles,
+                ...unitOverrideStyles
+              },
+              children: unit.text
+            },
+            `unit-${index}`
+          );
+        })
+      }
+    );
+  };
+
+  // src/components/AnimatedText/LayoutGrid.tsx
+  var import_jsx_runtime2 = __require("react/jsx-runtime");
+
+  // src/components/AnimatedText/TextSequence.tsx
+  var import_react3 = __toESM(__require("react"));
+  var import_remotion4 = __require("remotion");
+  var import_jsx_runtime3 = __require("react/jsx-runtime");
+  var TextSequenceItem = ({
+    duration,
+    delay,
+    exitPreset,
+    ...animatedTextProps
+  }) => {
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(AnimatedText, { ...animatedTextProps });
+  };
+  var TextSequence = ({ mode = "chain", overlap = 0, children }) => {
+    const { fps } = (0, import_remotion4.useVideoConfig)();
+    let runningFrame = 0;
+    return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(import_jsx_runtime3.Fragment, { children: import_react3.default.Children.map(children, (child, index) => {
+      if (!import_react3.default.isValidElement(child)) return null;
+      const childProps = child.props;
+      const { duration, delay = 0 } = childProps;
+      const durationFrames = Math.round(duration * fps);
+      const overlapFrames = Math.round(overlap * fps);
+      const delayFrames = Math.round(delay * fps);
+      let startFrame;
+      if (mode === "chain") {
+        startFrame = runningFrame;
+        runningFrame += durationFrames - overlapFrames;
+      } else {
+        startFrame = runningFrame + delayFrames;
+        runningFrame = startFrame + durationFrames;
+      }
+      return /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+        import_remotion4.Sequence,
+        {
+          from: Math.max(0, Math.round(startFrame)),
+          durationInFrames: durationFrames,
+          premountFor: fps,
+          children: /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
+            AnimatedText,
+            {
+              ...childProps
+            }
+          )
+        }
+      );
+    }) });
+  };
+  TextSequence.Item = TextSequenceItem;
+
+  // src/components/Global/Background/Background.tsx
+  var import_remotion15 = __require("remotion");
+
+  // src/components/Global/Background/presets.ts
+  var backgroundPresets = {
+    // ─── Dark & Dramatic ────────────────────────────────────
+    deepPurpleAurora: {
+      name: "Deep Purple Aurora",
+      description: "Rich purple center fading into deep blue \u2014 cinematic, premium feel",
+      layers: [
+        { type: "solid", color: "#0a0a1a" },
+        {
+          type: "radial",
+          colors: ["#7c3aed", "#4c1d95", "transparent"],
+          centerX: 50,
+          centerY: 45,
+          radius: 55
+        },
+        {
+          type: "radial",
+          colors: ["#1e3a8a", "transparent"],
+          centerX: 20,
+          centerY: 80,
+          radius: 60,
+          opacity: 0.5
+        },
+        {
+          type: "radial",
+          colors: ["#1e40af", "transparent"],
+          centerX: 85,
+          centerY: 20,
+          radius: 50,
+          opacity: 0.4
+        },
+        { type: "noise", opacity: 0.025 },
+        { type: "vignette", intensity: 0.5, radius: 35 }
+      ],
+      animated: true,
+      animationSpeed: 0.5
+    },
+    midnightOcean: {
+      name: "Midnight Ocean",
+      description: "Deep navy with subtle teal glow \u2014 calm, techy, professional",
+      layers: [
+        { type: "solid", color: "#020617" },
+        {
+          type: "radial",
+          colors: ["#0f172a", "#020617"],
+          centerX: 50,
+          centerY: 50
+        },
+        { type: "glow", color: "#0d9488", x: 60, y: 40, radius: 35, intensity: 0.35 },
+        { type: "glow", color: "#1e40af", x: 30, y: 70, radius: 40, intensity: 0.25 },
+        { type: "noise", opacity: 0.02 },
+        { type: "vignette", intensity: 0.6, radius: 30 }
+      ],
+      animated: true,
+      animationSpeed: 0.4
+    },
+    cosmicNight: {
+      name: "Cosmic Night",
+      description: "Starless deep space with subtle color nebulae",
+      layers: [
+        { type: "solid", color: "#030014" },
+        { type: "glow", color: "#581c87", x: 30, y: 35, radius: 40, intensity: 0.4 },
+        { type: "glow", color: "#1e3a5f", x: 70, y: 65, radius: 45, intensity: 0.35 },
+        { type: "glow", color: "#701a75", x: 55, y: 20, radius: 25, intensity: 0.2 },
+        { type: "noise", opacity: 0.03 },
+        { type: "vignette", intensity: 0.7, radius: 25 }
+      ],
+      animated: true,
+      animationSpeed: 0.3
+    },
+    darkElegance: {
+      name: "Dark Elegance",
+      description: "Near-black with barely-there warm gradient \u2014 ultra-minimal dark mode",
+      layers: [
+        { type: "solid", color: "#0c0c0c" },
+        {
+          type: "linear",
+          colors: [
+            "rgba(30,20,40,0.4)",
+            "rgba(20,15,25,0.2)",
+            "transparent"
+          ],
+          angle: 145
+        },
+        { type: "glow", color: "#1a1a2e", x: 50, y: 50, radius: 60, intensity: 0.3 },
+        { type: "noise", opacity: 0.015 }
+      ],
+      animated: false
+    },
+    // ─── Warm Tones ─────────────────────────────────────────
+    sunsetBlaze: {
+      name: "Sunset Blaze",
+      description: "Warm orange-to-purple gradient with golden center glow",
+      layers: [
+        { type: "linear", colors: ["#7c2d12", "#581c87"], angle: 135 },
+        { type: "glow", color: "#f59e0b", x: 45, y: 40, radius: 35, intensity: 0.5 },
+        { type: "glow", color: "#dc2626", x: 70, y: 60, radius: 30, intensity: 0.3 },
+        { type: "noise", opacity: 0.02 },
+        { type: "vignette", intensity: 0.4, radius: 35 }
+      ],
+      animated: true,
+      animationSpeed: 0.4
+    },
+    warmEmber: {
+      name: "Warm Ember",
+      description: "Cozy dark amber with subtle orange-red glows",
+      layers: [
+        { type: "solid", color: "#1c1007" },
+        { type: "glow", color: "#92400e", x: 40, y: 50, radius: 45, intensity: 0.4 },
+        { type: "glow", color: "#7f1d1d", x: 65, y: 35, radius: 30, intensity: 0.25 },
+        { type: "noise", opacity: 0.025 },
+        { type: "vignette", color: "#0a0502", intensity: 0.5, radius: 30 }
+      ],
+      animated: true,
+      animationSpeed: 0.3
+    },
+    // ─── Cool Tones ─────────────────────────────────────────
+    arcticFrost: {
+      name: "Arctic Frost",
+      description: "Icy whites and light blues \u2014 clean, modern, airy",
+      layers: [
+        {
+          type: "linear",
+          colors: ["#f0f9ff", "#e0f2fe", "#dbeafe"],
+          angle: 160
+        },
+        {
+          type: "radial",
+          colors: ["#bae6fd", "transparent"],
+          centerX: 40,
+          centerY: 45,
+          radius: 50,
+          opacity: 0.5
+        },
+        { type: "glow", color: "#7dd3fc", x: 65, y: 55, radius: 35, intensity: 0.3 },
+        { type: "noise", opacity: 0.02 }
+      ],
+      animated: true,
+      animationSpeed: 0.3
+    },
+    // ─── Soft / Light ───────────────────────────────────────
+    softLavender: {
+      name: "Soft Lavender",
+      description: "Gentle purple mist \u2014 elegant, dreamy, approachable",
+      layers: [
+        {
+          type: "linear",
+          colors: ["#faf5ff", "#f3e8ff", "#ede9fe"],
+          angle: 140
+        },
+        {
+          type: "radial",
+          colors: ["#ddd6fe", "transparent"],
+          centerX: 55,
+          centerY: 45,
+          radius: 50,
+          opacity: 0.6
+        },
+        { type: "glow", color: "#c4b5fd", x: 35, y: 60, radius: 40, intensity: 0.25 },
+        { type: "noise", opacity: 0.015 }
+      ],
+      animated: true,
+      animationSpeed: 0.3
+    },
+    frostedGlass: {
+      name: "Frosted Glass",
+      description: "Glassmorphism \u2014 blurred, luminous, modern UI feel",
+      layers: [
+        { type: "linear", colors: ["#e0e7ff", "#c7d2fe", "#a5b4fc"], angle: 135 },
+        { type: "blur", amount: 50 },
+        { type: "noise", opacity: 0.03 }
+      ],
+      animated: false
+    },
+    // ─── Neon / Bold ────────────────────────────────────────
+    neonDream: {
+      name: "Neon Dream",
+      description: "Dark base with vibrant colored glows \u2014 cyberpunk, energetic",
+      layers: [
+        { type: "solid", color: "#0a0a0a" },
+        { type: "glow", color: "#8b5cf6", x: 30, y: 40, radius: 35, intensity: 0.55 },
+        { type: "glow", color: "#06b6d4", x: 70, y: 55, radius: 30, intensity: 0.5 },
+        { type: "glow", color: "#ec4899", x: 50, y: 75, radius: 25, intensity: 0.35 },
+        { type: "noise", opacity: 0.02 },
+        { type: "vignette", intensity: 0.5, radius: 30 }
+      ],
+      animated: true,
+      animationSpeed: 0.5
+    },
+    // ─── Mesh / Organic ─────────────────────────────────────
+    pastelMesh: {
+      name: "Pastel Mesh",
+      description: "Soft multi-color mesh gradient \u2014 playful, creative, fresh",
+      layers: [
+        {
+          type: "mesh",
+          colors: ["#c4b5fd", "#93c5fd", "#86efac", "#fde68a"],
+          spread: 55
+        },
+        { type: "noise", opacity: 0.015 }
+      ],
+      animated: true,
+      animationSpeed: 0.4
+    },
+    oceanMesh: {
+      name: "Ocean Mesh",
+      description: "Deep blue-green mesh \u2014 fluid, immersive, nature-inspired",
+      layers: [
+        { type: "solid", color: "#042f2e" },
+        {
+          type: "mesh",
+          colors: ["#0d9488", "#0284c7", "#1e40af", "#059669"],
+          points: [
+            { x: 25, y: 20 },
+            { x: 75, y: 30 },
+            { x: 50, y: 75 },
+            { x: 15, y: 60 }
+          ],
+          spread: 50,
+          opacity: 0.7
+        },
+        { type: "noise", opacity: 0.02 },
+        { type: "vignette", intensity: 0.4, radius: 35 }
+      ],
+      animated: true,
+      animationSpeed: 0.35
+    },
+    // ─── BackgroundRig-compatible Presets ───────────────────
+    // These mirror the type/variant combinations from BackgroundRig
+    // gradient-mesh variants
+    "light-gradient-mesh": {
+      name: "Light Gradient Mesh",
+      description: "Light background with purple/pink floating gradient blobs",
+      layers: [
+        { type: "solid", color: "#FFFFFF" },
+        {
+          type: "glow",
+          color: "rgba(99,102,241,0.2)",
+          x: 30,
+          y: 30,
+          radius: 50,
+          intensity: 0.8
+        },
+        {
+          type: "glow",
+          color: "rgba(236,72,153,0.15)",
+          x: 70,
+          y: 70,
+          radius: 45,
+          intensity: 0.7
+        }
+      ],
+      animated: true,
+      animationSpeed: 1
+    },
+    "dark-gradient-mesh": {
+      name: "Dark Gradient Mesh",
+      description: "Dark background with purple/pink floating gradient blobs",
+      layers: [
+        { type: "solid", color: "#0F0F11" },
+        {
+          type: "glow",
+          color: "rgba(99,102,241,0.3)",
+          x: 30,
+          y: 30,
+          radius: 50,
+          intensity: 0.8
+        },
+        {
+          type: "glow",
+          color: "rgba(236,72,153,0.2)",
+          x: 70,
+          y: 70,
+          radius: 45,
+          intensity: 0.7
+        }
+      ],
+      animated: true,
+      animationSpeed: 1
+    },
+    "brand-gradient-mesh": {
+      name: "Brand Gradient Mesh",
+      description: "Indigo background with white floating gradient blobs",
+      layers: [
+        { type: "solid", color: "#4F46E5" },
+        {
+          type: "glow",
+          color: "rgba(255,255,255,0.2)",
+          x: 30,
+          y: 30,
+          radius: 50,
+          intensity: 0.8
+        },
+        {
+          type: "glow",
+          color: "rgba(255,255,255,0.15)",
+          x: 70,
+          y: 70,
+          radius: 45,
+          intensity: 0.7
+        }
+      ],
+      animated: true,
+      animationSpeed: 1
+    },
+    // grid-lines variants
+    "light-grid-lines": {
+      name: "Light Grid Lines",
+      description: "White background with subtle dark grid overlay",
+      layers: [
+        { type: "solid", color: "#FFFFFF" },
+        { type: "grid", color: "rgba(0,0,0,0.05)", size: 60 }
+      ],
+      animated: false
+    },
+    "dark-grid-lines": {
+      name: "Dark Grid Lines",
+      description: "Dark background with subtle light grid overlay",
+      layers: [
+        { type: "solid", color: "#0F0F11" },
+        { type: "grid", color: "rgba(255,255,255,0.05)", size: 60 }
+      ],
+      animated: false
+    },
+    "brand-grid-lines": {
+      name: "Brand Grid Lines",
+      description: "Indigo background with white grid overlay",
+      layers: [
+        { type: "solid", color: "#4F46E5" },
+        { type: "grid", color: "rgba(255,255,255,0.1)", size: 60 }
+      ],
+      animated: false
+    },
+    // blobs variants
+    "light-blobs": {
+      name: "Light Blobs",
+      description: "Light background with organic pulsing purple/pink shapes",
+      layers: [
+        { type: "solid", color: "#FFFFFF" },
+        {
+          type: "glow",
+          color: "rgba(99,102,241,0.2)",
+          x: 35,
+          y: 35,
+          radius: 40,
+          intensity: 0.9
+        },
+        {
+          type: "glow",
+          color: "rgba(236,72,153,0.15)",
+          x: 65,
+          y: 65,
+          radius: 35,
+          intensity: 0.8
+        }
+      ],
+      animated: true,
+      animationSpeed: 0.8
+    },
+    "dark-blobs": {
+      name: "Dark Blobs",
+      description: "Dark background with organic pulsing purple/pink shapes",
+      layers: [
+        { type: "solid", color: "#0F0F11" },
+        {
+          type: "glow",
+          color: "rgba(99,102,241,0.3)",
+          x: 35,
+          y: 35,
+          radius: 40,
+          intensity: 0.9
+        },
+        {
+          type: "glow",
+          color: "rgba(236,72,153,0.2)",
+          x: 65,
+          y: 65,
+          radius: 35,
+          intensity: 0.8
+        }
+      ],
+      animated: true,
+      animationSpeed: 0.8
+    },
+    "brand-blobs": {
+      name: "Brand Blobs",
+      description: "Indigo background with organic pulsing white shapes",
+      layers: [
+        { type: "solid", color: "#4F46E5" },
+        {
+          type: "glow",
+          color: "rgba(255,255,255,0.2)",
+          x: 35,
+          y: 35,
+          radius: 40,
+          intensity: 0.9
+        },
+        {
+          type: "glow",
+          color: "rgba(255,255,255,0.15)",
+          x: 65,
+          y: 65,
+          radius: 35,
+          intensity: 0.8
+        }
+      ],
+      animated: true,
+      animationSpeed: 0.8
+    },
+    // solid variants
+    "light-solid": {
+      name: "Light Solid",
+      description: "Plain white background",
+      layers: [{ type: "solid", color: "#FFFFFF" }],
+      animated: false
+    },
+    "dark-solid": {
+      name: "Dark Solid",
+      description: "Plain dark background",
+      layers: [{ type: "solid", color: "#0F0F11" }],
+      animated: false
+    },
+    "brand-solid": {
+      name: "Brand Solid",
+      description: "Plain indigo background",
+      layers: [{ type: "solid", color: "#4F46E5" }],
+      animated: false
+    }
+  };
+  var getTypeVariantLayers = (type, variant = "light", meshColors) => {
+    const BG_COLORS = {
+      light: "#FFFFFF",
+      dark: "#0F0F11",
+      brand: "#4F46E5"
+    };
+    const GRID_COLORS = {
+      light: "rgba(0,0,0,0.05)",
+      dark: "rgba(255,255,255,0.05)",
+      brand: "rgba(255,255,255,0.1)"
+    };
+    const DEFAULT_MESH_COLORS = {
+      light: {
+        primary: "rgba(99,102,241,0.2)",
+        secondary: "rgba(236,72,153,0.15)"
+      },
+      dark: {
+        primary: "rgba(99,102,241,0.3)",
+        secondary: "rgba(236,72,153,0.2)"
+      },
+      brand: {
+        primary: "rgba(255,255,255,0.2)",
+        secondary: "rgba(255,255,255,0.15)"
+      }
+    };
+    const backgroundColor = BG_COLORS[variant];
+    const gridColor = GRID_COLORS[variant];
+    const resolvedMeshColors = {
+      primary: meshColors?.primary ?? DEFAULT_MESH_COLORS[variant].primary,
+      secondary: meshColors?.secondary ?? DEFAULT_MESH_COLORS[variant].secondary
+    };
+    switch (type) {
+      case "gradient-mesh":
+        return [
+          { type: "solid", color: backgroundColor },
+          {
+            type: "glow",
+            color: resolvedMeshColors.primary,
+            x: 30,
+            y: 30,
+            radius: 50,
+            intensity: 0.8
+          },
+          {
+            type: "glow",
+            color: resolvedMeshColors.secondary,
+            x: 70,
+            y: 70,
+            radius: 45,
+            intensity: 0.7
+          }
+        ];
+      case "grid-lines":
+        return [
+          { type: "solid", color: backgroundColor },
+          { type: "grid", color: gridColor, size: 60 }
+        ];
+      case "blobs":
+        return [
+          { type: "solid", color: backgroundColor },
+          {
+            type: "glow",
+            color: resolvedMeshColors.primary,
+            x: 35,
+            y: 35,
+            radius: 40,
+            intensity: 0.9
+          },
+          {
+            type: "glow",
+            color: resolvedMeshColors.secondary,
+            x: 65,
+            y: 65,
+            radius: 35,
+            intensity: 0.8
+          }
+        ];
+      case "solid":
+      default:
+        return [{ type: "solid", color: backgroundColor }];
+    }
+  };
+
+  // src/components/Global/Background/layers/SolidLayer.tsx
+  var import_remotion6 = __require("remotion");
+
+  // src/components/Global/Background/utils/layerDefaults.ts
+  var SOLID_DEFAULTS = {
+    opacity: 1
+  };
+  var LINEAR_DEFAULTS = {
+    angle: 135,
+    opacity: 1
+  };
+  var RADIAL_DEFAULTS = {
+    centerX: 50,
+    centerY: 50,
+    radius: void 0,
+    // uses CSS default (farthest-corner)
+    shape: "ellipse",
+    opacity: 1
+  };
+  var MESH_DEFAULTS = {
+    spread: 50,
+    opacity: 1,
+    points: [
+      { x: 20, y: 30 },
+      { x: 80, y: 25 },
+      { x: 50, y: 70 },
+      { x: 15, y: 85 }
+    ]
+  };
+  var NOISE_DEFAULTS = {
+    frequency: 0.9,
+    octaves: 4,
+    opacity: 0.03
+  };
+  var BLUR_DEFAULTS = {
+    amount: 40,
+    opacity: 1
+  };
+  var VIGNETTE_DEFAULTS = {
+    color: "#000000",
+    intensity: 0.5,
+    radius: 40,
+    opacity: 1
+  };
+  var GLOW_DEFAULTS = {
+    x: 50,
+    y: 50,
+    radius: 30,
+    intensity: 0.6,
+    opacity: 1
+  };
+  var GRID_DEFAULTS = {
+    color: "rgba(255,255,255,0.05)",
+    size: 60,
+    strokeWidth: 1,
+    opacity: 1
+  };
+
+  // src/components/Global/Background/hooks/useAnimationEngine.ts
+  var import_remotion5 = __require("remotion");
+  function useAnimationEngine(options = {}) {
+    const rawFrame = (0, import_remotion5.useCurrentFrame)();
+    const { animated = false, animationSpeed = 1 } = options;
+    const frame = rawFrame * animationSpeed;
+    const oscillate = (min, max, period = 300) => {
+      if (!animated) return min;
+      const p = Math.max(period, 1);
+      return (0, import_remotion5.interpolate)(frame % p, [0, p / 2, p], [min, max, min]);
+    };
+    const rotate = (startAngle, period = 600) => {
+      if (!animated) return startAngle;
+      return (0, import_remotion5.interpolate)(frame, [0, period], [startAngle, startAngle + 360], {
+        extrapolateRight: "wrap"
+      });
+    };
+    const pulse = (base, amplitude, period = 200) => {
+      if (!animated) return base;
+      const p = Math.max(period, 1);
+      return (0, import_remotion5.interpolate)(
+        frame % p,
+        [0, p / 2, p],
+        [base, base + amplitude, base]
+      );
+    };
+    const drift = (center, range, period = 400) => {
+      if (!animated) return center;
+      const p = Math.max(period, 1);
+      return (0, import_remotion5.interpolate)(
+        frame % p,
+        [0, p / 2, p],
+        [center - range, center + range, center - range]
+      );
+    };
+    return { frame, oscillate, rotate, pulse, drift, animated };
+  }
+
+  // src/components/Global/Background/layers/SolidLayer.tsx
+  var import_jsx_runtime4 = __require("react/jsx-runtime");
+  var SolidLayer = ({
+    color,
+    opacity = SOLID_DEFAULTS.opacity,
+    blendMode,
+    animated = false,
+    animationSpeed = 1
+  }) => {
+    const { pulse } = useAnimationEngine({ animated, animationSpeed });
+    const currentOpacity = pulse(opacity * 0.92, opacity * 0.08, 400);
+    return /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+      import_remotion6.AbsoluteFill,
+      {
+        style: {
+          backgroundColor: color,
+          opacity: currentOpacity,
+          mixBlendMode: blendMode
+        }
+      }
+    );
+  };
+
+  // src/components/Global/Background/layers/LinearGradientLayer.tsx
+  var import_remotion7 = __require("remotion");
+  var import_jsx_runtime5 = __require("react/jsx-runtime");
+  var LinearGradientLayer = ({
+    colors,
+    angle = LINEAR_DEFAULTS.angle,
+    opacity = LINEAR_DEFAULTS.opacity,
+    blendMode,
+    animated = false,
+    animationSpeed = 1
+  }) => {
+    const { rotate } = useAnimationEngine({ animated, animationSpeed });
+    const currentAngle = rotate(angle, 600);
+    const gradient = `linear-gradient(${currentAngle}deg, ${colors.join(", ")})`;
+    return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+      import_remotion7.AbsoluteFill,
+      {
+        style: {
+          background: gradient,
+          opacity,
+          mixBlendMode: blendMode
+        }
+      }
+    );
+  };
+
+  // src/components/Global/Background/layers/RadialGradientLayer.tsx
+  var import_remotion8 = __require("remotion");
+  var import_jsx_runtime6 = __require("react/jsx-runtime");
+  var RadialGradientLayer = ({
+    colors,
+    centerX = RADIAL_DEFAULTS.centerX,
+    centerY = RADIAL_DEFAULTS.centerY,
+    radius,
+    shape = RADIAL_DEFAULTS.shape,
+    opacity = RADIAL_DEFAULTS.opacity,
+    blendMode,
+    animated = false,
+    animationSpeed = 1
+  }) => {
+    const { drift } = useAnimationEngine({ animated, animationSpeed });
+    const cx = drift(centerX, 8, 500);
+    const cy = drift(centerY, 6, 400);
+    const sizeHint = radius ? `${radius}%` : "farthest-corner";
+    const gradient = `radial-gradient(${shape} ${sizeHint} at ${cx}% ${cy}%, ${colors.join(", ")})`;
+    return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(
+      import_remotion8.AbsoluteFill,
+      {
+        style: {
+          background: gradient,
+          opacity,
+          mixBlendMode: blendMode
+        }
+      }
+    );
+  };
+
+  // src/components/Global/Background/layers/MeshGradientLayer.tsx
+  var import_remotion9 = __require("remotion");
+  var import_jsx_runtime7 = __require("react/jsx-runtime");
+  var MeshGradientLayer = ({
+    colors,
+    points,
+    spread = MESH_DEFAULTS.spread,
+    opacity = MESH_DEFAULTS.opacity,
+    blendMode,
+    animated = false,
+    animationSpeed = 1
+  }) => {
+    const { drift } = useAnimationEngine({ animated, animationSpeed });
+    const defaultPoints = MESH_DEFAULTS.points;
+    const meshPoints = points ?? colors.map((_, i) => defaultPoints[i % defaultPoints.length]);
+    const animatedPoints = meshPoints.map((pt, i) => ({
+      x: drift(pt.x, 10 + i * 3, 400 + i * 80),
+      y: drift(pt.y, 8 + i * 2, 350 + i * 70)
+    }));
+    const blobs = animatedPoints.map(
+      (pos, i) => `radial-gradient(circle at ${pos.x}% ${pos.y}%, ${colors[i % colors.length]} 0%, transparent ${spread}%)`
+    ).join(", ");
+    const base = `linear-gradient(135deg, ${colors[0]}, ${colors[colors.length - 1]})`;
+    return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+      import_remotion9.AbsoluteFill,
+      {
+        style: {
+          background: `${blobs}, ${base}`,
+          opacity,
+          mixBlendMode: blendMode
+        }
+      }
+    );
+  };
+
+  // src/components/Global/Background/layers/NoiseLayer.tsx
+  var import_remotion10 = __require("remotion");
+  var import_jsx_runtime8 = __require("react/jsx-runtime");
+  var NoiseLayer = ({
+    frequency = NOISE_DEFAULTS.frequency,
+    octaves = NOISE_DEFAULTS.octaves,
+    opacity = NOISE_DEFAULTS.opacity,
+    blendMode = "overlay"
+  }) => {
+    const noiseSvg = `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='${frequency}' numOctaves='${octaves}' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`;
+    return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+      import_remotion10.AbsoluteFill,
+      {
+        style: {
+          background: noiseSvg,
+          opacity,
+          mixBlendMode: blendMode
+        }
+      }
+    );
+  };
+
+  // src/components/Global/Background/layers/BlurLayer.tsx
+  var import_remotion11 = __require("remotion");
+  var import_jsx_runtime9 = __require("react/jsx-runtime");
+  var BlurLayer = ({
+    amount = BLUR_DEFAULTS.amount,
+    opacity = BLUR_DEFAULTS.opacity,
+    blendMode,
+    animated = false,
+    animationSpeed = 1
+  }) => {
+    const { pulse } = useAnimationEngine({ animated, animationSpeed });
+    const currentBlur = pulse(amount * 0.85, amount * 0.15, 500);
+    return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+      import_remotion11.AbsoluteFill,
+      {
+        style: {
+          backdropFilter: `blur(${currentBlur}px)`,
+          WebkitBackdropFilter: `blur(${currentBlur}px)`,
+          opacity,
+          mixBlendMode: blendMode
+        }
+      }
+    );
+  };
+
+  // src/components/Global/Background/layers/VignetteLayer.tsx
+  var import_remotion12 = __require("remotion");
+  var import_jsx_runtime10 = __require("react/jsx-runtime");
+  var VignetteLayer = ({
+    color = VIGNETTE_DEFAULTS.color,
+    intensity = VIGNETTE_DEFAULTS.intensity,
+    radius = VIGNETTE_DEFAULTS.radius,
+    opacity = VIGNETTE_DEFAULTS.opacity,
+    blendMode,
+    animated = false,
+    animationSpeed = 1
+  }) => {
+    const { pulse } = useAnimationEngine({ animated, animationSpeed });
+    const currentIntensity = pulse(intensity * 0.9, intensity * 0.1, 500);
+    const vignette = `radial-gradient(ellipse at 50% 50%, transparent ${radius}%, ${color} 100%)`;
+    return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+      import_remotion12.AbsoluteFill,
+      {
+        style: {
+          background: vignette,
+          opacity: currentIntensity * opacity,
+          mixBlendMode: blendMode
+        }
+      }
+    );
+  };
+
+  // src/components/Global/Background/layers/GlowLayer.tsx
+  var import_remotion13 = __require("remotion");
+  var import_jsx_runtime11 = __require("react/jsx-runtime");
+  var GlowLayer = ({
+    color,
+    x = GLOW_DEFAULTS.x,
+    y = GLOW_DEFAULTS.y,
+    radius = GLOW_DEFAULTS.radius,
+    intensity = GLOW_DEFAULTS.intensity,
+    opacity = GLOW_DEFAULTS.opacity,
+    blendMode,
+    animated = false,
+    animationSpeed = 1
+  }) => {
+    const { drift, pulse } = useAnimationEngine({ animated, animationSpeed });
+    const cx = drift(x, 5, 600);
+    const cy = drift(y, 4, 500);
+    const currentIntensity = pulse(intensity * 0.85, intensity * 0.15, 350);
+    const glow = `radial-gradient(circle ${radius}% at ${cx}% ${cy}%, ${color}, transparent)`;
+    return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+      import_remotion13.AbsoluteFill,
+      {
+        style: {
+          background: glow,
+          opacity: currentIntensity * opacity,
+          mixBlendMode: blendMode
+        }
+      }
+    );
+  };
+
+  // src/components/Global/Background/layers/GridLayer.tsx
+  var import_remotion14 = __require("remotion");
+  var import_jsx_runtime12 = __require("react/jsx-runtime");
+  var GridLayer = ({
+    color = GRID_DEFAULTS.color,
+    size = GRID_DEFAULTS.size,
+    strokeWidth = GRID_DEFAULTS.strokeWidth,
+    opacity = GRID_DEFAULTS.opacity,
+    blendMode
+  }) => {
+    return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+      import_remotion14.AbsoluteFill,
+      {
+        style: {
+          opacity,
+          mixBlendMode: blendMode
+        },
+        children: /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("svg", { width: "100%", height: "100%", xmlns: "http://www.w3.org/2000/svg", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("defs", { children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+            "pattern",
+            {
+              id: "background-grid",
+              width: size,
+              height: size,
+              patternUnits: "userSpaceOnUse",
+              children: /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+                "path",
+                {
+                  d: `M ${size} 0 L 0 0 0 ${size}`,
+                  fill: "none",
+                  stroke: color,
+                  strokeWidth
+                }
+              )
+            }
+          ) }),
+          /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("rect", { width: "100%", height: "100%", fill: "url(#background-grid)" })
+        ] })
+      }
+    );
+  };
+
+  // src/components/Global/Background/Background.tsx
+  var import_jsx_runtime13 = __require("react/jsx-runtime");
+  var Background = ({
+    preset,
+    type,
+    variant = "light",
+    meshColors,
+    layers: propLayers,
+    animated: propAnimated,
+    animationSpeed: propAnimationSpeed = 1,
+    className
+  }) => {
+    let layers;
+    let animated;
+    let animationSpeed;
+    if (preset && backgroundPresets[preset]) {
+      const presetConfig = backgroundPresets[preset];
+      layers = presetConfig.layers;
+      animated = propAnimated !== void 0 ? propAnimated : presetConfig.animated ?? false;
+      animationSpeed = propAnimationSpeed * (presetConfig.animationSpeed ?? 1);
+    } else if (type) {
+      layers = getTypeVariantLayers(type, variant, meshColors);
+      animated = propAnimated !== void 0 ? propAnimated : type !== "grid-lines" && type !== "solid";
+      animationSpeed = propAnimationSpeed;
+    } else if (propLayers && propLayers.length > 0) {
+      layers = propLayers;
+      animated = propAnimated ?? false;
+      animationSpeed = propAnimationSpeed;
+    } else {
+      layers = [];
+      animated = false;
+      animationSpeed = 1;
+    }
+    const resolveAnimation = (layer) => ({
+      animated: layer.animated !== void 0 ? layer.animated : animated,
+      animationSpeed: (layer.animationSpeed ?? 1) * animationSpeed
+    });
+    const renderLayer = (layer, index) => {
+      const anim = resolveAnimation(layer);
+      switch (layer.type) {
+        case "solid":
+          return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            SolidLayer,
+            {
+              color: layer.color,
+              opacity: layer.opacity,
+              blendMode: layer.blendMode,
+              ...anim
+            },
+            index
+          );
+        case "linear":
+          return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            LinearGradientLayer,
+            {
+              colors: layer.colors,
+              angle: layer.angle,
+              opacity: layer.opacity,
+              blendMode: layer.blendMode,
+              ...anim
+            },
+            index
+          );
+        case "radial":
+          return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            RadialGradientLayer,
+            {
+              colors: layer.colors,
+              centerX: layer.centerX,
+              centerY: layer.centerY,
+              radius: layer.radius,
+              shape: layer.shape,
+              opacity: layer.opacity,
+              blendMode: layer.blendMode,
+              ...anim
+            },
+            index
+          );
+        case "mesh":
+          return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            MeshGradientLayer,
+            {
+              colors: layer.colors,
+              points: layer.points,
+              spread: layer.spread,
+              opacity: layer.opacity,
+              blendMode: layer.blendMode,
+              ...anim
+            },
+            index
+          );
+        case "noise":
+          return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            NoiseLayer,
+            {
+              frequency: layer.frequency,
+              octaves: layer.octaves,
+              opacity: layer.opacity,
+              blendMode: layer.blendMode
+            },
+            index
+          );
+        case "blur":
+          return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            BlurLayer,
+            {
+              amount: layer.amount,
+              opacity: layer.opacity,
+              blendMode: layer.blendMode,
+              ...anim
+            },
+            index
+          );
+        case "vignette":
+          return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            VignetteLayer,
+            {
+              color: layer.color,
+              intensity: layer.intensity,
+              radius: layer.radius,
+              opacity: layer.opacity,
+              blendMode: layer.blendMode,
+              ...anim
+            },
+            index
+          );
+        case "glow":
+          return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            GlowLayer,
+            {
+              color: layer.color,
+              x: layer.x,
+              y: layer.y,
+              radius: layer.radius,
+              intensity: layer.intensity,
+              opacity: layer.opacity,
+              blendMode: layer.blendMode,
+              ...anim
+            },
+            index
+          );
+        case "grid":
+          return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            GridLayer,
+            {
+              color: layer.color,
+              size: layer.size,
+              strokeWidth: layer.strokeWidth,
+              opacity: layer.opacity,
+              blendMode: layer.blendMode
+            },
+            index
+          );
+        default:
+          return null;
+      }
+    };
+    return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+      import_remotion15.AbsoluteFill,
+      {
+        className,
+        style: {
+          overflow: "hidden",
+          zIndex: -1
+        },
+        children: layers.map(renderLayer)
+      }
+    );
+  };
+
+  // src/components/Global/Background/TestComposition.tsx
+  var import_remotion16 = __require("remotion");
+  var import_jsx_runtime14 = __require("react/jsx-runtime");
+
+  // src/components/Global/BackgroundRig.tsx
+  var import_remotion17 = __require("remotion");
+  var import_jsx_runtime15 = __require("react/jsx-runtime");
+
+  // src/scenes/integration-test/IntegrationTestScene.tsx
+  var import_jsx_runtime16 = __require("react/jsx-runtime");
+  var IntegrationTestScene = () => {
+    const frame = (0, import_remotion18.useCurrentFrame)();
+    const { fps } = (0, import_remotion18.useVideoConfig)();
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_remotion18.AbsoluteFill, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Background, { preset: "deepPurpleAurora" }),
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+        AnimatedText,
+        {
+          text: "Integration Test",
+          preset: "fadeBlurIn",
+          anchor: "center",
+          fontSize: 72,
+          color: "#ffffff"
+        }
+      )
+    ] });
+  };
+})();

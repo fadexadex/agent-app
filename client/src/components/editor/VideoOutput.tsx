@@ -5,7 +5,6 @@ import { Scene, framesToSeconds } from "@/lib/mockData";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import SingleSceneTimeline from "./SingleSceneTimeline";
-import RemotionTimelineVideo from "./RemotionTimelineVideo";
 
 interface VideoOutputProps {
   scenes: Scene[];
@@ -184,24 +183,22 @@ const VideoOutput = ({
   // Show single scene timeline for a completed single scene
   if (showSingleSceneTimeline && typeof selectedScene === "number") {
     const sceneIndex = selectedScene;
-    const scene = scenes[sceneIndex];
-
-    // Use Remotion Timeline for smooth 60fps performance
     return (
-      <RemotionTimelineVideo
-        sceneId={scene.id}
-        sceneName={scene.name}
-        durationInFrames={scene.duration}
-        fps={30}
-        videoUrl={sceneStatuses[sceneIndex]?.videoUrl}
-        previewUrl={sceneStatuses[sceneIndex]?.previewUrl}
-        onCurrentTimeChange={onSingleSceneSeek}
-        onPlayingChange={(playing) => {
-          // Sync playing state if needed
-        }}
+      <SingleSceneTimeline
+        scene={scenes[sceneIndex]}
+        currentTime={singleSceneTime}
+        onSeek={onSingleSceneSeek!}
         onScrub={onScrub}
         selectedTimestamp={selectedTimestamp}
-        onTimestampSelect={onTimestampSelect}
+        onTimestampSelect={onTimestampSelect!}
+        isPlaying={isPlaying}
+        onTogglePlay={onTogglePlay}
+        previewUrl={sceneStatuses[sceneIndex]?.previewUrl}
+        videoUrl={sceneStatuses[sceneIndex]?.videoUrl}
+        speed={speed}
+        onSpeedChange={handleSpeedChange}
+        audioUrl={audioUrl}
+        audioTrackName={audioTrackName}
       />
     );
   }
