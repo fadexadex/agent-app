@@ -30,4 +30,6 @@ server/output
 
 server/public
 
-remotion/buildreference-videos/
+remotion/build
+reference-videos/
+*.zip
