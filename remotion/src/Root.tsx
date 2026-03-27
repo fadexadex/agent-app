@@ -3,7 +3,7 @@ import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 import { EmailReplyFeature } from "./EmailReplyFeature";
 
-import { HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction, HookStudentStruggle, IntroAppSolution, FeatureCampusMap, HookManualCodingPain, IntroProductReveal, FeatureSeamlessConversion, FeatureComponentLibrary, BenefitSpeedEfficiency, CtaTryDevflow, FlowPilotIntroduction, Scene03FeatureAIPrioritization, BenefitProductivity, Scene06CtaSignup, Scene01HookChallenge, Scene02IntroProduct, AITaskPrioritization, FeatureTeamCollaboration, Scene05BenefitProductivity, RemoteChaosHook, FocusFlowIntro, AiPrioritizeFeature, RemoteCollabFeature, ClarityProductivityBenefit, CtaGetStarted, IntegrationTestScene } from "./scenes";
+import { HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction, HookStudentStruggle, IntroAppSolution, FeatureCampusMap, HookManualCodingPain, IntroProductReveal, FeatureSeamlessConversion, FeatureComponentLibrary, BenefitSpeedEfficiency, CtaTryDevflow, FlowPilotIntroduction, Scene03FeatureAIPrioritization, BenefitProductivity, Scene06CtaSignup, Scene01HookChallenge, Scene02IntroProduct, AITaskPrioritization, FeatureTeamCollaboration, Scene05BenefitProductivity, RemoteChaosHook, FocusFlowIntro, AiPrioritizeFeature, RemoteCollabFeature, ClarityProductivityBenefit, CtaGetStarted, IntegrationTestScene, Scene1HookProblem, HookTaskChaos, HookDesignDisconnect, Scene01Hook, Scene02Intro, Scene03RevenueInsights, CustomerSegmentsScene, Scene05BenefitGrowth, IntroProductIntroduction, Scene04CustomerSegments, Scene06Cta, HookRemoteChaos, IntroProjectPilot, FeatureAIPrioritization, FeatureRealtimeCollaboration, BenefitFocusEfficiency, HookOverwhelmed, IntroStudyFlow, FeatureSmartSchedule, FeatureFocusMode, BenefitAcademicSuccess } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -231,10 +231,10 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+                <Composition
         id="cta-get-started"
         component={CtaGetStarted}
-        durationInFrames={100}
+        durationInFrames={90}
         fps={30}
         width={1920}
         height={1080}
@@ -243,6 +243,158 @@ export const RemotionRoot: React.FC = () => {
         id="integration-test-scene"
         component={IntegrationTestScene}
         durationInFrames={90}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="scene-1-hook-problem"
+        component={Scene1HookProblem}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="hook-task-chaos"
+        component={HookTaskChaos}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="hook-design-disconnect"
+        component={HookDesignDisconnect}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                                  <Composition
+        id="scene-01-hook"
+        component={Scene01Hook}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                            <Composition
+        id="scene-02-intro"
+        component={Scene02Intro}
+        durationInFrames={105}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="scene-03-revenue-insights"
+        component={Scene03RevenueInsights}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="scene-04-customer-segments"
+        component={Scene04CustomerSegments}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                      <Composition
+        id="scene-05-benefit-growth"
+        component={Scene05BenefitGrowth}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="scene-06-cta"
+        component={Scene06Cta}
+        durationInFrames={100}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="hook-remote-chaos"
+        component={HookRemoteChaos}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="intro-projectpilot"
+        component={IntroProjectPilot}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-ai-prioritization"
+        component={FeatureAIPrioritization}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-realtime-collaboration"
+        component={FeatureRealtimeCollaboration}
+        durationInFrames={140}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="benefit-focus-efficiency"
+        component={BenefitFocusEfficiency}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                            <Composition
+        id="hook-overwhelmed"
+        component={HookOverwhelmed}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                      <Composition
+        id="intro-studyflow"
+        component={IntroStudyFlow}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                      <Composition
+        id="feature-smart-schedule"
+        component={FeatureSmartSchedule}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-focus-mode"
+        component={FeatureFocusMode}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="benefit-academic-success"
+        component={BenefitAcademicSuccess}
+        durationInFrames={120}
         fps={30}
         width={1920}
         height={1080}

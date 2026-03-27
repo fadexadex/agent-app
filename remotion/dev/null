@@ -29,8 +29,8 @@
     mod
   ));
 
-  // src/scenes/integration-test/IntegrationTestScene.tsx
-  var import_remotion18 = __require("remotion");
+  // src/scenes/app-promo-video/FeatureSmartSchedule.tsx
+  var import_remotion28 = __require("remotion");
 
   // src/components/AnimatedText/hooks/useTextSplitter.ts
   var import_react = __require("react");
@@ -2565,21 +2565,1649 @@
   var import_remotion17 = __require("remotion");
   var import_jsx_runtime15 = __require("react/jsx-runtime");
 
-  // src/scenes/integration-test/IntegrationTestScene.tsx
+  // src/components/MockupFrame/MockupFrame.tsx
+  var import_remotion20 = __require("remotion");
+
+  // src/components/MockupFrame/hooks/useAnimationCalculator.ts
+  var import_remotion19 = __require("remotion");
+  var import_react4 = __require("react");
+
+  // src/components/MockupFrame/presets.ts
+  var deviceSpecs = {
+    iphone15: {
+      bezelRadius: 55,
+      aspectRatio: 19.5 / 9,
+      defaultWidth: 280,
+      defaultHeight: 606
+    },
+    "iphone-notch": {
+      bezelRadius: 47,
+      aspectRatio: 19.5 / 9,
+      defaultWidth: 280,
+      defaultHeight: 606
+    },
+    browser: {
+      bezelRadius: 12,
+      aspectRatio: 16 / 10,
+      defaultWidth: 600,
+      defaultHeight: 400
+    },
+    card: {
+      bezelRadius: 16,
+      aspectRatio: 4 / 3,
+      defaultWidth: 400,
+      defaultHeight: 300
+    }
+  };
+  var entrancePresets = {
+    fadeIn: {
+      opacity: { from: 0, to: 1, duration: 20 },
+      blur: { from: 10, to: 0, duration: 20 }
+    },
+    springIn: {
+      scale: {
+        from: 0.5,
+        to: 1,
+        easing: { type: "spring", ...SPRING_CONFIGS.bouncy }
+      },
+      opacity: { from: 0, to: 1, duration: 15 }
+    },
+    slideInUp: {
+      position: {
+        fromY: 60,
+        toY: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.kinetic }
+      },
+      opacity: { from: 0, to: 1, duration: 12 }
+    },
+    slideInDown: {
+      position: {
+        fromY: -60,
+        toY: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.kinetic }
+      },
+      opacity: { from: 0, to: 1, duration: 12 }
+    },
+    slideInLeft: {
+      position: {
+        fromX: -80,
+        toX: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.kinetic }
+      },
+      opacity: { from: 0, to: 1, duration: 12 }
+    },
+    slideInRight: {
+      position: {
+        fromX: 80,
+        toX: 0,
+        easing: { type: "spring", ...SPRING_CONFIGS.kinetic }
+      },
+      opacity: { from: 0, to: 1, duration: 12 }
+    },
+    rotateIn: {
+      rotate: {
+        fromY: -30,
+        toY: 0,
+        perspective: 1200,
+        easing: { type: "spring", ...SPRING_CONFIGS.snappy }
+      },
+      opacity: { from: 0, to: 1, duration: 15 },
+      blur: { from: 5, to: 0, duration: 15 }
+    },
+    none: {}
+  };
+  var exitPresets = {
+    fadeOut: {
+      opacity: { from: 1, to: 0, duration: 20 },
+      blur: { from: 0, to: 10, duration: 20 }
+    },
+    slideOutLeft: {
+      position: {
+        fromX: 0,
+        toX: -100,
+        easing: { type: "spring", ...SPRING_CONFIGS.smooth }
+      },
+      opacity: { from: 1, to: 0, duration: 15 }
+    },
+    slideOutRight: {
+      position: {
+        fromX: 0,
+        toX: 100,
+        easing: { type: "spring", ...SPRING_CONFIGS.smooth }
+      },
+      opacity: { from: 1, to: 0, duration: 15 }
+    },
+    slideOutDown: {
+      position: {
+        fromY: 0,
+        toY: 60,
+        easing: { type: "spring", ...SPRING_CONFIGS.smooth }
+      },
+      opacity: { from: 1, to: 0, duration: 15 }
+    },
+    slideOutUp: {
+      position: {
+        fromY: 0,
+        toY: -60,
+        easing: { type: "spring", ...SPRING_CONFIGS.smooth }
+      },
+      opacity: { from: 1, to: 0, duration: 15 }
+    },
+    scaleDown: {
+      scale: { from: 1, to: 0.8, duration: 20, easing: "easeIn" },
+      opacity: { from: 1, to: 0, duration: 20 }
+    },
+    none: {}
+  };
+  var DEFAULTS2 = {
+    blur: {
+      from: 10,
+      to: 0,
+      duration: 20,
+      delay: 0
+    },
+    opacity: {
+      from: 0,
+      to: 1,
+      duration: 20,
+      delay: 0
+    },
+    scale: {
+      from: 1,
+      to: 1,
+      duration: 20,
+      delay: 0
+    },
+    position: {
+      fromX: 0,
+      toX: 0,
+      fromY: 0,
+      toY: 0,
+      duration: 20,
+      delay: 0
+    },
+    rotate: {
+      fromX: 0,
+      toX: 0,
+      fromY: 0,
+      toY: 0,
+      fromZ: 0,
+      toZ: 0,
+      perspective: 1200,
+      duration: 20,
+      delay: 0
+    },
+    // Frame sequence defaults
+    stagger: 15,
+    startFrom: 0,
+    // Exit animation start (frames before end)
+    exitAnimationDuration: 30
+  };
+  var getEntrancePreset = (presetName) => {
+    return entrancePresets[presetName] || entrancePresets.none;
+  };
+  var getExitPreset = (presetName) => {
+    return exitPresets[presetName] || exitPresets.none;
+  };
+  var getDeviceSpec = (deviceType) => {
+    return deviceSpecs[deviceType] || {
+      bezelRadius: 0,
+      aspectRatio: 16 / 9,
+      defaultWidth: 400,
+      defaultHeight: 300
+    };
+  };
+
+  // src/components/MockupFrame/hooks/interpolation.ts
+  var import_remotion18 = __require("remotion");
+  var mapEasing2 = (easing) => {
+    if (!easing) return void 0;
+    switch (easing) {
+      case "linear":
+        return import_remotion18.Easing.linear;
+      case "easeIn":
+        return import_remotion18.Easing.in(import_remotion18.Easing.quad);
+      case "easeOut":
+        return import_remotion18.Easing.out(import_remotion18.Easing.quad);
+      case "easeInOut":
+        return import_remotion18.Easing.inOut(import_remotion18.Easing.quad);
+      case "cubicIn":
+        return import_remotion18.Easing.in(import_remotion18.Easing.cubic);
+      case "cubicOut":
+        return import_remotion18.Easing.out(import_remotion18.Easing.cubic);
+      case "cubicInOut":
+        return import_remotion18.Easing.inOut(import_remotion18.Easing.cubic);
+      case "backIn":
+        return import_remotion18.Easing.in(import_remotion18.Easing.back(1.7));
+      case "backOut":
+        return import_remotion18.Easing.out(import_remotion18.Easing.back(1.7));
+      case "backInOut":
+        return import_remotion18.Easing.inOut(import_remotion18.Easing.back(1.7));
+      default:
+        return void 0;
+    }
+  };
+  var safeInterpolate2 = (frame, inputRange, outputRange, easing) => {
+    return (0, import_remotion18.interpolate)(frame, inputRange, outputRange, {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: mapEasing2(easing)
+    });
+  };
+  var interpolateWithDelay2 = (frame, delay, duration, from, to, easing) => {
+    const startFrame = delay;
+    const endFrame = delay + duration;
+    return safeInterpolate2(frame, [startFrame, endFrame], [from, to], easing);
+  };
+
+  // src/components/MockupFrame/hooks/useAnimationCalculator.ts
+  var normalizeConfig2 = (config, defaults) => {
+    if (config === void 0 || config === false) return null;
+    if (config === true) return defaults;
+    return { ...defaults, ...config };
+  };
+  var isSpringConfig3 = (easing) => {
+    return typeof easing === "object" && easing?.type === "spring";
+  };
+  var getSpringValues2 = (config) => {
+    return {
+      damping: config.damping ?? SPRING_CONFIGS.kinetic.damping,
+      stiffness: config.stiffness ?? SPRING_CONFIGS.kinetic.stiffness,
+      mass: config.mass ?? SPRING_CONFIGS.kinetic.mass
+    };
+  };
+  var useAnimationCalculator2 = (props) => {
+    const frame = (0, import_remotion19.useCurrentFrame)();
+    const { fps } = (0, import_remotion19.useVideoConfig)();
+    return (0, import_react4.useMemo)(() => {
+      const {
+        preset = "none",
+        blur: blurProp,
+        opacity: opacityProp,
+        scale: scaleProp,
+        position: positionProp,
+        rotate: rotateProp,
+        exitPreset = "none",
+        exitStartFrame
+      } = props;
+      const entrancePresetValues = getEntrancePreset(
+        preset
+      );
+      const blurConfig = normalizeConfig2(
+        blurProp ?? entrancePresetValues.blur,
+        DEFAULTS2.blur
+      );
+      const opacityConfig = normalizeConfig2(
+        opacityProp ?? entrancePresetValues.opacity,
+        DEFAULTS2.opacity
+      );
+      const scaleConfig = normalizeConfig2(
+        scaleProp ?? entrancePresetValues.scale,
+        DEFAULTS2.scale
+      );
+      const positionConfig = normalizeConfig2(
+        positionProp ?? entrancePresetValues.position,
+        DEFAULTS2.position
+      );
+      const rotateConfig = normalizeConfig2(
+        rotateProp ?? entrancePresetValues.rotate,
+        DEFAULTS2.rotate
+      );
+      const exitPresetValues = getExitPreset(exitPreset);
+      let blur = 0;
+      let opacity = 1;
+      let scale = 1;
+      let translateX = 0;
+      let translateY = 0;
+      let rotateX = 0;
+      let rotateY = 0;
+      let rotateZ = 0;
+      let perspective = 1200;
+      if (blurConfig) {
+        const delay = blurConfig.delay || 0;
+        blur = interpolateWithDelay2(
+          frame,
+          delay,
+          blurConfig.duration || 20,
+          blurConfig.from ?? 10,
+          blurConfig.to ?? 0,
+          blurConfig.easing
+        );
+      }
+      if (opacityConfig) {
+        const delay = opacityConfig.delay || 0;
+        opacity = interpolateWithDelay2(
+          frame,
+          delay,
+          opacityConfig.duration || 20,
+          opacityConfig.from ?? 0,
+          opacityConfig.to ?? 1,
+          opacityConfig.easing
+        );
+      }
+      if (scaleConfig) {
+        const delay = scaleConfig.delay || 0;
+        if (isSpringConfig3(scaleConfig.easing)) {
+          const springValues = getSpringValues2(scaleConfig.easing);
+          const springValue = (0, import_remotion19.spring)({
+            frame: frame - delay,
+            fps,
+            config: springValues
+          });
+          const from = scaleConfig.from ?? 0.5;
+          const to = scaleConfig.to ?? 1;
+          scale = from + springValue * (to - from);
+        } else {
+          scale = interpolateWithDelay2(
+            frame,
+            delay,
+            scaleConfig.duration || 20,
+            scaleConfig.from ?? 1,
+            scaleConfig.to ?? 1,
+            scaleConfig.easing
+          );
+        }
+      }
+      if (positionConfig) {
+        const delay = positionConfig.delay || 0;
+        if (isSpringConfig3(positionConfig.easing)) {
+          const springValues = getSpringValues2(positionConfig.easing);
+          const springValue = (0, import_remotion19.spring)({
+            frame: frame - delay,
+            fps,
+            config: springValues
+          });
+          translateX = (positionConfig.fromX ?? 0) + springValue * ((positionConfig.toX ?? 0) - (positionConfig.fromX ?? 0));
+          translateY = (positionConfig.fromY ?? 0) + springValue * ((positionConfig.toY ?? 0) - (positionConfig.fromY ?? 0));
+        } else {
+          translateX = interpolateWithDelay2(
+            frame,
+            delay,
+            positionConfig.duration || 20,
+            positionConfig.fromX ?? 0,
+            positionConfig.toX ?? 0,
+            positionConfig.easing
+          );
+          translateY = interpolateWithDelay2(
+            frame,
+            delay,
+            positionConfig.duration || 20,
+            positionConfig.fromY ?? 0,
+            positionConfig.toY ?? 0,
+            positionConfig.easing
+          );
+        }
+      }
+      if (rotateConfig) {
+        const delay = rotateConfig.delay || 0;
+        perspective = rotateConfig.perspective ?? 1200;
+        if (isSpringConfig3(rotateConfig.easing)) {
+          const springValues = getSpringValues2(rotateConfig.easing);
+          const springValue = (0, import_remotion19.spring)({
+            frame: frame - delay,
+            fps,
+            config: springValues
+          });
+          rotateX = (rotateConfig.fromX ?? 0) + springValue * ((rotateConfig.toX ?? 0) - (rotateConfig.fromX ?? 0));
+          rotateY = (rotateConfig.fromY ?? 0) + springValue * ((rotateConfig.toY ?? 0) - (rotateConfig.fromY ?? 0));
+          rotateZ = (rotateConfig.fromZ ?? 0) + springValue * ((rotateConfig.toZ ?? 0) - (rotateConfig.fromZ ?? 0));
+        } else {
+          rotateX = interpolateWithDelay2(
+            frame,
+            delay,
+            rotateConfig.duration || 20,
+            rotateConfig.fromX ?? 0,
+            rotateConfig.toX ?? 0,
+            rotateConfig.easing
+          );
+          rotateY = interpolateWithDelay2(
+            frame,
+            delay,
+            rotateConfig.duration || 20,
+            rotateConfig.fromY ?? 0,
+            rotateConfig.toY ?? 0,
+            rotateConfig.easing
+          );
+          rotateZ = interpolateWithDelay2(
+            frame,
+            delay,
+            rotateConfig.duration || 20,
+            rotateConfig.fromZ ?? 0,
+            rotateConfig.toZ ?? 0,
+            rotateConfig.easing
+          );
+        }
+      }
+      if (exitPreset !== "none" && exitStartFrame !== void 0 && frame >= exitStartFrame) {
+        const exitFrame = frame - exitStartFrame;
+        if (exitPresetValues.blur) {
+          blur = interpolateWithDelay2(
+            exitFrame,
+            exitPresetValues.blur.delay || 0,
+            exitPresetValues.blur.duration || 20,
+            exitPresetValues.blur.from ?? 0,
+            exitPresetValues.blur.to ?? 10,
+            exitPresetValues.blur.easing
+          );
+        }
+        if (exitPresetValues.opacity) {
+          opacity = interpolateWithDelay2(
+            exitFrame,
+            exitPresetValues.opacity.delay || 0,
+            exitPresetValues.opacity.duration || 20,
+            exitPresetValues.opacity.from ?? 1,
+            exitPresetValues.opacity.to ?? 0,
+            exitPresetValues.opacity.easing
+          );
+        }
+        if (exitPresetValues.scale) {
+          const exitScaleConfig = exitPresetValues.scale;
+          if (isSpringConfig3(exitScaleConfig.easing)) {
+            const springValues = getSpringValues2(exitScaleConfig.easing);
+            const springValue = (0, import_remotion19.spring)({
+              frame: exitFrame - (exitScaleConfig.delay || 0),
+              fps,
+              config: { ...springValues, damping: 100 }
+              // Higher damping for exits
+            });
+            const from = exitScaleConfig.from ?? 1;
+            const to = exitScaleConfig.to ?? 0.8;
+            scale = from + springValue * (to - from);
+          } else {
+            scale = interpolateWithDelay2(
+              exitFrame,
+              exitScaleConfig.delay || 0,
+              exitScaleConfig.duration || 20,
+              exitScaleConfig.from ?? 1,
+              exitScaleConfig.to ?? 0.8,
+              exitScaleConfig.easing
+            );
+          }
+        }
+        if (exitPresetValues.position) {
+          const exitPositionConfig = exitPresetValues.position;
+          if (isSpringConfig3(exitPositionConfig.easing)) {
+            const springValues = getSpringValues2(exitPositionConfig.easing);
+            const springValue = (0, import_remotion19.spring)({
+              frame: exitFrame - (exitPositionConfig.delay || 0),
+              fps,
+              config: { ...springValues, damping: 100 }
+              // Higher damping for exits
+            });
+            translateX = (exitPositionConfig.fromX ?? 0) + springValue * ((exitPositionConfig.toX ?? 0) - (exitPositionConfig.fromX ?? 0));
+            translateY = (exitPositionConfig.fromY ?? 0) + springValue * ((exitPositionConfig.toY ?? 0) - (exitPositionConfig.fromY ?? 0));
+          } else {
+            translateX = interpolateWithDelay2(
+              exitFrame,
+              exitPositionConfig.delay || 0,
+              exitPositionConfig.duration || 20,
+              exitPositionConfig.fromX ?? 0,
+              exitPositionConfig.toX ?? 0,
+              exitPositionConfig.easing
+            );
+            translateY = interpolateWithDelay2(
+              exitFrame,
+              exitPositionConfig.delay || 0,
+              exitPositionConfig.duration || 20,
+              exitPositionConfig.fromY ?? 0,
+              exitPositionConfig.toY ?? 0,
+              exitPositionConfig.easing
+            );
+          }
+        }
+      }
+      return {
+        values: {
+          blur,
+          opacity,
+          scale,
+          translateX,
+          translateY,
+          rotateX,
+          rotateY,
+          rotateZ,
+          perspective
+        }
+      };
+    }, [props, frame, fps]);
+  };
+
+  // src/components/MockupFrame/hooks/useStyleComposer.ts
+  var useStyleComposer2 = () => {
+    const composeStyles = (values, scaleOrigin) => {
+      const {
+        blur,
+        opacity,
+        scale,
+        translateX,
+        translateY,
+        rotateX,
+        rotateY,
+        rotateZ,
+        perspective
+      } = values;
+      const transforms = [];
+      if (rotateX !== 0 || rotateY !== 0) {
+        transforms.push(`perspective(${perspective}px)`);
+      }
+      if (translateX !== 0 || translateY !== 0) {
+        transforms.push(`translate3d(${translateX}px, ${translateY}px, 0)`);
+      }
+      if (scale !== 1) {
+        transforms.push(`scale(${scale})`);
+      }
+      if (rotateX !== 0) {
+        transforms.push(`rotateX(${rotateX}deg)`);
+      }
+      if (rotateY !== 0) {
+        transforms.push(`rotateY(${rotateY}deg)`);
+      }
+      if (rotateZ !== 0) {
+        transforms.push(`rotateZ(${rotateZ}deg)`);
+      }
+      const styles = {
+        opacity
+      };
+      if (blur > 0) {
+        styles.filter = `blur(${blur}px)`;
+      }
+      if (transforms.length > 0) {
+        styles.transform = transforms.join(" ");
+      }
+      if (scaleOrigin && scale !== 1) {
+        styles.transformOrigin = scaleOrigin;
+      }
+      if (rotateX !== 0 || rotateY !== 0) {
+        styles.transformStyle = "preserve-3d";
+      }
+      return styles;
+    };
+    const getTransformString = (values) => {
+      const {
+        scale,
+        translateX,
+        translateY,
+        rotateX,
+        rotateY,
+        rotateZ,
+        perspective
+      } = values;
+      const transforms = [];
+      if (rotateX !== 0 || rotateY !== 0) {
+        transforms.push(`perspective(${perspective}px)`);
+      }
+      if (translateX !== 0 || translateY !== 0) {
+        transforms.push(`translate3d(${translateX}px, ${translateY}px, 0)`);
+      }
+      if (scale !== 1) {
+        transforms.push(`scale(${scale})`);
+      }
+      if (rotateX !== 0) {
+        transforms.push(`rotateX(${rotateX}deg)`);
+      }
+      if (rotateY !== 0) {
+        transforms.push(`rotateY(${rotateY}deg)`);
+      }
+      if (rotateZ !== 0) {
+        transforms.push(`rotateZ(${rotateZ}deg)`);
+      }
+      return transforms.join(" ");
+    };
+    return { composeStyles, getTransformString };
+  };
+  var getScaleOrigin2 = (scaleConfig) => {
+    if (typeof scaleConfig === "object" && scaleConfig.origin) {
+      return scaleConfig.origin;
+    }
+    return void 0;
+  };
+
+  // src/components/MockupFrame/utils/glassEffects.ts
+  var DEFAULT_GLASS_CONFIG = {
+    blur: 20,
+    opacity: 0.5,
+    borderOpacity: 0.2
+  };
+  var getGlassStyles = (config, theme = "dark") => {
+    if (!config) return {};
+    const glassConfig = config === true ? DEFAULT_GLASS_CONFIG : { ...DEFAULT_GLASS_CONFIG, ...config };
+    const { blur, opacity, borderOpacity } = glassConfig;
+    const backgroundColor = theme === "dark" ? `rgba(0, 0, 0, ${opacity})` : `rgba(255, 255, 255, ${opacity})`;
+    const borderColor = theme === "dark" ? `rgba(255, 255, 255, ${borderOpacity})` : `rgba(0, 0, 0, ${borderOpacity})`;
+    return {
+      backgroundColor,
+      backdropFilter: `blur(${blur}px)`,
+      WebkitBackdropFilter: `blur(${blur}px)`,
+      // Safari support
+      border: `1px solid ${borderColor}`
+    };
+  };
+  var getGlareStyles = (enabled) => {
+    if (!enabled) return {};
+    return {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      pointerEvents: "none",
+      background: "linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 30%, transparent 50%)",
+      borderRadius: "inherit"
+    };
+  };
+  var getFrameShadowStyles = (theme = "dark", intensity = "medium") => {
+    const shadowIntensities = {
+      light: {
+        dark: "0 4px 20px rgba(0, 0, 0, 0.3)",
+        light: "0 4px 20px rgba(0, 0, 0, 0.15)"
+      },
+      medium: {
+        dark: "0 8px 40px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3)",
+        light: "0 8px 40px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.1)"
+      },
+      heavy: {
+        dark: "0 12px 60px rgba(0, 0, 0, 0.6), 0 8px 20px rgba(0, 0, 0, 0.4)",
+        light: "0 12px 60px rgba(0, 0, 0, 0.25), 0 8px 20px rgba(0, 0, 0, 0.15)"
+      }
+    };
+    return {
+      boxShadow: shadowIntensities[intensity][theme]
+    };
+  };
+
+  // src/components/MockupFrame/utils/deviceFrames/BrowserFrame.tsx
   var import_jsx_runtime16 = __require("react/jsx-runtime");
-  var IntegrationTestScene = () => {
-    const frame = (0, import_remotion18.useCurrentFrame)();
-    const { fps } = (0, import_remotion18.useVideoConfig)();
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(import_remotion18.AbsoluteFill, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Background, { preset: "deepPurpleAurora" }),
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+  var BrowserFrame = ({
+    children,
+    theme,
+    glare = false,
+    width,
+    height,
+    style,
+    config = {}
+  }) => {
+    const { borderGradient } = config;
+    const spec = deviceSpecs.browser;
+    const frameWidth = width || spec.defaultWidth;
+    const frameHeight = height || spec.defaultHeight;
+    const colors = {
+      dark: {
+        background: "#1E1E1E",
+        border: "rgba(255, 255, 255, 0.08)"
+      },
+      light: {
+        background: "#ffffff",
+        border: "rgba(0, 0, 0, 0.08)"
+      }
+    };
+    const c = colors[theme];
+    const baseFrameStyle = {
+      width: borderGradient ? "100%" : frameWidth,
+      height: borderGradient ? "100%" : frameHeight,
+      backgroundColor: c.background,
+      borderRadius: spec.bezelRadius,
+      overflow: "hidden",
+      display: "flex",
+      flexDirection: "column",
+      border: `1px solid ${c.border}`
+    };
+    const contentStyle = {
+      flex: 1,
+      position: "relative",
+      overflow: "hidden",
+      minHeight: 0,
+      backgroundColor: c.background,
+      borderRadius: spec.bezelRadius
+      // Ensure content respects border radius
+    };
+    const contentInnerStyle = {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0
+    };
+    const renderInnerFrame = () => /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: baseFrameStyle, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: contentStyle, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: contentInnerStyle, children }),
+      glare && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: getGlareStyles(true) })
+    ] }) });
+    if (borderGradient) {
+      const borderWidth = 2;
+      const gradientBg = borderGradient === true ? "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" : borderGradient;
+      const wrapperStyle = {
+        width: frameWidth + borderWidth * 2,
+        height: frameHeight + borderWidth * 2,
+        background: gradientBg,
+        borderRadius: spec.bezelRadius + borderWidth,
+        padding: borderWidth,
+        display: "flex",
+        ...getFrameShadowStyles(theme, "heavy"),
+        ...style
+        // Apply external positioning/sizing styles to wrapper
+      };
+      return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: wrapperStyle, children: renderInnerFrame() });
+    }
+    const standardStyle = {
+      ...baseFrameStyle,
+      ...getFrameShadowStyles(theme, "heavy"),
+      ...style
+    };
+    return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: standardStyle, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { style: contentStyle, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: contentInnerStyle, children }),
+      glare && /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { style: getGlareStyles(true) })
+    ] }) });
+  };
+
+  // src/components/MockupFrame/utils/deviceFrames/IPhoneFrame.tsx
+  var import_jsx_runtime17 = __require("react/jsx-runtime");
+  var IPHONE_CUTOUTS = {
+    // iPhone 15 Dynamic Island - pill-shaped cutout
+    iphone15: `
+    <svg width="0" height="0">
+      <defs>
+        <clipPath id="iphone15-screen" clipPathUnits="objectBoundingBox">
+          <path d="
+            M 0.5 0
+            L 0.62 0
+            C 0.63 0, 0.64 0.008, 0.64 0.02
+            L 0.64 0.025
+            C 0.64 0.04, 0.62 0.055, 0.58 0.055
+            L 0.42 0.055
+            C 0.38 0.055, 0.36 0.04, 0.36 0.025
+            L 0.36 0.02
+            C 0.36 0.008, 0.37 0, 0.38 0
+            L 0.5 0
+            M 0 0 L 1 0 L 1 1 L 0 1 Z
+          " fill-rule="evenodd"/>
+        </clipPath>
+      </defs>
+    </svg>
+  `,
+    // iPhone Notch - classic notch design
+    "iphone-notch": `
+    <svg width="0" height="0">
+      <defs>
+        <clipPath id="iphone-notch-screen" clipPathUnits="objectBoundingBox">
+          <path d="
+            M 0.5 0
+            L 0.72 0
+            C 0.73 0, 0.74 0.01, 0.74 0.025
+            L 0.74 0.045
+            C 0.74 0.055, 0.72 0.065, 0.7 0.065
+            L 0.3 0.065
+            C 0.28 0.065, 0.26 0.055, 0.26 0.045
+            L 0.26 0.025
+            C 0.26 0.01, 0.27 0, 0.28 0
+            L 0.5 0
+            M 0 0 L 1 0 L 1 1 L 0 1 Z
+          " fill-rule="evenodd"/>
+        </clipPath>
+      </defs>
+    </svg>
+  `
+  };
+  var IPhoneFrame = ({
+    children,
+    theme,
+    glare = false,
+    variant,
+    width,
+    height,
+    style
+  }) => {
+    const spec = deviceSpecs[variant];
+    const frameWidth = width || spec.defaultWidth;
+    const frameHeight = height || spec.defaultHeight;
+    const bezelThickness = Math.round(frameWidth * 0.03);
+    const screenWidth = frameWidth - bezelThickness * 2;
+    const screenHeight = frameHeight - bezelThickness * 2;
+    const colors = {
+      dark: {
+        bezel: "#1c1c1e",
+        bezelInner: "#000000",
+        accent: "#2c2c2e"
+      },
+      light: {
+        bezel: "#e5e5e7",
+        bezelInner: "#f5f5f7",
+        accent: "#d1d1d6"
+      }
+    };
+    const c = colors[theme];
+    const containerStyle = {
+      width: frameWidth,
+      height: frameHeight,
+      backgroundColor: c.bezel,
+      borderRadius: spec.bezelRadius,
+      padding: bezelThickness,
+      boxSizing: "border-box",
+      position: "relative",
+      ...getFrameShadowStyles(theme, "heavy"),
+      ...style
+    };
+    const screenContainerStyle = {
+      width: screenWidth,
+      height: screenHeight,
+      borderRadius: spec.bezelRadius - bezelThickness,
+      overflow: "hidden",
+      position: "relative",
+      backgroundColor: "#000"
+    };
+    const screenStyle = {
+      width: "100%",
+      height: "100%",
+      position: "relative",
+      overflow: "hidden"
+    };
+    const contentStyle = {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0
+    };
+    const cutoutStyle = {
+      position: "absolute",
+      top: 0,
+      left: "50%",
+      transform: "translateX(-50%)",
+      zIndex: 10,
+      pointerEvents: "none"
+    };
+    const dynamicIslandWidth = variant === "iphone15" ? screenWidth * 0.28 : screenWidth * 0.44;
+    const dynamicIslandHeight = variant === "iphone15" ? 34 : 30;
+    const dynamicIslandTop = variant === "iphone15" ? 12 : 0;
+    const dynamicIslandRadius = variant === "iphone15" ? 17 : 0;
+    const dynamicIslandStyle = variant === "iphone15" ? {
+      ...cutoutStyle,
+      top: dynamicIslandTop,
+      width: dynamicIslandWidth,
+      height: dynamicIslandHeight,
+      backgroundColor: "#000",
+      borderRadius: dynamicIslandRadius
+    } : {
+      ...cutoutStyle,
+      width: dynamicIslandWidth,
+      height: dynamicIslandHeight,
+      backgroundColor: "#000",
+      borderBottomLeftRadius: 20,
+      borderBottomRightRadius: 20
+    };
+    return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: containerStyle, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        "div",
+        {
+          dangerouslySetInnerHTML: { __html: IPHONE_CUTOUTS[variant] },
+          style: { position: "absolute", width: 0, height: 0 }
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: screenContainerStyle, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { style: screenStyle, children: [
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: contentStyle, children }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: dynamicIslandStyle }),
+        glare && /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { style: getGlareStyles(true) })
+      ] }) }),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        "div",
+        {
+          style: {
+            position: "absolute",
+            right: -2,
+            top: frameHeight * 0.25,
+            width: 3,
+            height: 35,
+            backgroundColor: c.accent,
+            borderRadius: 2
+          }
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        "div",
+        {
+          style: {
+            position: "absolute",
+            left: -2,
+            top: frameHeight * 0.2,
+            width: 3,
+            height: 25,
+            backgroundColor: c.accent,
+            borderRadius: 2
+          }
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        "div",
+        {
+          style: {
+            position: "absolute",
+            left: -2,
+            top: frameHeight * 0.32,
+            width: 3,
+            height: 50,
+            backgroundColor: c.accent,
+            borderRadius: 2
+          }
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        "div",
+        {
+          style: {
+            position: "absolute",
+            left: -2,
+            top: frameHeight * 0.42,
+            width: 3,
+            height: 50,
+            backgroundColor: c.accent,
+            borderRadius: 2
+          }
+        }
+      )
+    ] });
+  };
+
+  // src/components/MockupFrame/utils/deviceFrames/CardFrame.tsx
+  var import_jsx_runtime18 = __require("react/jsx-runtime");
+  var CardFrame = ({
+    children,
+    theme,
+    glare = false,
+    glass = true,
+    width,
+    height,
+    style
+  }) => {
+    const spec = deviceSpecs.card;
+    const frameWidth = width || spec.defaultWidth;
+    const frameHeight = height || spec.defaultHeight;
+    const glassStyles = getGlassStyles(glass, theme);
+    const solidBackground = theme === "dark" ? {
+      backgroundColor: "#1c1c1e",
+      border: "1px solid rgba(255, 255, 255, 0.1)"
+    } : { backgroundColor: "#ffffff", border: "1px solid rgba(0, 0, 0, 0.1)" };
+    const containerStyle = {
+      width: frameWidth,
+      height: frameHeight,
+      borderRadius: spec.bezelRadius,
+      overflow: "hidden",
+      position: "relative",
+      ...glass ? glassStyles : solidBackground,
+      ...getFrameShadowStyles(theme, "medium"),
+      ...style
+    };
+    const contentStyle = {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0
+    };
+    return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { style: containerStyle, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: contentStyle, children }),
+      glare && /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { style: getGlareStyles(true) })
+    ] });
+  };
+
+  // src/components/MockupFrame/hooks/useFrameRenderer.tsx
+  var import_jsx_runtime19 = __require("react/jsx-runtime");
+  var useFrameRenderer = ({
+    type,
+    theme,
+    glare,
+    browserConfig,
+    glass,
+    width,
+    height
+  }) => {
+    const renderFrame = (children) => {
+      if (type === "plain") {
+        return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+          "div",
+          {
+            style: {
+              width: width || "auto",
+              height: height || "auto",
+              position: "relative"
+            },
+            children
+          }
+        );
+      }
+      if (type === "browser") {
+        return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+          BrowserFrame,
+          {
+            theme,
+            glare,
+            config: browserConfig,
+            width,
+            height,
+            children
+          }
+        );
+      }
+      if (type === "iphone15" || type === "iphone-notch") {
+        return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+          IPhoneFrame,
+          {
+            theme,
+            glare,
+            variant: type,
+            width,
+            height,
+            children
+          }
+        );
+      }
+      if (type === "card") {
+        return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
+          CardFrame,
+          {
+            theme,
+            glare,
+            glass,
+            width,
+            height,
+            children
+          }
+        );
+      }
+      return children;
+    };
+    return { renderFrame };
+  };
+
+  // src/components/MockupFrame/MockupFrame.tsx
+  var import_jsx_runtime20 = __require("react/jsx-runtime");
+  var MockupFrame = (props) => {
+    const {
+      src,
+      children,
+      type = "plain",
+      theme = "dark",
+      glass,
+      glare = false,
+      browserConfig,
+      width,
+      height,
+      zIndex,
+      style,
+      contentStyle,
+      scale: scaleProp
+    } = props;
+    const deviceSpec = getDeviceSpec(type);
+    const frameWidth = width || deviceSpec.defaultWidth;
+    const frameHeight = height || deviceSpec.defaultHeight;
+    const { values } = useAnimationCalculator2(props);
+    const { composeStyles } = useStyleComposer2();
+    const scaleOrigin = getScaleOrigin2(scaleProp);
+    const animationStyles = composeStyles(values, scaleOrigin);
+    const { renderFrame } = useFrameRenderer({
+      type,
+      theme,
+      glare,
+      browserConfig,
+      glass,
+      width: frameWidth,
+      height: frameHeight
+    });
+    const renderContent = () => {
+      if (src) {
+        const isVideo = src.endsWith(".mp4") || src.endsWith(".webm") || src.endsWith(".mov") || src.includes("video");
+        if (isVideo) {
+          return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+            import_remotion20.Video,
+            {
+              src,
+              style: {
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                ...contentStyle
+              }
+            }
+          );
+        }
+        return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
+          import_remotion20.Img,
+          {
+            src,
+            style: {
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              ...contentStyle
+            }
+          }
+        );
+      }
+      return children;
+    };
+    const containerStyles = {
+      display: "inline-block",
+      ...animationStyles,
+      ...zIndex !== void 0 && { zIndex },
+      ...style
+    };
+    return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("div", { style: containerStyles, children: renderFrame(renderContent()) });
+  };
+
+  // src/components/MockupFrame/FrameSequence.tsx
+  var import_react5 = __toESM(__require("react"));
+  var import_remotion21 = __require("remotion");
+  var import_jsx_runtime21 = __require("react/jsx-runtime");
+
+  // src/components/Layout/MotionContainer.tsx
+  var import_remotion27 = __require("remotion");
+
+  // ../node_modules/remotion-animated/dist/esm/index.mjs
+  var import_react6 = __require("react");
+  var import_remotion22 = __require("remotion");
+  var import_jsx_runtime22 = __require("react/jsx-runtime");
+  var import_remotion23 = __require("remotion");
+  var import_remotion24 = __require("remotion");
+  var import_remotion25 = __require("remotion");
+  var import_remotion26 = __require("remotion");
+  var reductionStrategyForProperty = (property) => {
+    switch (property) {
+      case "translateX":
+      case "translateY":
+      case "translateZ":
+      case "rotateX":
+      case "rotateY":
+      case "rotateZ":
+        return 0;
+      case "scaleX":
+      case "scaleY":
+      case "scaleZ":
+        return 1;
+      case "opacity":
+      case "width":
+      case "height":
+      default:
+        return 2;
+    }
+  };
+  var ReductionStrategy_default = reductionStrategyForProperty;
+  var reduceComputedValues = (valueLists) => valueLists.reduce((acc, valueList) => {
+    const properties = Object.keys(valueList);
+    const reducedValues = { ...acc };
+    properties.forEach((property) => {
+      let reducedValue = valueList[property];
+      if (acc[property] !== void 0 && reducedValue !== void 0) {
+        reducedValue = reduceValue(property, reducedValue, acc);
+      }
+      reducedValues[property] = reducedValue;
+    });
+    return reducedValues;
+  }, {});
+  function reduceValue(property, reducedValue, acc) {
+    const strategy = ReductionStrategy_default(property);
+    switch (strategy) {
+      case 0:
+        return (acc[property] ?? 0) + (reducedValue ?? 0);
+      case 1:
+        return (acc[property] ?? 1) * (reducedValue ?? 1);
+      case 2:
+      default:
+        return reducedValue;
+    }
+  }
+  var AnimationReducer_default = reduceComputedValues;
+  var value = (currentValue, defaultValue) => currentValue === void 0 ? defaultValue : currentValue.toFixed(4);
+  var transformStyles = (values) => {
+    let translate;
+    let scale;
+    let rotateX;
+    let rotateY;
+    let rotateZ;
+    if (values.translateX || values.translateY || values.translateZ) {
+      const translateX = `${value(values.translateX, 0)}px`;
+      const translateY = `${value(values.translateY, 0)}px`;
+      const translateZ = `${value(values.translateZ, 0)}px`;
+      translate = `translate3d(${translateX}, ${translateY}, ${translateZ})`;
+    }
+    if (values.scaleX !== void 0 || values.scaleY !== void 0 || values.scaleZ !== void 0) {
+      const scaleX = value(values.scaleX, 1);
+      const scaleY = value(values.scaleY, 1);
+      const scaleZ = value(values.scaleZ, 1);
+      scale = `scale3d(${scaleX}, ${scaleY}, ${scaleZ})`;
+    }
+    if (values.rotateX)
+      rotateX = `rotateX(${value(values.rotateX, 0)}deg)`;
+    if (values.rotateY)
+      rotateY = `rotateY(${value(values.rotateY, 0)}deg)`;
+    if (values.rotateZ)
+      rotateZ = `rotateZ(${value(values.rotateZ, 0)}deg)`;
+    if (!translate && !scale && !rotateX && !rotateY && !rotateZ) {
+      return null;
+    }
+    let transform = "";
+    if (translate)
+      transform += translate;
+    if (scale)
+      transform += ` ${scale}`;
+    if (rotateX)
+      transform += ` ${rotateX}`;
+    if (rotateY)
+      transform += ` ${rotateY}`;
+    if (rotateZ)
+      transform += ` ${rotateZ}`;
+    return transform.trim();
+  };
+  var TransformStyles_default = transformStyles;
+  var stylesFromValues = (values) => {
+    const properties = {};
+    const transform = TransformStyles_default(values);
+    if (values.opacity !== void 0)
+      properties.opacity = values.opacity;
+    if (values.width !== void 0)
+      properties.width = values.width;
+    if (values.height !== void 0)
+      properties.height = values.height;
+    if (transform)
+      properties.transform = transform;
+    return properties;
+  };
+  var AnimatedStyles_default = stylesFromValues;
+  var animatedStylesFromAnimations = (animations, currentFrame, fps) => {
+    const currentAnimations = animations.filter((animation) => animation.in <= currentFrame);
+    const computedValues = currentAnimations.map((animation) => animation.valuesAt(currentFrame, fps) ?? {});
+    const animatedValues = AnimationReducer_default(computedValues);
+    return AnimatedStyles_default(animatedValues);
+  };
+  var Animated = (props) => {
+    const frame = (0, import_remotion22.useCurrentFrame)();
+    const { fps } = (0, import_remotion22.useVideoConfig)();
+    const { animations } = props;
+    const animationFrame = frame - (props.delay ?? 0);
+    const animatedStyles = (0, import_react6.useMemo)(() => animatedStylesFromAnimations(animations, animationFrame, fps), [animationFrame, fps, animations]);
+    const isBeforeInPoint = props.in && frame < props.in;
+    const isAfterOutPoint = props.out && frame > props.out;
+    if (isBeforeInPoint || isAfterOutPoint) {
+      return null;
+    }
+    return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", {
+      className: props.className,
+      style: {
+        ...props.style,
+        ...animatedStyles,
+        position: props.absolute ? "absolute" : void 0
+      },
+      children: props.children
+    });
+  };
+  var Animated_default = Animated;
+  var CustomSpring = (withDefaultConfig) => (frame, fps, options = {}) => {
+    const { start, ...overrideSpringConfig } = options;
+    const driver = (0, import_remotion23.spring)({
+      fps,
+      frame: frame - (start ?? 0),
+      durationInFrames: options.duration,
+      config: {
+        ...withDefaultConfig,
+        ...overrideSpringConfig
+      }
+    });
+    return { driver };
+  };
+  var CustomSpring_default = CustomSpring;
+  var DefaultSpring = CustomSpring_default({
+    stiffness: 75,
+    damping: 200,
+    overshootClamping: true
+  });
+  var DefaultSpring_default = DefaultSpring;
+  var easingForOptions = (options, defaultingTo = DefaultSpring_default) => {
+    if ("ease" in options && typeof options.ease === "function")
+      return options.ease;
+    return defaultingTo;
+  };
+  var valueWithEasing = (frame, fps, options, defaultingTo = DefaultSpring_default) => {
+    const easingFunction = easingForOptions(options, defaultingTo);
+    const value2 = easingFunction(frame, fps, options);
+    if (value2.driver === void 0) {
+      throw new TypeError("Easing function must return a driver value. You may have imported an easing function from Remotion directly, rather than from the `Ease` collection of `remotion-animated`. If you intended to use a Remotion easing function directly, wrap it with the `CustomEasing` function first.");
+    }
+    return value2.driver;
+  };
+  var interpolateAnimation = (input, to, initialValue = 0, defaultValue = initialValue, clamp = false) => {
+    if (to === void 0)
+      return defaultValue;
+    return (0, import_remotion24.interpolate)(input, [0, 1], [initialValue, to], {
+      extrapolateLeft: clamp ? "clamp" : void 0,
+      extrapolateRight: clamp ? "clamp" : void 0
+    });
+  };
+  var AnimationInterpolation_default = interpolateAnimation;
+  var Fade = (options) => {
+    const start = options.start ?? 0;
+    return {
+      in: start,
+      valuesAt: (frame, fps) => {
+        const input = valueWithEasing(frame, fps, options);
+        const initial = options.initial ?? 1;
+        const opacity = AnimationInterpolation_default(input, options.to, initial, initial, true);
+        return { opacity };
+      }
+    };
+  };
+  var Fade_default = Fade;
+  var Move = (options) => {
+    return {
+      in: options.start ?? 0,
+      valuesAt: (frame, fps) => {
+        const input = valueWithEasing(frame, fps, options);
+        const translateX = AnimationInterpolation_default(input, options.x, options.initialX);
+        const translateY = AnimationInterpolation_default(input, options.y, options.initialY);
+        const translateZ = AnimationInterpolation_default(input, options.z, options.initialZ);
+        return { translateX, translateY, translateZ };
+      }
+    };
+  };
+  var Move_default = Move;
+  var Scale = (options) => {
+    return {
+      in: options.start ?? 0,
+      valuesAt: (frame, fps) => {
+        const input = valueWithEasing(frame, fps, options);
+        const initial = options.initial ?? 1;
+        const initialX = options.initialX ?? initial;
+        const initialY = options.initialY ?? initial;
+        const initialZ = options.initialZ ?? initial;
+        const scaleX = AnimationInterpolation_default(input, options.x ?? options.by, initialX);
+        const scaleY = AnimationInterpolation_default(input, options.y ?? options.by, initialY);
+        const scaleZ = AnimationInterpolation_default(input, options.z, initialZ);
+        return { scaleX, scaleY, scaleZ };
+      }
+    };
+  };
+  var Scale_default = Scale;
+  var DEFAULT_DURATION = 15;
+  var CustomEasing = (easingFunction) => (frame, _fps, options = {}) => {
+    const { start } = options;
+    const durationInFrames = options.duration ?? DEFAULT_DURATION;
+    const driver = (0, import_remotion25.interpolate)(frame - (start ?? 0), [0, durationInFrames], [0, 1], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: easingFunction
+    });
+    return { driver };
+  };
+  var CustomEasing_default = CustomEasing;
+  var Ease;
+  ((Ease2) => {
+    Ease2.Linear = CustomEasing_default(import_remotion26.Easing.linear);
+    Ease2.QuadraticIn = CustomEasing_default(import_remotion26.Easing.in(import_remotion26.Easing.quad));
+    Ease2.QuadraticOut = CustomEasing_default(import_remotion26.Easing.out(import_remotion26.Easing.quad));
+    Ease2.QuadraticInOut = CustomEasing_default(import_remotion26.Easing.inOut(import_remotion26.Easing.quad));
+    Ease2.CubicIn = CustomEasing_default(import_remotion26.Easing.in(import_remotion26.Easing.cubic));
+    Ease2.CubicOut = CustomEasing_default(import_remotion26.Easing.out(import_remotion26.Easing.cubic));
+    Ease2.CubicInOut = CustomEasing_default(import_remotion26.Easing.inOut(import_remotion26.Easing.cubic));
+    Ease2.QuarticIn = CustomEasing_default(import_remotion26.Easing.in(import_remotion26.Easing.poly(4)));
+    Ease2.QuarticOut = CustomEasing_default(import_remotion26.Easing.out(import_remotion26.Easing.poly(4)));
+    Ease2.QuarticInOut = CustomEasing_default(import_remotion26.Easing.inOut(import_remotion26.Easing.poly(4)));
+    Ease2.QuinticIn = CustomEasing_default(import_remotion26.Easing.in(import_remotion26.Easing.poly(5)));
+    Ease2.QuinticOut = CustomEasing_default(import_remotion26.Easing.out(import_remotion26.Easing.poly(5)));
+    Ease2.QuinticInOut = CustomEasing_default(import_remotion26.Easing.inOut(import_remotion26.Easing.poly(5)));
+    Ease2.SinusoidalIn = CustomEasing_default(import_remotion26.Easing.in(import_remotion26.Easing.sin));
+    Ease2.SinusoidalOut = CustomEasing_default(import_remotion26.Easing.out(import_remotion26.Easing.sin));
+    Ease2.SinusoidalInOut = CustomEasing_default(import_remotion26.Easing.inOut(import_remotion26.Easing.sin));
+    Ease2.CircularIn = CustomEasing_default(import_remotion26.Easing.in(import_remotion26.Easing.circle));
+    Ease2.CircularOut = CustomEasing_default(import_remotion26.Easing.out(import_remotion26.Easing.circle));
+    Ease2.CircularInOut = CustomEasing_default(import_remotion26.Easing.inOut(import_remotion26.Easing.circle));
+    Ease2.ExponentialIn = CustomEasing_default(import_remotion26.Easing.in(import_remotion26.Easing.exp));
+    Ease2.ExponentialOut = CustomEasing_default(import_remotion26.Easing.out(import_remotion26.Easing.exp));
+    Ease2.ExponentialInOut = CustomEasing_default(import_remotion26.Easing.inOut(import_remotion26.Easing.exp));
+    Ease2.BounceIn = CustomEasing_default(import_remotion26.Easing.in(import_remotion26.Easing.bounce));
+    Ease2.BounceOut = CustomEasing_default(import_remotion26.Easing.out(import_remotion26.Easing.bounce));
+    Ease2.BounceInOut = CustomEasing_default(import_remotion26.Easing.inOut(import_remotion26.Easing.bounce));
+    Ease2.Bezier = (x1, y1, x2, y2) => CustomEasing_default(import_remotion26.Easing.bezier(x1, y1, x2, y2));
+  })(Ease ||= {});
+
+  // src/components/Layout/MotionContainer.tsx
+  var import_jsx_runtime23 = __require("react/jsx-runtime");
+  function buildEntranceAnimations(initial, delay, duration, distance, springConfig) {
+    const { damping = 15, stiffness = 100, mass = 1 } = springConfig;
+    const animations = [];
+    animations.push(
+      Fade_default({ to: 1, initial: 0, start: delay, duration, damping: 100 })
+    );
+    switch (initial) {
+      case "offscreen-bottom":
+        animations.push(
+          Move_default({ y: 0, initialY: distance, start: delay, duration, damping, stiffness, mass })
+        );
+        break;
+      case "offscreen-top":
+        animations.push(
+          Move_default({ y: 0, initialY: -distance, start: delay, duration, damping, stiffness, mass })
+        );
+        break;
+      case "offscreen-left":
+        animations.push(
+          Move_default({ x: 0, initialX: -distance, start: delay, duration, damping, stiffness, mass })
+        );
+        break;
+      case "offscreen-right":
+        animations.push(
+          Move_default({ x: 0, initialX: distance, start: delay, duration, damping, stiffness, mass })
+        );
+        break;
+      case "scale-zero":
+        animations.push(
+          Scale_default({ by: 1, initial: 0, start: delay, duration, damping: 12, stiffness: 100 })
+        );
+        break;
+      case "blur":
+        animations.push(
+          Scale_default({ by: 1, initial: 0.95, start: delay, duration, damping: 100 })
+        );
+        break;
+    }
+    return animations;
+  }
+  function buildExitAnimations(exit, exitStartFrame, exitDuration, distance, springConfig) {
+    const { damping = 15, stiffness = 100, mass = 1 } = springConfig;
+    const animations = [];
+    animations.push(
+      Fade_default({ to: 0, initial: 1, start: exitStartFrame, duration: exitDuration, damping: 100 })
+    );
+    switch (exit) {
+      case "slide-down":
+        animations.push(
+          Move_default({ y: distance, initialY: 0, start: exitStartFrame, duration: exitDuration, damping, stiffness, mass })
+        );
+        break;
+      case "slide-up":
+        animations.push(
+          Move_default({ y: -distance, initialY: 0, start: exitStartFrame, duration: exitDuration, damping, stiffness, mass })
+        );
+        break;
+      case "slide-left":
+        animations.push(
+          Move_default({ x: -distance, initialX: 0, start: exitStartFrame, duration: exitDuration, damping, stiffness, mass })
+        );
+        break;
+      case "slide-right":
+        animations.push(
+          Move_default({ x: distance, initialX: 0, start: exitStartFrame, duration: exitDuration, damping, stiffness, mass })
+        );
+        break;
+      case "scale-down":
+        animations.push(
+          Scale_default({ by: 0, initial: 1, start: exitStartFrame, duration: exitDuration, damping: 12, stiffness: 100 })
+        );
+        break;
+      case "blur-out":
+        animations.push(
+          Scale_default({ by: 0.95, initial: 1, start: exitStartFrame, duration: exitDuration, damping: 100 })
+        );
+        break;
+    }
+    return animations;
+  }
+  var MotionContainer = ({
+    delay = 0,
+    duration = 30,
+    initial = "hidden",
+    exit,
+    exitStartFrame,
+    exitDuration = 20,
+    distance = 100,
+    springConfig = { damping: 15, stiffness: 100, mass: 1 },
+    className,
+    style,
+    fill = false,
+    children
+  }) => {
+    const entranceAnimations = buildEntranceAnimations(
+      initial,
+      delay,
+      duration,
+      distance,
+      springConfig
+    );
+    const exitAnimations = exit && exitStartFrame !== void 0 ? buildExitAnimations(exit, exitStartFrame, exitDuration, distance, springConfig) : [];
+    const allAnimations = [...entranceAnimations, ...exitAnimations];
+    const Wrapper = fill ? import_remotion27.AbsoluteFill : "div";
+    return /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(Animated_default, { animations: allAnimations, children: /* @__PURE__ */ (0, import_jsx_runtime23.jsx)(Wrapper, { className, style, children }) });
+  };
+
+  // src/components/Layout/BentoGrid.tsx
+  var import_react7 = __toESM(__require("react"));
+  var import_jsx_runtime24 = __require("react/jsx-runtime");
+
+  // src/scenes/app-promo-video/FeatureSmartSchedule.tsx
+  var import_jsx_runtime25 = __require("react/jsx-runtime");
+  var FeaturePill = ({ children }) => {
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+      "div",
+      {
+        style: {
+          backgroundColor: "#E0F2F7",
+          // Light blue
+          padding: "12px 24px",
+          borderRadius: 999,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontWeight: 600,
+          color: "#212529",
+          // Dark text
+          fontSize: 28,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+        },
+        children
+      }
+    );
+  };
+  var FeatureSmartSchedule = () => {
+    const frame = (0, import_remotion28.useCurrentFrame)();
+    const { fps, width, height } = (0, import_remotion28.useVideoConfig)();
+    const mockupEntryProgress = (0, import_remotion28.spring)({
+      frame,
+      fps,
+      config: { damping: 20, stiffness: 200 },
+      // Snappy spring
+      delay: 0
+    });
+    const rotateX = (0, import_remotion28.interpolate)(
+      frame,
+      [0, 40],
+      [-10, 0],
+      { extrapolateRight: "clamp" }
+    );
+    const rotateY = (0, import_remotion28.interpolate)(
+      frame,
+      [0, 40],
+      [0, 0],
+      // Only X rotation specified
+      { extrapolateRight: "clamp" }
+    );
+    return /* @__PURE__ */ (0, import_jsx_runtime25.jsxs)(import_remotion28.AbsoluteFill, { style: { backgroundColor: "#F8F9FA" }, children: [
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(Background, { layers: [{ type: "solid", color: "#F8F9FA" }] }),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+        MotionContainer,
+        {
+          initial: "offscreen-right",
+          delay: 0,
+          duration: 40,
+          exit: "slide-right",
+          exitStartFrame: 120,
+          style: {
+            transform: `scale(${mockupEntryProgress}) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            transformOrigin: "center",
+            translateX: "-50%",
+            translateY: "-20px"
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+            MockupFrame,
+            {
+              type: "iphone15",
+              width: 300,
+              height: 600,
+              children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(import_remotion28.AbsoluteFill, { style: { backgroundColor: "#ffffff", borderRadius: 20, justifyContent: "center", alignItems: "center" }, children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)("p", { style: { color: "#ccc", fontSize: 20 }, children: "StudyFlow App" }) })
+            }
+          )
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+        MotionContainer,
+        {
+          initial: "scale-zero",
+          delay: 30,
+          duration: 25,
+          exit: "fade-out",
+          exitStartFrame: 125,
+          style: {
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            transform: "translateX(-50%) translateY(-250px)"
+          },
+          children: /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(FeaturePill, { children: "Effortless Scheduling" })
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
         AnimatedText,
         {
-          text: "Integration Test",
+          text: "Let AI optimize your study time.",
           preset: "fadeBlurIn",
+          startFrame: 50,
+          animationUnit: "full",
           anchor: "center",
-          fontSize: 72,
-          color: "#ffffff"
+          offsetY: 280,
+          fontSize: 24,
+          fontWeight: 400,
+          color: "#343A40",
+          exit: {
+            startFrame: 130,
+            opacity: { from: 1, to: 0, duration: 15 },
+            blur: { from: 0, to: 5, duration: 15 }
+          }
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime25.jsx)(
+        AnimatedText,
+        {
+          text: "Calculus Homework, Due Friday",
+          preset: "typewriter",
+          startFrame: 60,
+          stagger: 1.5,
+          animationUnit: "character",
+          anchor: "top-left",
+          offsetX: width / 2 - 300 / 2 + 50,
+          offsetY: height / 2 - 600 / 2 + 150,
+          fontSize: 22,
+          fontWeight: 500,
+          color: "#333",
+          exit: {
+            startFrame: 110,
+            opacity: { from: 1, to: 0, duration: 10 }
+          }
         }
       )
     ] });
