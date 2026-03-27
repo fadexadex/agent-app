@@ -18,6 +18,7 @@ interface BrandColorExtractorProps {
  */
 const BrandColorExtractor = ({ onColorsExtracted }: BrandColorExtractorProps) => {
   const [url, setUrl] = useState("");
+  const [bypassCache, setBypassCache] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [brandName, setBrandName] = useState<string | undefined>();
   const [colors, setColors] = useState<string[]>([]);
@@ -35,29 +36,54 @@ const BrandColorExtractor = ({ onColorsExtracted }: BrandColorExtractorProps) =>
       const res = await fetch("/api/brand/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: url.trim(), fresh: bypassCache }),
       });
 
-      const data = await res.json();
+      const raw = await res.text();
+      let data: {
+        success?: boolean;
+        message?: string;
+        colors?: string[];
+        brandName?: string;
+        logos?: string[];
+        backdrops?: string[];
+        error?: string;
+      } = {};
+      try {
+        data = raw ? (JSON.parse(raw) as typeof data) : {};
+      } catch {
+        toast.error(
+          res.status === 404
+            ? "Brand extract API not found. Use a local server with /api/brand or fix VITE_API_PROXY_TARGET."
+            : "Invalid response from server. Please try again.",
+        );
+        return;
+      }
+
+      if (!res.ok) {
+        toast.error(data.error || `Request failed (${res.status})`);
+        return;
+      }
 
       if (data.success) {
-        if (data.colors.length === 0) {
-          toast.error("No brand colors found for this website");
+        const colorList = data.colors ?? [];
+        if (colorList.length === 0) {
+          toast.error(data.message ?? "No brand colors found for this website");
           return;
         }
 
-        setColors(data.colors);
+        setColors(colorList);
         setBrandName(data.brandName);
 
         // Auto-select all colors
-        const allSelected = new Set(data.colors);
+        const allSelected = new Set(colorList);
         setSelectedColors(allSelected);
 
         // Notify parent with all colors selected
-        onColorsExtracted(data.colors, data.brandName);
+        onColorsExtracted(colorList, data.brandName);
 
         toast.success(
-          `Extracted ${data.colors.length} color${data.colors.length !== 1 ? 's' : ''} from ${data.brandName || 'website'}`
+          `Extracted ${colorList.length} color${colorList.length !== 1 ? 's' : ''} from ${data.brandName || 'website'}`
         );
       } else {
         toast.error(data.error || "Failed to extract colors");
@@ -149,9 +175,19 @@ const BrandColorExtractor = ({ onColorsExtracted }: BrandColorExtractorProps) =>
           </Button>
         </div>
 
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          We'll extract the brand's color palette from their website
-        </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Palette comes from theme tags, manifest, and logo colors (via OpenBrand).
+          </p>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer shrink-0">
+            <Checkbox
+              checked={bypassCache}
+              onCheckedChange={(v) => setBypassCache(v === true)}
+              disabled={isExtracting}
+            />
+            Bypass cache
+          </label>
+        </div>
       </div>
 
       {/* Results Section */}
