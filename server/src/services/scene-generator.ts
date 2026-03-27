@@ -123,10 +123,20 @@ export type ProgressEvent =
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
-function buildSystemPrompt(assets: string[] = [], brandColors: string[] = []): string {
+function buildSystemPrompt(
+  assets: string[] = [],
+  brandColors: string[] = [],
+  brandName?: string,
+): string {
   let assetInstruction = "";
   if (assets.length > 0) {
     assetInstruction = `\n\nThe user has uploaded the following assets:\n${assets.join("\n")}\nYou can reference these exact URLs in the scene elements (e.g., for MockupFrame, Image, or custom components). Utilize these assets directly in the scenes.`;
+  }
+
+  const trimmedBrand = brandName?.trim();
+  let brandInstruction = "";
+  if (trimmedBrand) {
+    brandInstruction = `\n\nBrand name (use for logos, titles, and CTA copy when appropriate): ${trimmedBrand}. Do not substitute a different company name.`;
   }
 
   let colorInstruction = "";
@@ -153,7 +163,7 @@ Rules:
 - For custom elements, set component to a Remotion component name (e.g. "FeaturePill", "VoiceIndicatorPill", "AnimatedText", "MockupFrame")
 - notes: concise exit order + stagger timing guidance (e.g. "Exit order: mockup first, label last. Stagger 3 frames.")
 - id: unique kebab-case slug per scene
-- Make element descriptions vivid and specific — the Remotion developer uses them to build the component${assetInstruction}${colorInstruction}`;
+- Make element descriptions vivid and specific — the Remotion developer uses them to build the component${assetInstruction}${brandInstruction}${colorInstruction}`;
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
@@ -164,6 +174,7 @@ export async function generateSceneScript(
   assets: string[] = [],
   brandColors: string[] = [],
   onProgress: (event: ProgressEvent) => void,
+  brandName?: string,
 ): Promise<void> {
   const google = createGoogleGenerativeAI({
     apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -211,7 +222,7 @@ export async function generateSceneScript(
     model: google(modelId),
     output: "array",
     schema: SceneSchema,
-    system: buildSystemPrompt(assets, brandColors),
+    system: buildSystemPrompt(assets, brandColors, brandName),
     messages: [
       { role: "user", content: mappedParts as any }
     ],

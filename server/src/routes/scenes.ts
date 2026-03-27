@@ -4,11 +4,12 @@ import { generateSceneScript, ProgressEvent } from "../services/scene-generator.
 const router = Router();
 
 router.post("/generate", async (req: Request, res: Response) => {
-  const { prompt, model, assets, brandColors } = req.body as {
+  const { prompt, model, assets, brandColors, brandName } = req.body as {
     prompt?: string;
     model?: string;
     assets?: string[];
     brandColors?: string[];
+    brandName?: string;
   };
 
   if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
@@ -28,7 +29,14 @@ router.post("/generate", async (req: Request, res: Response) => {
   };
 
   try {
-    await generateSceneScript(prompt.trim(), model, assets || [], brandColors || [], send);
+    await generateSceneScript(
+      prompt.trim(),
+      model,
+      assets || [],
+      brandColors || [],
+      send,
+      typeof brandName === "string" ? brandName : undefined,
+    );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[scenes/generate] error:", message);
