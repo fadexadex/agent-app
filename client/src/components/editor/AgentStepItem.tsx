@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Search, LayoutGrid, FileEdit, Check, ChevronRight, Play, Video } from "lucide-react";
+import { Brain, Search, LayoutGrid, FileEdit, Check, ChevronRight, Play, Video, Image as ImageIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { TextShimmer } from "@/components/ui/text-shimmer";
 import { AgentStep } from "@/lib/agentTypes";
@@ -25,6 +25,8 @@ const getStepIcon = (type: AgentStep["type"]) => {
       return Play;
     case "render":
       return Video;
+    case "image":
+      return ImageIcon;
     case "complete":
       return Check;
     default:
@@ -32,11 +34,24 @@ const getStepIcon = (type: AgentStep["type"]) => {
   }
 };
 
+const getFriendlyLabel = (step: AgentStep): string => {
+  const map: Record<string, string> = {
+    thinking: step.status === "complete" ? "Planned approach" : "Planning...",
+    explore: "Reviewing examples...",
+    generate: "Creating design...",
+    update: "Building scene...",
+    preview: "Setting up preview...",
+    render: step.status === "complete" ? "Video ready!" : "Creating video...",
+    image: step.status === "complete" ? "Image generated" : "Generating image...",
+  };
+  return map[step.type] || step.label;
+};
+
 const getCompletedLabel = (step: AgentStep): string => {
   if (step.type === "thinking" && step.duration) {
-    return `Thought for ${step.duration}s`;
+    return `Planned for ${step.duration}s`;
   }
-  return step.label;
+  return getFriendlyLabel(step);
 };
 
 const AgentStepItem = ({ step, isActive }: AgentStepItemProps) => {
@@ -50,12 +65,12 @@ const AgentStepItem = ({ step, isActive }: AgentStepItemProps) => {
       setIsOpen(true);
       setWasActive(true);
     } else if (wasActive) {
-      // Was active before, now not active - collapse it
-      setIsOpen(false);
+      const timer = setTimeout(() => setIsOpen(false), 500); // 500ms delay
+      return () => clearTimeout(timer);
     }
   }, [isActive, wasActive]);
 
-  const hasContent = step.streamingContent?.length || step.detail || step.files?.length || step.previewUrl;
+  const hasContent = step.streamingContent?.length || step.detail || step.files?.length || step.previewUrl || step.imageUrl || step.type === "image";
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -78,11 +93,11 @@ const AgentStepItem = ({ step, isActive }: AgentStepItemProps) => {
           <div className="flex-1 min-w-0">
             {isActive && step.status !== "complete" ? (
               <TextShimmer className="text-xs" duration={2} spread={30}>
-                {step.label}
+                {getFriendlyLabel(step)}
               </TextShimmer>
             ) : (
               <span className="text-xs text-muted-foreground">
-                {step.status === "complete" ? getCompletedLabel(step) : step.label}
+                {step.status === "complete" ? getCompletedLabel(step) : getFriendlyLabel(step)}
               </span>
             )}
           </div>
@@ -165,6 +180,30 @@ const AgentStepItem = ({ step, isActive }: AgentStepItemProps) => {
                   </a>
                 </div>
               )}
+
+              {/* Image preview */}
+              {step.imageUrl && (
+                <div className="mt-2">
+                  <img
+                    src={step.imageUrl}
+                    alt={step.imagePrompt || "Generated image"}
+                    className="rounded-md max-w-full h-auto max-h-32 object-contain"
+                  />
+                  {step.imagePrompt && (
+                    <p className="text-[10px] text-muted-foreground/70 mt-1 italic truncate">
+                      "{step.imagePrompt}"
+                    </p>
+                  )}
+                </div>
+              )}
+              
+              {/* Loading animation for image generation */}
+              {step.type === "image" && step.status === "active" && (
+                <div className="mt-2 w-full h-24 rounded-md bg-muted animate-pulse flex items-center justify-center">
+                  <span className="text-xs text-muted-foreground">Generating image...</span>
+                </div>
+              )}
+
             </motion.div>
           )}
         </AnimatePresence>

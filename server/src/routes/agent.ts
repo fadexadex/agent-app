@@ -6,21 +6,18 @@ import mime from "mime-types";
 import { remotionAgent } from "../agents/remotion-agent.js";
 import { PREVIEWS_DIR } from "../tools/render-scene.js";
 import { renderStates } from "../lib/render-state.js";
+import { getGeneratedAssets } from "../lib/generated-assets.js";
 
 const router = Router();
 
 interface ChatRequest {
   messages: any[];
   sceneId?: string;
-  sceneContext?: {
-    title?: string;
-    description?: string;
-    duration?: number;
-  };
+  sceneContext?: Record<string, unknown>;
   assets?: string[]; // Array of file URLs like "/uploads/foo.png"
 }
 
-const UPLOADS_DIR = resolve(process.cwd(), "public");
+const UPLOADS_DIR = resolve(process.cwd(), "../remotion/public");
 
 router.post("/chat", async (req: Request, res: Response) => {
   try {
@@ -36,16 +33,25 @@ router.post("/chat", async (req: Request, res: Response) => {
         for (const assetUrl of assets) {
           try {
             // Assume assetUrl starts with /uploads/
-            const localPath = join(UPLOADS_DIR, assetUrl);
+            const localPath = join(UPLOADS_DIR, assetUrl.replace(/^\//, ""));
             const fileData = await readFile(localPath);
             const base64Data = fileData.toString("base64");
             const mimeType = mime.lookup(localPath) || "application/octet-stream";
             
-            parts.push({
-              type: "file",
-              data: `data:${mimeType};base64,${base64Data}`,
-              mimeType,
-            });
+            const isImage = mimeType && mimeType.startsWith('image/');
+            if (isImage) {
+              parts.push({
+                type: "image",
+                image: Buffer.from(base64Data, "base64"),
+                mediaType: mimeType,
+              });
+            } else {
+              parts.push({
+                type: "file",
+                data: Buffer.from(base64Data, "base64"),
+                mediaType: mimeType,
+              });
+            }
           } catch (err) {
             console.error(`[API] Failed to read asset ${assetUrl}:`, err);
           }
@@ -56,22 +62,26 @@ router.post("/chat", async (req: Request, res: Response) => {
     }
 
     // Build context to include in the agent's context
-    let contextInfo = "";
-    if (sceneId) {
-      contextInfo = `[Scene: ${sceneId}]`;
-      if (sceneContext?.title) {
-        contextInfo += ` Title: "${sceneContext.title}"`;
-      }
-      if (sceneContext?.description) {
-        contextInfo += ` - ${sceneContext.description}`;
-      }
-      if (sceneContext?.duration) {
-        contextInfo += ` (${sceneContext.duration}s)`;
+    if (sceneContext && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === "user") {
+        const payloadText = `[SCENE_JSON_PAYLOAD:\n\`\`\`json\n${JSON.stringify(sceneContext, null, 2)}\n\`\`\`\n]`;
+        
+        if (typeof lastMessage.content === "string") {
+          lastMessage.content = payloadText + "\n\n" + lastMessage.content;
+        } else if (Array.isArray(lastMessage.content)) {
+          const textPartIndex = lastMessage.content.findIndex((p: any) => p.type === "text");
+          if (textPartIndex !== -1) {
+            lastMessage.content[textPartIndex].text = payloadText + "\n\n" + lastMessage.content[textPartIndex].text;
+          } else {
+            lastMessage.content.unshift({ type: "text", text: payloadText + "\n\n" });
+          }
+        }
       }
     }
 
-    if (contextInfo) {
-      console.log(`[API] Scene context: ${contextInfo}`);
+    if (sceneContext) {
+      console.log(`[API] Injected Scene context JSON payload`);
     }
 
     await pipeAgentUIStreamToResponse({

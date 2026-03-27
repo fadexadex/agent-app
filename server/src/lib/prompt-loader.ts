@@ -1,24 +1,26 @@
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { join, resolve } from "path";
+import { loadCoreRemotionSkills } from "./skills-loader.js";
 
 const REMOTION_DIR = resolve(process.cwd(), "../remotion");
 
+interface LoadOptions {
+  /** Include full component reference (larger context, more detail) */
+  includeFullReference?: boolean;
+  /** Include scene examples */
+  includeExamples?: boolean;
+}
+
 /**
- * Load and combine the director system prompt with the component catalog.
- * This gives the agent full context about how to generate Remotion scenes.
+ * Load the condensed director prompt with component catalog.
+ * This is the optimized version for faster generation.
  */
-export function loadDirectorPrompt(): string {
-  const directorPromptPath = join(
-    REMOTION_DIR,
-    "prompts/DIRECTOR_SYSTEM_PROMPT.md",
-  );
-  const componentCatalogPath = join(
-    REMOTION_DIR,
-    "remotion-components/COMPONENT-CATALOG.md",
-  );
+export function loadDirectorPrompt(options: LoadOptions = {}): string {
+  const { includeFullReference = false, includeExamples = false } = options;
+
+  const directorPromptPath = join(REMOTION_DIR, "prompts/DIRECTOR_SYSTEM_PROMPT.md");
 
   let directorPrompt = "";
-  let componentCatalog = "";
 
   try {
     directorPrompt = readFileSync(directorPromptPath, "utf-8");
@@ -27,84 +29,91 @@ export function loadDirectorPrompt(): string {
     directorPrompt = getDefaultDirectorPrompt();
   }
 
-  try {
-    componentCatalog = readFileSync(componentCatalogPath, "utf-8");
-  } catch (error) {
-    console.warn("Could not load COMPONENT-CATALOG.md:", error);
-    componentCatalog = "";
-  }
+  const coreSkills = loadCoreRemotionSkills();
 
-  const workflowInstructions = `
-## Tool Workflow
+  // Minimal workflow reminder (main instructions are in director prompt)
+  const workflowReminder = `
+## Tool Workflow (Quick Reference)
 
-You have access to tools for creating Remotion scenes. Follow this workflow **in order** for every scene:
+1. **writeSceneCode** → Write TSX to remotion/src/scenes/
+2. **triggerPreview** → Register in Root.tsx (validates syntax)
+3. **renderScene** → Generate MP4 (REQUIRED)
+4. **awaitRender** → Verify completion
 
-1. **Think first**: Use the \`think\` tool to plan your approach before writing code.
-2. **Explore if needed**: Use \`listFiles\` and \`readFile\` to examine existing components or examples.
-3. **Write the scene**: Use \`writeSceneCode\` to create the TSX component in remotion/src/scenes/.
-4. **Register the composition**: Use \`triggerPreview\` to add the scene to Root.tsx.
-5. **Render the video**: Use \`renderScene\` to actually render the MP4. **THIS STEP IS MANDATORY.** Without it, the user sees a blank preview. No video is produced automatically — you must explicitly call \`renderScene\` after every \`triggerPreview\`.
-
-## Critical: Always Render
-
-After calling \`triggerPreview\`, you MUST call \`renderScene\` with the same \`sceneId\`. The render takes 30–90 seconds; this is normal. Do not skip this step under any circumstances.
-
-Example final two calls for a scene with id "hook-intro":
-\`\`\`
-triggerPreview({ sceneId: "hook-intro", componentName: "HookIntro", fileName: "HookIntro", durationFrames: 120 })
-renderScene({ sceneId: "hook-intro" })
-\`\`\`
-
-## Working Directory Structure
-
-- \`remotion/src/components/\` - Pre-built component library (AnimatedText, Background, MockupFrame, etc.)
-- \`remotion/src/scenes/\` - Generated scene components (your output goes here)
-- \`remotion/src/Root.tsx\` - Composition registry (updated by triggerPreview)
-- \`remotion/prompts/\` - Documentation and examples
-
-## Important Reminders
-
-- Always import components from '@/components' (e.g., \`import { AnimatedText } from "@/components/AnimatedText"\`)
-- Use \`useCurrentFrame()\` and \`useVideoConfig()\` from 'remotion' for animations
-- NEVER use CSS animations or Tailwind animate classes - all motion must be frame-based
-- The rendered video will be served at \`/previews/{sceneId}.mp4\` and played directly in the browser
+**CRITICAL**: Always call renderScene + awaitRender. Videos are NOT auto-generated.
 `;
 
-  return [
+  const parts = [
     directorPrompt,
+    "\n---\n# Remotion Animation Patterns\n",
+    coreSkills,
     "\n---\n",
-    componentCatalog,
-    "\n---\n",
-    workflowInstructions,
-  ].join("\n");
+    workflowReminder
+  ];
+
+  // Add examples if requested
+  if (includeExamples) {
+    const exampleContent = loadSceneExamples();
+    if (exampleContent) {
+      parts.push("\n---\n", exampleContent);
+    }
+  }
+
+  return parts.join("\n");
+}
+
+/**
+ * Load condensed prompt for quick generation (default behavior).
+ */
+export function loadCondensedPrompt(): string {
+  return loadDirectorPrompt({ includeFullReference: false, includeExamples: false });
+}
+
+/**
+ * Load full prompt with all references for complex scenes.
+ */
+export function loadFullPrompt(): string {
+  return loadDirectorPrompt({ includeFullReference: true, includeExamples: true });
+}
+
+/**
+ * Load scene examples for reference.
+ */
+function loadSceneExamples(): string {
+  const examplePath = join(REMOTION_DIR, "prompts/scene-email-feature.json");
+
+  if (!existsSync(examplePath)) {
+    return "";
+  }
+
+  try {
+    const example = readFileSync(examplePath, "utf-8");
+    return `## Scene Example\n\n\`\`\`json\n${example}\n\`\`\``;
+  } catch {
+    return "";
+  }
 }
 
 function getDefaultDirectorPrompt(): string {
   return `# Video Director Agent
 
-You are an expert Remotion video developer. Your role is to generate high-quality, production-ready Remotion scene components.
+Expert Remotion developer generating production-ready scene components.
 
-## Critical Rules
+**CRITICAL**: Include \`import React from "react";\` at the top of every \`.tsx\` file.
 
-1. **ALL animations MUST use \`useCurrentFrame()\`** - CSS animations are FORBIDDEN
-2. **Use \`spring()\` for entrances** with appropriate damping
-3. **Always clamp interpolations** with \`extrapolateRight: 'clamp'\`
-4. **spring() does NOT have a delay parameter** - subtract from frame instead
+## Animation Rules
+1. ALL animations use \`useCurrentFrame()\` - CSS animations FORBIDDEN
+2. spring() has NO delay param - use \`frame - delay\` instead
+3. Always clamp: \`interpolate(frame, [0, 30], [0, 1], { extrapolateRight: 'clamp' })\`
 
 ## Code Structure
-
-Always use functional components with explicit typing:
-
 \`\`\`typescript
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion';
+import React from "react";
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring, interpolate } from "remotion";
 
-interface SceneProps {
-  // Define configurable props
-}
-
-export const SceneName: React.FC<SceneProps> = (props) => {
+export const SceneName: React.FC = () => {
   const frame = useCurrentFrame();
-  const { fps, width, height } = useVideoConfig();
+  const { fps } = useVideoConfig();
 
   return (
     <AbsoluteFill>
@@ -115,3 +124,27 @@ export const SceneName: React.FC<SceneProps> = (props) => {
 \`\`\`
 `;
 }
+
+/**
+ * Pre-built scene definitions for template-based generation.
+ * These can be injected into the agent context to skip exploration.
+ */
+export const SCENE_TEMPLATES = {
+  feature: {
+    description: "Feature showcase with indicator pill, mockup, and label",
+    timing: { indicator: 0, mockup: 15, label: 40, exit: 100 },
+    duration: 120,
+  },
+  hook: {
+    description: "Opening hook with animated text and visual anchor",
+    timing: { text: 0, visual: 20, exit: 150 },
+    duration: 180,
+  },
+  cta: {
+    description: "Call-to-action with logo reveal and URL",
+    timing: { logo: 0, url: 30, exit: 120 },
+    duration: 150,
+  },
+} as const;
+
+export type SceneTemplateType = keyof typeof SCENE_TEMPLATES;

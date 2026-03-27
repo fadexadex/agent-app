@@ -5,6 +5,7 @@ import { join, resolve } from "path";
 import * as fs from "fs";
 import { Readable } from "stream";
 import { finished } from "stream/promises";
+import { spawn } from "child_process";
 import {
   initRenderState,
   appendErrorOutput,
@@ -101,9 +102,56 @@ to check completion status.`,
     initRenderState(sceneId);
     appendOutputLog(sceneId, `Starting Lambda render process for ${sceneId}...`);
 
-    // 3. Run the Lambda render process in the background
+    // 3. Run the render process in the background
     (async () => {
       try {
+        const useLocalRender = process.env.USE_LOCAL_RENDER === "true";
+
+        if (useLocalRender) {
+          appendOutputLog(sceneId, `Starting LOCAL render process for ${sceneId}...`);
+          
+          const remotionProcess = spawn(
+            "npx",
+            [
+              "remotion",
+              "render",
+              "src/index.ts",
+              sceneId,
+              outputFile,
+              "--log=verbose"
+            ],
+            {
+              cwd: REMOTION_DIR,
+              env: { ...process.env },
+            }
+          );
+
+          remotionProcess.stdout.on("data", (data) => {
+            appendOutputLog(sceneId, data.toString());
+          });
+
+          remotionProcess.stderr.on("data", (data) => {
+            appendErrorOutput(sceneId, data.toString());
+          });
+
+          await new Promise<void>((resolve, reject) => {
+            remotionProcess.on("close", (code) => {
+              if (code === 0) {
+                resolve();
+              } else {
+                reject(new Error(`Local render exited with code ${code}`));
+              }
+            });
+            remotionProcess.on("error", (err) => {
+              reject(err);
+            });
+          });
+
+          appendOutputLog(sceneId, `Successfully rendered to ${outputFile}`);
+          markRenderComplete(sceneId, `/previews/${sceneId}.mp4`);
+          return;
+        }
+
         const region = (process.env.REMOTION_AWS_REGION || process.env.AWS_REGION || "us-east-1") as any;
 
         // 1. Setup / Identify bucket

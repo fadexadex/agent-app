@@ -30,7 +30,7 @@ export const Paywall = ({ children }: { children: React.ReactNode }) => {
     }
 
     // Load Interswitch script
-    if (!document.getElementById("interswitch-script")) {
+    if (import.meta.env.VITE_ENABLE_PAYWALL === "true" && !document.getElementById("interswitch-script")) {
       const script = document.createElement("script");
       script.id = "interswitch-script";
       script.src = "https://newwebpay.qa.interswitchng.com/inline-checkout.js";
@@ -38,6 +38,11 @@ export const Paywall = ({ children }: { children: React.ReactNode }) => {
       document.body.appendChild(script);
     }
   }, []);
+
+  // If paywall is not enabled, just render children directly
+  if (import.meta.env.VITE_ENABLE_PAYWALL !== "true") {
+    return <>{children}</>;
+  }
 
   if (hasPaid) {
     return <>{children}</>;

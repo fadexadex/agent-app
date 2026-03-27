@@ -138,13 +138,7 @@ const EditorPage = () => {
     latestVideoUrl,
   } = useAgent({
     sceneId: currentScene?.id?.toString() || "unknown",
-    sceneContext: currentScene
-      ? {
-          title: currentScene.name,
-          description: currentScene.notes || currentScene.elements.map(e => e.description).join(" "),
-          duration: currentScene.duration,
-        }
-      : undefined,
+    sceneContext: currentScene || undefined,
     onRenderComplete: handleRenderComplete,
   });
 
@@ -354,11 +348,7 @@ const EditorPage = () => {
       // Pass scene data directly to avoid stale closure issues during transitions
       sendMessage(scenePrompt, {
         sceneId: String(scene.id),
-        sceneContext: {
-          title: scene.name,
-          description: scene.notes || scene.elements.map((e) => e.description).join(" "),
-          duration: framesToSeconds(scene.duration),
-        },
+        sceneContext: scene,
         assets: overrides?.assets
       });
     },
@@ -778,15 +768,7 @@ Requirements:
             allDone={allDone}
             selectedTimestamp={selectedTimestamp}
             onClearTimestamp={() => setSelectedTimestamp(null)}
-            sceneContext={
-              displayScene
-                ? {
-                    title: displayScene.name,
-                    description: displayScene.notes || displayScene.elements.map(e => e.description).join(" "),
-                    duration: displayScene.duration,
-                  }
-                : undefined
-            }
+            sceneContext={displayScene || undefined}
           />
         </ResizablePanel>
       </ResizablePanelGroup>

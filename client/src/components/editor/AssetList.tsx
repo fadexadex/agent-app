@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Loader2, UploadCloud, File, Image as ImageIcon, Video, RefreshCw } from "lucide-react";
+import { Loader2, UploadCloud, File, Image as ImageIcon, Video, RefreshCw, Sparkles } from "lucide-react";
 import { uploadFile } from "@/lib/upload";
 import { Button } from "@/components/ui/button";
 
@@ -7,8 +7,10 @@ interface Asset {
   name: string;
   url: string;
   mimeType: string;
-  size: number;
+  size?: number;
   createdAt: string;
+  isGenerated?: boolean;
+  prompt?: string;
 }
 
 const AssetList = () => {
@@ -20,13 +22,34 @@ const AssetList = () => {
   const fetchAssets = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/assets");
-      if (res.ok) {
-        const data = await res.json();
-        // Sort newest first
-        data.sort((a: Asset, b: Asset) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setAssets(data);
+      const [uploadsRes, generatedRes] = await Promise.all([
+        fetch("/api/assets"),
+        fetch("/api/agent/generated-assets")
+      ]);
+
+      let allAssets: Asset[] = [];
+
+      if (uploadsRes.ok) {
+        const data = await uploadsRes.json();
+        allAssets = [...data];
       }
+
+      if (generatedRes.ok) {
+        const { assets: genAssets } = await generatedRes.json();
+        const mappedGenAssets = genAssets.map((ga: any) => ({
+          name: `Generated: ${ga.id.slice(0, 8)}`,
+          url: ga.url,
+          mimeType: 'image/png',
+          createdAt: ga.createdAt,
+          isGenerated: true,
+          prompt: ga.prompt
+        }));
+        allAssets = [...allAssets, ...mappedGenAssets];
+      }
+
+      // Sort newest first
+      allAssets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setAssets(allAssets);
     } catch (err) {
       console.error("Failed to fetch assets", err);
     } finally {
@@ -92,12 +115,12 @@ const AssetList = () => {
           </div>
         ) : assets.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-xs">
-            No assets uploaded yet.
+            No assets yet.
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2">
             {assets.map((asset) => (
-              <div key={asset.url} className="group relative border rounded-md overflow-hidden bg-muted aspect-square flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors" title={asset.name}>
+              <div key={asset.url} className="group relative border rounded-md overflow-hidden bg-muted aspect-square flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors" title={asset.prompt || asset.name}>
                 {asset.mimeType.startsWith("image/") ? (
                   <img src={asset.url} alt={asset.name} className="w-full h-full object-cover" />
                 ) : asset.mimeType.startsWith("video/") ? (
@@ -109,11 +132,22 @@ const AssetList = () => {
                   <File className="w-8 h-8 text-muted-foreground mb-1" />
                 )}
                 
+                {asset.isGenerated && (
+                  <div className="absolute top-1 right-1 bg-black/50 p-0.5 rounded-sm">
+                    <Sparkles className="w-3 h-3 text-yellow-300" />
+                  </div>
+                )}
+
                 {/* Overlay with filename */}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-1.5">
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-1.5">
                   <p className="text-[9px] text-white truncate w-full leading-tight">
                     {asset.name}
                   </p>
+                  {asset.prompt && (
+                    <p className="text-[8px] text-white/70 line-clamp-2 mt-0.5 leading-tight italic">
+                      "{asset.prompt}"
+                    </p>
+                  )}
                 </div>
               </div>
             ))}

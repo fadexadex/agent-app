@@ -291,3 +291,15 @@ export type {
 // Audio - Background music components
 // ============================================
 export { BackgroundMusic } from "./Audio/BackgroundMusic";
+
+// ============================================
+// Patterns - Reusable parameterized components
+// ============================================
+export { IndicatorPill, FeaturePill, IconArc } from "./Patterns";
+
+export type {
+  IndicatorPillProps,
+  FeaturePillProps,
+  IconArcProps,
+  IconConfig,
+} from "./Patterns";

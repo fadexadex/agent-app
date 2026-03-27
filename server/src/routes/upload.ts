@@ -5,7 +5,7 @@ import { mkdir } from "fs/promises";
 
 const router = Router();
 
-const UPLOADS_DIR = path.resolve(process.cwd(), "public", "uploads");
+const UPLOADS_DIR = path.resolve(process.cwd(), "../remotion/public", "uploads");
 // Ensure uploads dir exists
 mkdir(UPLOADS_DIR, { recursive: true }).catch((err) =>
   console.warn("[server] Could not create uploads dir:", err)

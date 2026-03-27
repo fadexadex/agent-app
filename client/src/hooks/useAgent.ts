@@ -1,26 +1,18 @@
 import { useChat, Chat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart, getToolName, UIMessage } from "ai";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useDeferredValue } from "react";
 import { AgentStep } from "@/lib/agentTypes";
 
 interface UseAgentOptions {
   sceneId?: number | string | "all";
-  sceneContext?: {
-    title?: string;
-    description?: string;
-    duration?: number;
-  };
+  sceneContext?: Record<string, unknown>;
   onRenderComplete?: (sceneId: string, videoUrl: string) => void;
   assets?: string[];
 }
 
 interface SendMessageOverrides {
   sceneId?: number | string | "all";
-  sceneContext?: {
-    title?: string;
-    description?: string;
-    duration?: number;
-  };
+  sceneContext?: Record<string, unknown>;
   assets?: string[];
 }
 
@@ -36,9 +28,7 @@ interface UseAgentReturn {
 
 function makeChat(
   sceneId: number | string | "all" | undefined,
-  sceneContext:
-    | { title?: string; description?: string; duration?: number }
-    | undefined,
+  sceneContext: any | undefined,
   assets?: string[]
 ) {
   return new Chat<UIMessage>({
@@ -291,8 +281,12 @@ export function useAgent(options: UseAgentOptions = {}): UseAgentReturn {
     [], // No dependencies — uses overrides or refs
   );
 
+  
+  const deferredSteps = useDeferredValue(steps);
+  
   return {
-    steps,
+    steps: deferredSteps,
+
     isProcessing,
     sendMessage,
     error: error || null,
@@ -429,7 +423,22 @@ function toolCallToAgentStep(
       };
     }
 
+    
+    case "generateImage": {
+      const imageResult = result as { success?: boolean; imageUrl?: string; prompt?: string } | undefined;
+      return {
+        id: stepId,
+        type: "image",
+        label: isComplete ? "Image generated" : "Generating image...",
+        timestamp,
+        status: isComplete ? "complete" : "active",
+        imageUrl: imageResult?.imageUrl,
+        imagePrompt: (args as { prompt?: string }).prompt,
+      };
+    }
+
     default:
+
       return {
         id: stepId,
         type: "generate",

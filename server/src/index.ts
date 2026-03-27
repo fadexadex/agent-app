@@ -61,7 +61,23 @@ app.use(
   }),
 );
 
-const UPLOADS_DIR = path.resolve(process.cwd(), "public", "uploads");
+
+const GENERATED_DIR = path.resolve(process.cwd(), "../remotion/public", "generated");
+mkdir(GENERATED_DIR, { recursive: true }).catch((err) =>
+  console.warn("[server] Could not create generated dir:", err),
+);
+
+app.use(
+  "/generated",
+  express.static(GENERATED_DIR, {
+    setHeaders: (res) => {
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+    },
+  }),
+);
+
+const UPLOADS_DIR = path.resolve(process.cwd(), "../remotion/public", "uploads");
 app.use(
   "/uploads",
   express.static(UPLOADS_DIR, {

@@ -7,6 +7,7 @@ import { writeSceneCodeTool } from "../tools/write-scene.js";
 import { triggerPreviewTool } from "../tools/trigger-preview.js";
 import { renderSceneTool } from "../tools/render-scene.js";
 import { awaitRenderTool } from "../tools/await-render.js";
+import { generateImageTool } from "../tools/generate-image.js";
 
 /**
  * Remotion Scene Agent
@@ -30,6 +31,7 @@ export const remotionAgent = new ToolLoopAgent({
     triggerPreview: triggerPreviewTool,
     renderScene: renderSceneTool,
     awaitRender: awaitRenderTool,
+    generateImage: generateImageTool,
   },
   stopWhen: stepCountIs(20),
   onStepFinish: ({ stepNumber, toolCalls }) => {

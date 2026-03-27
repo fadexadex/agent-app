@@ -1,10 +1,8 @@
 import React from "react";
-
 import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
-import { EmailReplyFeature } from "./EmailReplyFeature";
 
-import { HelloWorldIntro, TheHook, TheProblem, TheSolution, KeyFeatures, CallToAction, HookStudentStruggle, IntroAppSolution, FeatureCampusMap, HookManualCodingPain, IntroProductReveal, FeatureSeamlessConversion, FeatureComponentLibrary, BenefitSpeedEfficiency, CtaTryDevflow, FlowPilotIntroduction, Scene03FeatureAIPrioritization, BenefitProductivity, Scene06CtaSignup, Scene01HookChallenge, Scene02IntroProduct, AITaskPrioritization, FeatureTeamCollaboration, Scene05BenefitProductivity, RemoteChaosHook, FocusFlowIntro, AiPrioritizeFeature, RemoteCollabFeature, ClarityProductivityBenefit, CtaGetStarted, IntegrationTestScene } from "./scenes";
+import { CleanTestScene, FeatureEmail, EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -16,233 +14,73 @@ export const RemotionRoot: React.FC = () => {
         width={1280}
         height={720}
       />
-      <Composition
+                      <Composition
+        id="clean-test-scene"
+        component={CleanTestScene}
+        durationInFrames={90}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+              <Composition
         id="feature-email"
-        component={EmailReplyFeature}
+        component={FeatureEmail}
         durationInFrames={120}
         fps={30}
-        width={1080}
+        width={1920}
         height={1080}
       />
-      <Composition
-        id="hello-world-intro"
-        component={HelloWorldIntro}
+              <Composition
+        id="feature-emai"
+        component={EmailFeature}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="scene-hook"
+        component={SceneHook}
         durationInFrames={90}
         fps={30}
         width={1920}
         height={1080}
       />
-      <Composition
-        id="the-hook"
-        component={TheHook}
+          <Composition
+        id="scene-workspace-assembly"
+        component={SceneWorkspaceAssembly}
         durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-      <Composition
-        id="the-problem"
-        component={TheProblem}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-      <Composition
-        id="the-solution"
-        component={TheSolution}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-      <Composition
-        id="key-features"
-        component={KeyFeatures}
-        durationInFrames={180}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-      <Composition
-        id="cta-start-free"
-        component={CallToAction}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-      <Composition
-        id="hook-student-struggle"
-        component={HookStudentStruggle}
-        durationInFrames={100}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-      <Composition
-        id="intro-app-solution"
-        component={IntroAppSolution}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-      <Composition
-        id="feature-campus-map"
-        component={FeatureCampusMap}
-        durationInFrames={130}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-                                  <Composition
-        id="hook-manual-coding-pain"
-        component={HookManualCodingPain}
-        durationInFrames={135}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-                            <Composition
-        id="intro-product-reveal"
-        component={IntroProductReveal}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-                            <Composition
-        id="feature-seamless-conversion"
-        component={FeatureSeamlessConversion}
-        durationInFrames={150}
         fps={30}
         width={1920}
         height={1080}
       />
           <Composition
-        id="feature-component-library"
-        component={FeatureComponentLibrary}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="benefit-speed-efficiency"
-        component={BenefitSpeedEfficiency}
-        durationInFrames={135}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="cta-try-devflow"
-        component={CtaTryDevflow}
+        id="hook"
+        component={Hook}
         durationInFrames={90}
         fps={30}
         width={1920}
         height={1080}
       />
-                <Composition
-        id="scene-02-intro-product"
-        component={Scene02IntroProduct}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-                <Composition
-        id="scene-03-feature-ai-prioritization"
-        component={AITaskPrioritization}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-                <Composition
-        id="scene-05-benefit-productivity"
-        component={Scene05BenefitProductivity}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-                <Composition
-        id="scene-06-cta-signup"
-        component={Scene06CtaSignup}
-        durationInFrames={100}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-                <Composition
-        id="scene-01-hook-challenge"
-        component={Scene01HookChallenge}
+          <Composition
+        id="scene-notion-ai-magic"
+        component={SceneNotionAIMagic}
         durationInFrames={120}
         fps={30}
         width={1920}
         height={1080}
       />
           <Composition
-        id="scene-04-feature-team-collaboration"
-        component={FeatureTeamCollaboration}
-        durationInFrames={150}
+        id="workspace"
+        component={Workspace}
+        durationInFrames={120}
         fps={30}
         width={1920}
         height={1080}
       />
                       <Composition
-        id="remote-chaos-hook"
-        component={RemoteChaosHook}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="focusflow-intro"
-        component={FocusFlowIntro}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-                <Composition
-        id="ai-prioritize-feature"
-        component={AiPrioritizeFeature}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="remote-collab-feature"
-        component={RemoteCollabFeature}
-        durationInFrames={135}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="clarity-productivity-benefit"
-        component={ClarityProductivityBenefit}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="cta-get-started"
-        component={CtaGetStarted}
-        durationInFrames={100}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="integration-test-scene"
-        component={IntegrationTestScene}
+        id="scene-outro"
+        component={SceneOutro}
         durationInFrames={90}
         fps={30}
         width={1920}
@@ -251,4 +89,3 @@ export const RemotionRoot: React.FC = () => {
     </>
   );
 };
-

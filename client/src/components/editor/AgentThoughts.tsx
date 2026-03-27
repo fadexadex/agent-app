@@ -17,11 +17,7 @@ interface AgentThoughtsProps {
   allDone?: boolean;
   selectedTimestamp?: number | null;
   onClearTimestamp?: () => void;
-  sceneContext?: {
-    title?: string;
-    description?: string;
-    duration?: number;
-  };
+  sceneContext?: Record<string, unknown>;
 }
 
 const formatTime = (seconds: number): string => {
@@ -41,11 +37,7 @@ interface ChatMessage {
 
 interface RefinementChatProps {
   selectedScene: number | "all";
-  sceneContext?: {
-    title?: string;
-    description?: string;
-    duration?: number;
-  };
+  sceneContext?: Record<string, unknown>;
   selectedTimestamp?: number | null;
   onClearTimestamp?: () => void;
 }
@@ -139,11 +131,9 @@ const RefinementChat = ({
 
       {/* Real agent steps from refinement */}
       {agentSteps.length > 0 && (
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence>
           {agentSteps.map((step, index) => (
-            <motion.div 
-              layout 
-              key={`agent-${step.id}`}
+            <motion.div layout={false} key={`agent-${step.id}`}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
@@ -336,11 +326,9 @@ const AgentThoughts = ({
           )}
 
           {/* Generation steps */}
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence>
             {steps.map((step, index) => (
-              <motion.div 
-                layout 
-                key={`${selectedScene}-${step.id}`}
+              <motion.div layout={false} key={`${selectedScene}-${step.id}`}
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}

@@ -6,12 +6,14 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:e2e": "tsx scripts/run-e2e-scene.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.63",
     "@ai-sdk/google": "^3.0.52",
     "@ai-sdk/google-vertex": "^4.0.93",
+    "@google/genai": "^1.46.0",
     "@remotion/lambda": "^4.0.440",
     "ai": "^6.0.116",
     "concurrently": "^9.2.1",
@@ -30,7 +32,6 @@
     "@types/mime-types": "^3.0.1",
     "@types/multer": "^2.1.0",
     "@types/node": "^22.16.5",
-    
     "vitest": "^4.1.0"
   }
 }

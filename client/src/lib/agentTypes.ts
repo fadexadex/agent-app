@@ -9,6 +9,7 @@ export interface AgentStep {
     | "update"
     | "preview"
     | "render"
+    | "image"
     | "complete";
   label: string;
   detail?: string;
@@ -22,4 +23,6 @@ export interface AgentStep {
   previewUrl?: string; // For triggerPreview results
   videoUrl?: string; // For renderScene results
   renderSceneId?: string; // The Remotion composition ID being rendered
+  imageUrl?: string; // For generateImage results
+  imagePrompt?: string; // For generateImage results
 }

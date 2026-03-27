@@ -4,7 +4,7 @@ import path from "path";
 import mime from "mime-types";
 
 const router = Router();
-const UPLOADS_DIR = path.resolve(process.cwd(), "public", "uploads");
+const UPLOADS_DIR = path.resolve(process.cwd(), "../remotion/public", "uploads");
 
 router.get("/", async (req: Request, res: Response) => {
   try {

@@ -182,7 +182,7 @@ export async function generateSceneScript(
 
   onProgress({ step: "analyzing", message: "Analyzing your product..." });
 
-  const UPLOADS_DIR = resolve(process.cwd(), "public");
+  const UPLOADS_DIR = resolve(process.cwd(), "../remotion/public");
   const contentParts: any[] = [{ type: "text", text: `Generate 5-6 Remotion video scenes for this product: ${prompt}` }];
 
   // Inject base64 data for each asset so Gemini can "see" them
@@ -209,10 +209,20 @@ export async function generateSceneScript(
   // We map file part correctly for AI SDK Core
   const mappedParts = contentParts.map(part => {
     if (part.type === "file") {
+      const isImage = part.mimeType && part.mimeType.startsWith('image/');
+      // AI SDK 3.x+ expects the actual binary data or a URL, not a data URL string.
+      // We pass the raw Uint8Array buffer here
+      if (isImage) {
+        return {
+          type: "image",
+          image: Buffer.from(part.data, "base64"),
+          mediaType: part.mimeType,
+        };
+      }
       return {
         type: "file",
-        data: `data:${part.mimeType};base64,${part.data}`,
-        mimeType: part.mimeType,
+        data: Buffer.from(part.data, "base64"),
+        mediaType: part.mimeType,
       };
     }
     return part;

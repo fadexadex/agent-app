@@ -12,6 +12,10 @@ const SCENES_DIR = join(REMOTION_DIR, "src/scenes");
 const ROOT_FILE = join(REMOTION_DIR, "src/Root.tsx");
 const SCENES_INDEX = join(SCENES_DIR, "index.ts");
 
+function sanitizeForJSX(value: string): string {
+  return value.replace(/[^a-zA-Z0-9_-]/g, '');
+}
+
 // Tool for registering a scene and triggering preview
 export const triggerPreviewTool = tool({
   description:
@@ -22,14 +26,8 @@ export const triggerPreviewTool = tool({
       .describe(
         "The project folder name used in writeSceneCode to group all scenes for this video (e.g., 'app-promo', 'tiktok-hook')"
       ),
-    sceneId: z
-      .string()
-      .describe("The scene ID used in writeSceneCode (e.g., 'hook-intro')"),
-    componentName: z
-      .string()
-      .describe(
-        "The exported component name from the scene file (e.g., 'HookIntro')",
-      ),
+    sceneId: z.string().regex(/^[a-zA-Z][a-zA-Z0-9_-]*$/, "sceneId must be alphanumeric").max(64).describe("The scene ID used in writeSceneCode (e.g., 'hook-intro')"),
+    componentName: z.string().regex(/^[A-Z][a-zA-Z0-9]*$/, "componentName must be PascalCase").max(64).describe("The exported component name from the scene file (e.g., 'HookIntro')"),
     fileName: z
       .string()
       .describe("The file name without extension (e.g., 'HookIntro')"),
@@ -62,6 +60,8 @@ export const triggerPreviewTool = tool({
   }) => {
     // Sanitize folder name
     const sanitizedFolder = projectFolder.replace(/[^a-zA-Z0-9_-]/g, "");
+    const safeSceneId = sanitizeForJSX(sceneId);
+    const safeComponentName = sanitizeForJSX(componentName);
     
     // Store original contents for rollback
     let originalScenesIndex = "";
@@ -83,12 +83,12 @@ export const triggerPreviewTool = tool({
       await mkdir(SCENES_DIR, { recursive: true });
 
       // Update scenes/index.ts barrel export
-      await updateScenesIndex(sanitizedFolder, fileName, componentName);
+      await updateScenesIndex(sanitizedFolder, fileName, safeComponentName);
 
       // Update Root.tsx to add the composition
       await updateRootFile(
-        sceneId,
-        componentName,
+        safeSceneId,
+        safeComponentName,
         durationFrames,
         width,
         height,
@@ -100,6 +100,9 @@ export const triggerPreviewTool = tool({
       // if unrelated files in the project are broken.
       try {
         await execAsync(`npx esbuild src/scenes/${sanitizedFolder}/${fileName}.tsx --bundle --external:remotion --external:react --external:react-dom --external:@remotion/transitions --external:zod --outfile=/dev/null`, { cwd: REMOTION_DIR });
+        
+        // Also validate Root.tsx
+        await execAsync(`npx esbuild src/Root.tsx --bundle --external:remotion --external:react --external:react-dom --external:@remotion/transitions --external:zod --outfile=/dev/null`, { cwd: REMOTION_DIR });
       } catch (checkError: any) {
         // Compilation failed! Rollback the changes to prevent poisoning the registry
         await writeFile(SCENES_INDEX, originalScenesIndex, "utf-8");
@@ -107,24 +110,24 @@ export const triggerPreviewTool = tool({
           await writeFile(ROOT_FILE, originalRootFile, "utf-8");
         }
         
-        console.error("Compilation check failed for scene", sceneId);
+        console.error("Compilation check failed for scene", safeSceneId);
         
         const stdoutStr = checkError.stdout ? checkError.stdout.toString() : "";
         const stderrStr = checkError.stderr ? checkError.stderr.toString() : "";
         
         return {
           success: false,
-          sceneId,
+          sceneId: safeSceneId,
           error: "Build failed! The generated scene code contains syntax errors or invalid imports/exports. Please fix the TypeScript/React errors and call writeSceneCode again.\n\nError output:\n" + stdoutStr + "\n" + stderrStr,
         };
       }
 
-      const previewUrl = `http://localhost:3100/preview/${sceneId}`;
+      const previewUrl = `http://localhost:3100/preview/${safeSceneId}`;
 
       return {
         success: true,
-        sceneId,
-        componentName,
+        sceneId: safeSceneId,
+        componentName: safeComponentName,
         previewUrl,
         config: {
           durationFrames,
@@ -144,7 +147,7 @@ export const triggerPreviewTool = tool({
           : "Unknown error triggering preview";
       return {
         success: false,
-        sceneId,
+        sceneId: safeSceneId,
         error: message,
       };
     }
@@ -168,8 +171,12 @@ async function updateScenesIndex(
 
   const exportLine = `export { ${componentName} } from "./${folderName}/${fileName}";`;
 
+  function escapeRegex(str: string): string {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   // Remove any existing export that uses the exact same componentName to prevent duplicate exports
-  const componentRegex = new RegExp(`export\\s+\\{\\s*${componentName}\\s*\\}\\s+from\\s+['"][^'"]+['"];?\\n?`, 'g');
+  const componentRegex = new RegExp(`export\\s+\\{\\s*${escapeRegex(componentName)}\\s*\\}\\s+from\\s+['"][^'"]+['"];?\\n?`, 'g');
   content = content.replace(componentRegex, '');
 
   // Remove any existing export from the same path, assuming the file is being overwritten
@@ -212,12 +219,16 @@ async function updateRootFile(
   } else {
     // Add new scenes import after existing imports
     const lastImportIndex = content.lastIndexOf("import ");
-    const endOfLastImport = content.indexOf("\n", lastImportIndex);
-    const newImport = `\nimport { ${componentName} } from "./scenes";`;
-    content =
-      content.slice(0, endOfLastImport + 1) +
-      newImport +
-      content.slice(endOfLastImport + 1);
+    if (lastImportIndex === -1) {
+       content = `import { ${componentName} } from "./scenes";\n` + content;
+    } else {
+       const endOfLastImport = content.indexOf("\n", lastImportIndex);
+       const newImport = `\nimport { ${componentName} } from "./scenes";`;
+       content =
+         content.slice(0, endOfLastImport + 1) +
+         newImport +
+         content.slice(endOfLastImport + 1);
+    }
   }
 
   // Create the new Composition JSX

@@ -4,12 +4,16 @@ import { z } from "zod";
 // Tool for structured thinking - allows the agent to reason through problems
 export const thinkTool = tool({
   description:
-    "Use this tool to think through complex problems step by step. The user will see your thinking process. Use this FIRST before taking actions.",
+    "Share your thinking in simple, friendly language. " +
+    "Avoid technical jargon - explain as if talking to a creative professional. " +
+    "Use: 'Planning the visual flow', 'Designing animation timing', 'Creating scene layout'.",
   inputSchema: z.object({
     thoughts: z
       .array(z.string())
       .describe(
-        "Array of thought steps, each a concise observation or reasoning step"
+        "Thought steps in plain language. " +
+        "Good: 'Setting up smooth entrance for the headline' " +
+        "Bad: 'Configuring spring() with damping: 200'"
       ),
   }),
   execute: async ({ thoughts }) => {

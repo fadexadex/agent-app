@@ -95,7 +95,7 @@ describe("Tool Execution Flow", () => {
 import { AnimatedText } from '@/components/AnimatedText';
 import { Background } from '@/components/Global';
 
-export const IntegrationTestScene: React.FC = () => {
+export const CleanTestScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
@@ -117,22 +117,22 @@ export const IntegrationTestScene: React.FC = () => {
     const writeResult = (await writeSceneCodeTool.execute!(
       {
         projectFolder: "integration-test",
-        sceneId: "integration-test-scene",
-        fileName: "IntegrationTestScene",
+        sceneId: "clean-test-scene",
+        fileName: "CleanTestScene",
         content: sceneCode,
       },
       toolOpts
     )) as { success: boolean; fileName: string };
     expect(writeResult.success).toBe(true);
-    expect(writeResult.fileName).toBe("IntegrationTestScene.tsx");
+    expect(writeResult.fileName).toBe("CleanTestScene.tsx");
 
     // Step 5: Trigger preview (this will update Root.tsx)
     const previewResult = (await triggerPreviewTool.execute!(
       {
         projectFolder: "integration-test",
-        sceneId: "integration-test-scene",
-        componentName: "IntegrationTestScene",
-        fileName: "IntegrationTestScene",
+        sceneId: "clean-test-scene",
+        componentName: "CleanTestScene",
+        fileName: "CleanTestScene",
         durationFrames: 90,
         width: 1920,
         height: 1080,
@@ -147,7 +147,7 @@ export const IntegrationTestScene: React.FC = () => {
     
     expect(previewResult.success).toBe(true);
     expect(previewResult.previewUrl).toBe(
-      "http://localhost:3100/preview/integration-test-scene"
+      "http://localhost:3100/preview/clean-test-scene"
     );
 
     // Verify Root.tsx was updated
@@ -156,7 +156,7 @@ export const IntegrationTestScene: React.FC = () => {
     const rootPath = resolve(process.cwd(), "../remotion/src/Root.tsx");
     const rootContent = await readFile(rootPath, "utf-8");
 
-    expect(rootContent).toContain("IntegrationTestScene");
-    expect(rootContent).toContain('id="integration-test-scene"');
+    expect(rootContent).toContain("CleanTestScene");
+    expect(rootContent).toContain('id="clean-test-scene"');
   });
 });

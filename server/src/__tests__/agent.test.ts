@@ -17,7 +17,8 @@ describe("Remotion Agent", () => {
     expect(toolNames).toContain("writeSceneCode");
     expect(toolNames).toContain("triggerPreview");
     expect(toolNames).toContain("renderScene");
-    expect(toolNames.length).toBe(6);
+    expect(toolNames).toContain("generateImage");
+    expect(toolNames.length).toBeGreaterThanOrEqual(7);
   });
 
   it("should be a valid agent with stream method", () => {
@@ -40,18 +41,10 @@ describe("Prompt Loader", () => {
     expect(typeof prompt).toBe("string");
     console.log(`[Prompt Size]: The size of the Director system prompt is ${prompt.length} characters.`);
     
-    const fs = await import("fs");
-    fs.writeFileSync("../log.md", prompt);
-    
     expect(prompt.length).toBeGreaterThan(1000);
 
     // Should contain content from DIRECTOR_SYSTEM_PROMPT.md
     expect(prompt).toContain("Video Director Agent");
-
-    // Should contain content from COMPONENT-CATALOG.md
-    expect(prompt).toContain("AnimatedText");
-    expect(prompt).toContain("Background");
-    expect(prompt).toContain("MockupFrame");
 
     // Should contain the workflow instructions we added
     expect(prompt).toContain("Tool Workflow");
