@@ -1,4 +1,4 @@
-import { PlaySquare, Layers, Plus } from "lucide-react";
+import { PlaySquare, Layers, Plus, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Scene } from "@/lib/mockData";
 
@@ -8,15 +8,21 @@ interface SceneStatus {
   previewUrl?: string;
 }
 
+interface SceneVersionInfo {
+  currentVersion: number;
+  hasMultipleVersions: boolean;
+}
+
 interface SceneListProps {
   scenes: Scene[];
   selectedScene: number | "all";
   onSelectScene: (scene: number | "all") => void;
   sceneStatuses: SceneStatus[];
   onOpenAddScene: () => void;
+  sceneVersions?: SceneVersionInfo[];
 }
 
-const SceneList = ({ scenes, selectedScene, onSelectScene, onOpenAddScene }: SceneListProps) => {
+const SceneList = ({ scenes, selectedScene, onSelectScene, onOpenAddScene, sceneVersions }: SceneListProps) => {
   return (
     <div className="flex flex-col h-full bg-card overflow-hidden">
       <div className="p-3 border-b border-border">
@@ -29,6 +35,8 @@ const SceneList = ({ scenes, selectedScene, onSelectScene, onOpenAddScene }: Sce
         <div className="space-y-0.5">
           {scenes.map((scene, i) => {
             const isSelected = selectedScene === i;
+            const versionInfo = sceneVersions?.[i];
+            const showVersion = versionInfo && versionInfo.currentVersion > 1;
 
             return (
               <button
@@ -42,7 +50,17 @@ const SceneList = ({ scenes, selectedScene, onSelectScene, onOpenAddScene }: Sce
                 )}
               >
                 <PlaySquare className={cn("h-4 w-4 shrink-0", isSelected ? "text-primary-foreground" : "text-muted-foreground")} />
-                <span className="truncate">{scene.name}</span>
+                <span className="truncate flex-1 text-left">{scene.name}</span>
+                {showVersion && (
+                  <span className={cn(
+                    "text-[10px] px-1.5 py-0.5 rounded shrink-0",
+                    isSelected
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  )}>
+                    v{versionInfo.currentVersion}
+                  </span>
+                )}
               </button>
             );
           })}

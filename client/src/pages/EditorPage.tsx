@@ -11,8 +11,13 @@ import {
   updateProjectSceneStatus,
   updateProjectAgentSteps,
   updateProjectSceneAudioTrack,
+  addSceneVersion,
+  restoreSceneVersion,
+  getSceneVersions,
+  getSceneCurrentVersion,
   StoredProject,
   AudioTrack,
+  SceneVersion,
 } from "@/lib/storage";
 import { useAgent } from "@/hooks/useAgent";
 import {
@@ -25,10 +30,12 @@ import SceneList from "@/components/editor/SceneList";
 import AssetList from "@/components/editor/AssetList";
 import AudioTrackSelector from "@/components/editor/AudioTrackSelector";
 import MainPreview from "@/components/editor/MainPreview";
+import { CombinedVideoPlayerHandle } from "@/components/editor/CombinedVideoPlayer";
 import VideoOutput from "@/components/editor/VideoOutput";
 import AgentThoughts from "@/components/editor/AgentThoughts";
 import FullscreenPreviewModal from "@/components/editor/FullscreenPreviewModal";
 import AddSceneModal from "@/components/editor/AddSceneModal";
+import SceneVersionHistory from "@/components/editor/SceneVersionHistory";
 
 interface SceneStatus {
   status: "queued" | "generating" | "complete";
@@ -46,6 +53,7 @@ const EditorPage = () => {
   const passedProjectId: string | undefined = (location.state as any)?.projectId;
   const fromVideos: boolean = (location.state as any)?.fromVideos || false;
   const passedSceneStatuses: SceneStatus[] | undefined = (location.state as any)?.sceneStatuses;
+  const passedSceneSteps: Record<number, AgentStep[]> | undefined = (location.state as any)?.sceneSteps;
 
   const [scenes, setScenes] = useState<Scene[]>(passedScenes);
   const [selectedScene, setSelectedScene] = useState<number | "all">(0);
@@ -66,6 +74,8 @@ const EditorPage = () => {
 
   // Ref to the HTML video element inside MainPreview — used for real-time scrubbing
   const videoRef = useRef<HTMLVideoElement>(null);
+  // Ref for combined video player
+  const combinedPlayerRef = useRef<CombinedVideoPlayerHandle>(null);
 
   // Single scene timeline state
   const [singleSceneTime, setSingleSceneTime] = useState(0);
@@ -156,6 +166,15 @@ const EditorPage = () => {
     if (passedProjectId && passedSceneStatuses) {
       currentProjectIdRef.current = passedProjectId;
       setSceneStatuses(passedSceneStatuses);
+      // Restore sceneSteps from state or localStorage
+      if (passedSceneSteps) {
+        setSceneSteps(passedSceneSteps);
+      } else {
+        const savedProject = getProject(passedProjectId);
+        if (savedProject?.agentSteps) {
+          setSceneSteps(savedProject.agentSteps);
+        }
+      }
       const allComplete = passedSceneStatuses.every((s) => s.status === "complete");
       if (allComplete) {
         setAllDone(true);
@@ -212,6 +231,22 @@ const EditorPage = () => {
       userOverrodeSelectionRef.current = false;
     }
   }, [allDone]);
+
+  // Spacebar to toggle play/pause
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+      if (e.code === "Space") {
+        e.preventDefault();
+        handleTogglePlay();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isPlaying, playheadTime, totalDuration]);
 
   // Update steps for current scene as agent processes
   useEffect(() => {
@@ -541,10 +576,10 @@ Requirements:
 
   const handleAudioVolumeChange = (volume: number) => {
     if (!audioTrack || selectedScene === "all" || typeof selectedScene !== "number") return;
-    
+
     const newTrack = { ...audioTrack, volume };
     setAudioTrack(newTrack);
-    
+
     // Update local scenes state
     setScenes(prev => prev.map((s, i) => i === selectedScene ? { ...s, audioTrack: newTrack } : s));
 
@@ -553,7 +588,78 @@ Requirements:
     }
   };
 
+  // ─── Scene Refinement & Versioning ────────────────────────────────────────────
 
+  const handleRefinementStart = useCallback((sceneIndex: number, prompt: string) => {
+    // Set scene status to "generating" to show loading state
+    setSceneStatuses((prev) =>
+      prev.map((s, i) =>
+        i === sceneIndex ? { ...s, status: "generating", progress: 0 } : s
+      )
+    );
+
+    // Update in localStorage
+    if (currentProjectIdRef.current) {
+      updateProjectSceneStatus(currentProjectIdRef.current, sceneIndex, "generating");
+    }
+  }, []);
+
+  const handleRefinementComplete = useCallback((sceneIndex: number, videoUrl: string, prompt: string) => {
+    // Update scene status to complete with new video URL
+    setSceneStatuses((prev) =>
+      prev.map((s, i) =>
+        i === sceneIndex ? { ...s, status: "complete", progress: 100, videoUrl } : s
+      )
+    );
+
+    // Add version to storage
+    if (currentProjectIdRef.current) {
+      addSceneVersion(currentProjectIdRef.current, sceneIndex, {
+        videoUrl,
+        prompt,
+      });
+      updateProjectSceneStatus(currentProjectIdRef.current, sceneIndex, "complete", videoUrl);
+    }
+  }, []);
+
+  const handleRestoreVersion = useCallback((sceneIndex: number, versionIndex: number) => {
+    if (!currentProjectIdRef.current) return;
+
+    // Restore version in storage
+    restoreSceneVersion(currentProjectIdRef.current, sceneIndex, versionIndex);
+
+    // Get the restored version's video URL from storage
+    const versions = getSceneVersions(currentProjectIdRef.current, sceneIndex);
+    const restoredVersion = versions[versionIndex];
+
+    if (restoredVersion) {
+      // Update local state with restored video URL
+      setSceneStatuses((prev) =>
+        prev.map((s, i) =>
+          i === sceneIndex ? { ...s, videoUrl: restoredVersion.videoUrl } : s
+        )
+      );
+    }
+  }, []);
+
+  // Get version info for the current scene
+  const currentSceneVersions = typeof selectedScene === "number" && currentProjectIdRef.current
+    ? getSceneVersions(currentProjectIdRef.current, selectedScene)
+    : [];
+  const currentSceneVersionNumber = typeof selectedScene === "number" && currentProjectIdRef.current
+    ? getSceneCurrentVersion(currentProjectIdRef.current, selectedScene)
+    : 1;
+
+  // Get version info for all scenes (for SceneList)
+  const allSceneVersions = scenes.map((_, i) => {
+    if (!currentProjectIdRef.current) return { currentVersion: 1, hasMultipleVersions: false };
+    const versions = getSceneVersions(currentProjectIdRef.current, i);
+    const currentVersion = getSceneCurrentVersion(currentProjectIdRef.current, i);
+    return {
+      currentVersion,
+      hasMultipleVersions: versions.length > 1,
+    };
+  });
 
   const displayScene = selectedScene === "all" ? null : scenes[selectedScene];
   const displaySteps =
@@ -637,6 +743,7 @@ Requirements:
                       projectId: currentProjectIdRef.current,
                       sceneStatuses,
                       audioTrack,
+                      sceneSteps,
                     },
                   })
                 }
@@ -681,6 +788,7 @@ Requirements:
                 onSelectScene={handleSelectScene}
                 sceneStatuses={sceneStatuses}
                 onOpenAddScene={() => setIsAddSceneModalOpen(true)}
+                sceneVersions={allSceneVersions}
               />
             </TabsContent>
             
@@ -718,6 +826,14 @@ Requirements:
                 videoUrl={displayVideoUrl}
                 generatingMessage={generatingMessage}
                 videoRef={videoRef}
+                // Combined video props
+                allScenes={scenes}
+                allVideoUrls={sceneStatuses.map(s => s.videoUrl)}
+                combinedTime={playheadTime}
+                onCombinedTimeUpdate={setPlayheadTime}
+                isPlaying={isPlaying}
+                onTogglePlay={() => setIsPlaying(p => !p)}
+                combinedPlayerRef={combinedPlayerRef}
               />
             </ResizablePanel>
 
@@ -725,9 +841,9 @@ Requirements:
 
             {/* Video Output / Timeline */}
             <ResizablePanel
-              defaultSize={18}
-              minSize={8}
-              maxSize={40}
+              defaultSize={35}
+              minSize={15}
+              maxSize={55}
               onResize={setVideoPanelSize}
             >
               <VideoOutput
@@ -769,6 +885,15 @@ Requirements:
             selectedTimestamp={selectedTimestamp}
             onClearTimestamp={() => setSelectedTimestamp(null)}
             sceneContext={displayScene || undefined}
+            onRefinementStart={handleRefinementStart}
+            onRefinementComplete={handleRefinementComplete}
+            versions={currentSceneVersions}
+            currentVersion={currentSceneVersionNumber}
+            onRestoreVersion={(versionIndex) => {
+              if (typeof selectedScene === "number") {
+                handleRestoreVersion(selectedScene, versionIndex);
+              }
+            }}
           />
         </ResizablePanel>
       </ResizablePanelGroup>

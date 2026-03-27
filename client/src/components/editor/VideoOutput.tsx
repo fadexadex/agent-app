@@ -43,7 +43,7 @@ const formatTime = (seconds: number): string => {
 };
 
 const TRACK_HEIGHT = 28; // px — consistent row height (matches SingleSceneTimeline)
-const RULER_HEIGHT = 20; // px
+const RULER_HEIGHT = 24; // px — increased for better timestamp visibility
 const SCALE_SPLIT_COUNT = 4; // sub-ticks per major interval
 const LABEL_COL_WIDTH = 112; // px
 
@@ -91,6 +91,7 @@ const VideoOutput = ({
   const autoScrollRaf = useRef<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [speed, setSpeed] = useState<Speed>(1);
+  const [isDragging, setIsDragging] = useState(false);
 
   const progress = totalDuration > 0 ? (currentTime / totalDuration) * 100 : 0;
 
@@ -194,20 +195,32 @@ const VideoOutput = ({
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!allDone || e.button !== 0) return;
     isDraggingRef.current = true;
+    setIsDragging(true);
     e.currentTarget.setPointerCapture(e.pointerId);
     const time = computeTimeFromPointer(e);
     movePlayheadImperative(time);
-    onScrub?.(time - sceneStarts[findSceneAtTime(time)]);
-    onSelectScene(findSceneAtTime(time));
+
+    // In "all scenes" mode, don't navigate to individual scene
+    if (selectedScene !== "all") {
+      onScrub?.(time - sceneStarts[findSceneAtTime(time)]);
+      onSelectScene(findSceneAtTime(time));
+    }
+    // Don't call onSeek here for "all scenes" - wait until pointer up
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDraggingRef.current) return;
     const time = computeTimeFromPointer(e);
     movePlayheadImperative(time);
-    const sceneIdx = findSceneAtTime(time);
-    const relativeTime = time - sceneStarts[sceneIdx];
-    onScrub?.(relativeTime);
+
+    // During drag, only scrub video for single scene mode
+    // For "all scenes" mode, just update playhead visually (state updates on pointer up)
+    if (selectedScene !== "all") {
+      const sceneIdx = findSceneAtTime(time);
+      const relativeTime = time - sceneStarts[sceneIdx];
+      onScrub?.(relativeTime);
+    }
+
     // Auto-scroll near edges
     const container = scrollContainerRef.current;
     if (container) {
@@ -222,12 +235,25 @@ const VideoOutput = ({
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
+    setIsDragging(false);
     stopAutoScroll();
     e.currentTarget.releasePointerCapture(e.pointerId);
     const time = computeTimeFromPointer(e);
+
+    // In "all scenes" mode, don't auto-navigate to individual scene
+    if (selectedScene !== "all") {
+      const sceneIdx = findSceneAtTime(time);
+      onSelectScene(sceneIdx);
+    }
+    onSeek(time);
+  };
+
+  // Handle double-click to go to specific scene
+  const handleDoubleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!allDone) return;
+    const time = computeTimeFromPointer(e as unknown as React.PointerEvent<HTMLDivElement>);
     const sceneIdx = findSceneAtTime(time);
     onSelectScene(sceneIdx);
-    onSeek(time);
   };
 
   // Generate ruler ticks based on zoom — removed; now uses `ticks` memo above
@@ -384,6 +410,7 @@ const VideoOutput = ({
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
+          onDoubleClick={handleDoubleClick}
         >
           <div
             style={{ width: `${zoom * 100}%`, minWidth: "100%", position: "relative" }}
@@ -391,7 +418,7 @@ const VideoOutput = ({
           >
             {/* Time ruler — major + minor ticks */}
             <div
-              className="shrink-0 border-b border-white/10 relative overflow-hidden bg-[#0d0f14]"
+              className="shrink-0 border-b border-white/10 relative bg-[#0d0f14]"
               style={{ height: RULER_HEIGHT }}
             >
               {ticks.map(({ time, major }) => (
@@ -400,9 +427,9 @@ const VideoOutput = ({
                   className="absolute top-0 flex flex-col pointer-events-none"
                   style={{ left: `${(time / (totalDuration || 1)) * 100}%` }}
                 >
-                  <div className={cn("w-px", major ? "h-3 bg-white/30" : "h-1.5 bg-white/12")} />
+                  <div className={cn("w-px", major ? "h-2.5 bg-white/40" : "h-1.5 bg-white/15")} />
                   {major && (
-                    <span className="text-[8px] font-mono text-white/35 mt-0.5 pl-0.5 whitespace-nowrap">
+                    <span className="text-[9px] font-mono text-white/50 mt-0.5 pl-0.5 whitespace-nowrap select-none">
                       {formatTime(time)}
                     </span>
                   )}
@@ -473,14 +500,14 @@ const VideoOutput = ({
                 </div>
               )}
 
-              {/* Red Playhead — imperative position via ref */}
+              {/* Red Playhead — imperative position during drag, React-controlled otherwise */}
               {totalDuration > 0 && (
                 <div
                   ref={playheadRef}
-                  className="absolute top-0 bottom-0 z-20 pointer-events-none"
-                  style={{ left: `${progress}%`, willChange: "left" }}
+                  className="absolute inset-y-0 z-20 pointer-events-none"
+                  style={isDragging ? { willChange: "left" } : { left: `${progress}%`, willChange: "left" }}
                 >
-                  <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-red-500 opacity-80" />
+                  <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-red-500" />
                   <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto cursor-ew-resize"
                     style={{ top: -RULER_HEIGHT }}
                   >
@@ -497,6 +524,15 @@ const VideoOutput = ({
           </div>
         </div>
       </div>
+
+      {/* Hint bar */}
+      {selectedScene === "all" && allDone && (
+        <div className="shrink-0 px-3 py-0.5 border-t border-white/5 bg-[#0d0f14]">
+          <p className="text-[9px] text-white/25 text-center">
+            Double-click a scene to jump to it
+          </p>
+        </div>
+      )}
     </div>
   );
 };
