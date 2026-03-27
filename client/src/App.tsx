@@ -10,6 +10,7 @@ import EditorPage from "./pages/EditorPage.tsx";
 import ExportPage from "./pages/ExportPage.tsx";
 import VideosPage from "./pages/VideosPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import { Paywall } from "./components/Paywall.tsx";
 
 const queryClient = new QueryClient();
 
@@ -18,17 +19,19 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/videos" element={<VideosPage />} />
-          <Route path="/generating" element={<GeneratingPage />} />
-          <Route path="/storyboard" element={<StoryboardPage />} />
-          <Route path="/editor" element={<EditorPage />} />
-          <Route path="/export" element={<ExportPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <Paywall>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/videos" element={<VideosPage />} />
+            <Route path="/generating" element={<GeneratingPage />} />
+            <Route path="/storyboard" element={<StoryboardPage />} />
+            <Route path="/editor" element={<EditorPage />} />
+            <Route path="/export" element={<ExportPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </Paywall>
     </TooltipProvider>
   </QueryClientProvider>
 );
