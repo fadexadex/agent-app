@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Zap, Film, FolderOpen, Paperclip, X, Loader2, Globe, Wand2, Smartphone, Presentation } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Film, FolderOpen, Paperclip, X, Loader2, Palette, Wand2, Smartphone, Presentation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -187,7 +187,7 @@ const Index = () => {
                       className={`relative text-muted-foreground hover:text-foreground transition-colors ${brand ? "text-primary" : ""}`}
                       title="Extract brand from URL"
                     >
-                      <Globe className="w-5 h-5" />
+                      <Palette className="w-5 h-5" />
                       {brand && (
                         <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full text-[10px] text-primary-foreground flex items-center justify-center font-semibold">
                           {brand.colors.length}

@@ -122,5 +122,19 @@ export default defineConfig(({ mode, command }) => {
     optimizeDeps: {
       exclude: ["@remotion-scenes", "@remotion-components"],
     },
+    build: {
+      outDir: path.resolve(clientDir, "../dist"),
+      emptyOutDir: true,
+      chunkSizeWarningLimit: 1000,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              return 'vendor';
+            }
+          }
+        }
+      }
+    },
   };
 });
