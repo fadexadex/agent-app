@@ -151,10 +151,6 @@ Use these colors for text accents and UI elements where appropriate.`;
   let modeInstruction = "";
   if (generationMode === "animate-media") {
     modeInstruction = `\n\nMODE: Animate Media. The user wants to animate their provided assets (like PDFs or images). Focus on creating scenes that display the uploaded assets prominently using panning, zooming, and motion suitable for a data/media showcase. Do not invent fake product UI if they just want their media animated.`;
-  } else if (generationMode === "social-reel") {
-    modeInstruction = `\n\nMODE: Social Reel. Create short, punchy, fast-paced scenes optimized for social media engagement.`;
-  } else if (generationMode === "explainer") {
-    modeInstruction = `\n\nMODE: Explainer Video. Focus on clear, step-by-step explanatory scenes that educate the viewer. Break down complex topics into simple visuals.`;
   }
 
   return `You are a video scene scriptwriter for Remotion animations.

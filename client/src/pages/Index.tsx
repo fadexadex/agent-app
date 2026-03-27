@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Zap, Film, FolderOpen, Paperclip, X, Loader2, Palette, Wand2, Smartphone, Presentation } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Film, FolderOpen, Paperclip, X, Loader2, Palette, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -9,13 +9,11 @@ import BrandColorExtractor, { BrandData } from "@/components/BrandColorExtractor
 import { examplePrompts } from "@/lib/mockData";
 import { uploadFile } from "@/lib/upload";
 
-type GenerationMode = "product-video" | "animate-media" | "social-reel" | "explainer";
+type GenerationMode = "product-video" | "animate-media";
 
 const modes: { id: GenerationMode; label: string; icon: React.ReactNode }[] = [
   { id: "product-video", label: "Product Video", icon: <Film className="w-5 h-5" /> },
   { id: "animate-media", label: "Animate Media", icon: <Wand2 className="w-5 h-5" /> },
-  { id: "social-reel", label: "Social", icon: <Smartphone className="w-5 h-5" /> },
-  { id: "explainer", label: "Explainer", icon: <Presentation className="w-5 h-5" /> },
 ];
 
 const Index = () => {
