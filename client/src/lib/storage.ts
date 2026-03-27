@@ -212,6 +212,9 @@ export interface StoredAnimationChat {
   latestVideoUrl?: string | null;
   latestPreviewUrl?: string | null;
   latestSceneId?: string | null;
+  // Versioning
+  currentVersion?: number;
+  versions?: SceneVersion[];
 }
 
 const ANIMATION_CHATS_KEY = "fusion_animation_chats";
@@ -367,6 +370,72 @@ export function getSceneCurrentVersion(
   sceneIndex: number
 ): number {
   const project = getProject(projectId);
-  if (!project || !project.scenes[sceneIndex]) return 1;
   return project.scenes[sceneIndex].currentVersion || 1;
+}
+
+/**
+ * Add a new version to an animation chat's history.
+ */
+export function addChatVersion(
+  chatId: string,
+  version: Omit<SceneVersion, "id" | "createdAt">
+): void {
+  const chat = getAnimationChat(chatId);
+  if (!chat) return;
+
+  const newVersion: SceneVersion = {
+    id: generateProjectId(),
+    videoUrl: version.videoUrl,
+    previewUrl: version.previewUrl,
+    createdAt: Date.now(),
+    prompt: version.prompt,
+  };
+
+  if (!chat.versions) {
+    chat.versions = [];
+  }
+
+  // If this is the first version and chat already has media, save current as v1
+  if (chat.versions.length === 0 && (chat.latestVideoUrl || chat.latestPreviewUrl)) {
+    chat.versions.push({
+      id: generateProjectId(),
+      videoUrl: chat.latestVideoUrl || "",
+      previewUrl: chat.latestPreviewUrl || undefined,
+      createdAt: chat.createdAt,
+      prompt: undefined,
+    });
+  }
+
+  chat.versions.push(newVersion);
+
+  if (chat.versions.length > MAX_VERSIONS_PER_SCENE) {
+    chat.versions = chat.versions.slice(-MAX_VERSIONS_PER_SCENE);
+  }
+
+  chat.currentVersion = chat.versions.length;
+  chat.latestVideoUrl = version.videoUrl;
+  chat.latestPreviewUrl = version.previewUrl;
+
+  chat.updatedAt = Date.now();
+  saveAnimationChat(chat);
+}
+
+/**
+ * Restore a chat to a previous version.
+ */
+export function restoreChatVersion(
+  chatId: string,
+  versionIndex: number
+): void {
+  const chat = getAnimationChat(chatId);
+  if (!chat || !chat.versions || !chat.versions[versionIndex]) return;
+
+  const targetVersion = chat.versions[versionIndex];
+
+  chat.latestVideoUrl = targetVersion.videoUrl;
+  chat.latestPreviewUrl = targetVersion.previewUrl;
+  chat.currentVersion = versionIndex + 1;
+
+  chat.updatedAt = Date.now();
+  saveAnimationChat(chat);
 }

@@ -61,6 +61,15 @@ You can start the project using the scripts in `package.json`:
     npm run dev:remotion
     ```
 
+## Demo / Testing Credentials
+For testing purposes, you can use the following details:
+
+Card: <code>5060 9905 8000 0217 499</code><br>
+Expiry: <code>03/50</code><br>
+CVV: <code>111</code><br>
+PIN: <code>1111</code><br>
+OTP: <code>123456</code>
+
 ## Project Structure
 This project is a monorepo with three main parts:
 - `client/` — React + Vite frontend with Tailwind CSS, Framer Motion, and shadcn/ui components.

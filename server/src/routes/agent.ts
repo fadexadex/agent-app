@@ -28,7 +28,38 @@ const UPLOADS_DIR = resolve(process.cwd(), "../remotion/public");
 
 router.post("/chat", async (req: Request, res: Response) => {
   try {
-    const { messages, sceneId, sceneContext, assets } = req.body as ChatRequest;
+    const { messages: rawMessages, sceneId, sceneContext, assets } = req.body as ChatRequest;
+
+    // Deep clone to avoid mutating req.body accidentally
+    let messages = JSON.parse(JSON.stringify(rawMessages));
+
+    // Sanitization: Remove any tool-calls that don't have a corresponding tool-result in the same message or turn.
+    // This prevents the "Tool result is missing" error when refinement chat history is sent back to the LLM.
+    messages = messages.map((msg: any) => {
+      if (msg.role === "assistant" && Array.isArray(msg.parts)) {
+        const parts = [...msg.parts];
+        const toolCallIdsWithResults = new Set(
+          parts.filter((p: any) => p.type === "tool-result").map((p: any) => p.toolCallId)
+        );
+
+        // Filter out tool calls that don't have a matching result
+        const sanitizedParts = parts.filter((p: any) => {
+          if (p.type === "tool-invocation" || p.type === "tool-call") {
+             const hasResult = toolCallIdsWithResults.has(p.toolCallId);
+             if (!hasResult) {
+                console.warn(`[API] Removing dangling tool call ${p.toolCallId} from message ${msg.id}`);
+                return false;
+             }
+          }
+          return true;
+        });
+
+        msg.parts = sanitizedParts;
+      }
+      return msg;
+    });
+
+    console.log(`[API] Processing chat with ${messages.length} messages. History length: ${JSON.stringify(messages).length} chars.`);
 
     // Attach base64 data to the last user message if there are assets
     if (assets && assets.length > 0 && messages.length > 0) {

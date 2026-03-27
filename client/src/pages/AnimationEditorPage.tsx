@@ -13,7 +13,17 @@ import { uploadFile } from "@/lib/upload";
 import MainPreview from "@/components/editor/MainPreview";
 import AgentStepItem from "@/components/editor/AgentStepItem";
 import { AgentStep } from "@/lib/agentTypes";
-import { getAllAnimationChats, getAnimationChat, saveAnimationChat, deleteAnimationChat, StoredAnimationChat, getRelativeTime } from "@/lib/storage";
+import { 
+  getAllAnimationChats, 
+  getAnimationChat, 
+  saveAnimationChat, 
+  deleteAnimationChat, 
+  StoredAnimationChat, 
+  getRelativeTime,
+  addChatVersion,
+  restoreChatVersion,
+  SceneVersion
+} from "@/lib/storage";
 
 // Map tool calls to AgentStep types (copied from useAgent for local usage)
 function toolCallToAgentStep(
@@ -115,6 +125,8 @@ const AnimationEditorPageInner = () => {
   const [latestVideoUrl, setLatestVideoUrl] = useState<string | null>(existingChat?.latestVideoUrl || null);
   const [latestPreviewUrl, setLatestPreviewUrl] = useState<string | null>(existingChat?.latestPreviewUrl || null);
   const [latestSceneId, setLatestSceneId] = useState<string | null>(existingChat?.latestSceneId || null);
+  const [currentVersion, setCurrentVersion] = useState(existingChat?.currentVersion || (existingChat?.versions?.length || 0));
+  const [versions, setVersions] = useState<SceneVersion[]>(existingChat?.versions || []);
   const [isRendering, setIsRendering] = useState(false);
   const [historyChats, setHistoryChats] = useState<StoredAnimationChat[]>([]);
   
@@ -208,12 +220,29 @@ const AnimationEditorPageInner = () => {
               setLatestSceneId(result.sceneId);
             }
           } else if (result.success && result.videoUrl && result.videoUrl !== latestVideoUrl) {
+            // New version detected!
+            const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user');
+            let versionPrompt = "";
+            if (lastUserMsg) {
+              versionPrompt = (lastUserMsg as any).text || (lastUserMsg.parts ? (lastUserMsg.parts as any[]).find((p: any) => p.type === 'text')?.text : "");
+            }
+
+            addChatVersion(activeChatId.current, {
+              videoUrl: result.videoUrl,
+              previewUrl: latestPreviewUrl || undefined,
+              prompt: versionPrompt || "Refinement"
+            });
+            const updated = getAnimationChat(activeChatId.current);
+            if (updated) {
+              setVersions(updated.versions || []);
+              setCurrentVersion(updated.currentVersion || 0);
+            }
             setLatestVideoUrl(result.videoUrl);
           }
         }
       }
     }
-  }, [messages, startRenderPolling, latestVideoUrl, latestPreviewUrl]);
+  }, [messages, startRenderPolling, latestVideoUrl, latestPreviewUrl, input]);
 
   // Initial trigger for new chats
   useEffect(() => {
@@ -238,19 +267,21 @@ const AnimationEditorPageInner = () => {
       else if (msgText) activeTitle = msgText.slice(0, 30) + "...";
       else if (existingChat) activeTitle = existingChat.title;
 
-      saveAnimationChat({
-        id: activeChatId.current,
-        title: activeTitle,
-        createdAt: existingChat ? existingChat.createdAt : Date.now(),
-        updatedAt: Date.now(),
-        messages,
-        latestVideoUrl,
-        latestPreviewUrl,
-        latestSceneId,
-      });
-      setHistoryChats(getAllAnimationChats());
-    }
-  }, [messages, latestVideoUrl, latestPreviewUrl, latestSceneId]);
+        saveAnimationChat({
+          id: activeChatId.current,
+          title: activeTitle,
+          createdAt: existingChat ? existingChat.createdAt : Date.now(),
+          updatedAt: Date.now(),
+          messages,
+          latestVideoUrl,
+          latestPreviewUrl,
+          latestSceneId,
+          currentVersion,
+          versions,
+        });
+        setHistoryChats(getAllAnimationChats());
+      }
+    }, [messages, latestVideoUrl, latestPreviewUrl, latestSceneId, currentVersion, versions]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -530,7 +561,50 @@ const AnimationEditorPageInner = () => {
 
         {/* Right Pane: Video Player */}
         <ResizablePanel defaultSize={65} className="bg-black/5 relative">
-          <div className="h-full w-full p-4 md:p-8 flex items-center justify-center">
+          <div className="h-full w-full p-4 md:p-8 flex items-center justify-center flex-col gap-4">
+            {/* Version Switcher */}
+            {versions.length > 1 && (
+              <div className="flex items-center gap-3 bg-card/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-border shadow-lg z-20">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  disabled={currentVersion <= 1}
+                  onClick={() => {
+                    const newIdx = currentVersion - 2;
+                    restoreChatVersion(activeChatId.current, newIdx);
+                    setCurrentVersion(currentVersion - 1);
+                    const v = versions[newIdx];
+                    setLatestVideoUrl(v.videoUrl);
+                    if (v.previewUrl) setLatestPreviewUrl(v.previewUrl);
+                  }}
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                </Button>
+                
+                <div className="text-[11px] font-bold tracking-tight uppercase text-muted-foreground select-none">
+                  Version <span className="text-foreground">{currentVersion}</span> / {versions.length}
+                </div>
+
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground disabled:opacity-30"
+                  disabled={currentVersion >= versions.length}
+                  onClick={() => {
+                    const newIdx = currentVersion;
+                    restoreChatVersion(activeChatId.current, newIdx);
+                    setCurrentVersion(currentVersion + 1);
+                    const v = versions[newIdx];
+                    setLatestVideoUrl(v.videoUrl);
+                    if (v.previewUrl) setLatestPreviewUrl(v.previewUrl);
+                  }}
+                >
+                  <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
+                </Button>
+              </div>
+            )}
+
             {latestPreviewUrl || latestVideoUrl ? (
               <div className="w-full h-full rounded-xl overflow-hidden shadow-2xl border border-border/50 bg-black flex flex-col">
                 <MainPreview
