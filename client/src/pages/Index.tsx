@@ -28,7 +28,8 @@ const Index = () => {
 
   const handleGenerate = () => {
     if (!prompt.trim() && assets.length === 0) return;
-    navigate("/generating", {
+    const targetRoute = generationMode === "animate-media" ? "/animate" : "/generating";
+    navigate(targetRoute, {
       state: {
         prompt,
         assets,
@@ -92,8 +93,9 @@ const Index = () => {
       </header>
 
       {/* Hero */}
-      <main className="flex-1 flex items-center justify-center px-4">
-        <motion.div
+      <main className="flex-1 flex flex-col">
+        <div className="flex-1 flex items-center justify-center px-4 min-h-[calc(100vh-80px)] py-12">
+          <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -272,7 +274,100 @@ const Index = () => {
               ))}
             </div>
           </div>
-        </motion.div>
+          </motion.div>
+        </div>
+
+        {/* Community Showcase Section */}
+        <section className="w-full py-24 bg-muted/30 border-t relative overflow-hidden">
+          {/* Subtle background decoration */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div className="max-w-6xl mx-auto px-6 relative z-10">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                Made with <span className="text-primary">Fusion</span>
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+                Discover what our community is creating. High-quality videos tailored to your brand, ready in seconds.
+              </p>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+              {[
+                {
+                  videoUrl: "https://res.cloudinary.com/dwl6lr9vq/video/upload/v1774645162/exported-video_3_rerx3u.mp4",
+                  prompt: "A modern SaaS landing page explainer for remote teams",
+                  tag: "Product Video"
+                },
+                {
+                  videoUrl: "https://res.cloudinary.com/dwl6lr9vq/video/upload/v1774645827/exported-video_4_yqnu1a.mp4",
+                  prompt: "Sleek animated text revealing a new feature rollout",
+                  tag: "Animate Media"
+                }
+              ].map((demo, idx) => (
+                <Dialog key={idx}>
+                  <DialogTrigger asChild>
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.6, delay: 0.2 + idx * 0.1 }}
+                      className="group relative rounded-3xl overflow-hidden border bg-card/50 backdrop-blur-sm shadow-xl hover:shadow-2xl hover:border-primary/20 transition-all duration-500 cursor-pointer"
+                    >
+                      <div className="aspect-video relative overflow-hidden bg-black/5">
+                        <video
+                          src={demo.videoUrl}
+                          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 ease-out"
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                        />
+                        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                           <div className="w-16 h-16 rounded-full bg-black/50 border border-white/20 backdrop-blur-md flex items-center justify-center text-white scale-90 group-hover:scale-100 transition-all duration-300 shadow-xl">
+                             <svg className="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                           </div>
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                      </div>
+                      
+                      <div className="absolute bottom-0 left-0 right-0 p-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="px-3 py-1 text-xs font-semibold bg-primary/90 text-primary-foreground rounded-full backdrop-blur-md shadow-sm">
+                            {demo.tag}
+                          </span>
+                        </div>
+                        <p className="text-white text-sm font-medium line-clamp-2 drop-shadow-md">
+                          "{demo.prompt}"
+                        </p>
+                      </div>
+                    </motion.div>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-5xl w-[95vw] p-0 border-none bg-transparent shadow-none overflow-hidden sm:rounded-xl">
+                    <DialogHeader className="sr-only">
+                      <DialogTitle>Community Video: {demo.prompt}</DialogTitle>
+                      <DialogDescription>Community submitted showcase video playing.</DialogDescription>
+                    </DialogHeader>
+                    <video
+                      src={demo.videoUrl}
+                      className="w-full h-auto max-h-[85vh] object-contain rounded-xl bg-black/95 shadow-2xl ring-1 ring-white/10"
+                      controls
+                      autoPlay
+                      playsInline
+                    />
+                  </DialogContent>
+                </Dialog>
+              ))}
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );

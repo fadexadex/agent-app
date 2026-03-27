@@ -9,6 +9,7 @@ import StoryboardPage from "./pages/StoryboardPage.tsx";
 import EditorPage from "./pages/EditorPage.tsx";
 import ExportPage from "./pages/ExportPage.tsx";
 import VideosPage from "./pages/VideosPage.tsx";
+import AnimationEditorPage from "./pages/AnimationEditorPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { Paywall } from "./components/Paywall.tsx";
 
@@ -25,6 +26,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/videos" element={<VideosPage />} />
             <Route path="/generating" element={<GeneratingPage />} />
+            <Route path="/animate" element={<AnimationEditorPage />} />
+            <Route path="/animate/:chatId" element={<AnimationEditorPage />} />
             <Route path="/storyboard" element={<StoryboardPage />} />
             <Route path="/editor" element={<EditorPage />} />
             <Route path="/export" element={<ExportPage />} />

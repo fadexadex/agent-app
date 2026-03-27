@@ -1,42 +1,43 @@
-# Fusion (formerly MotionAI) 🎬✨
+# Fusion
 
-**Fusion** is an AI-powered video generation tool that solves the "blank canvas" problem by allowing users to instantly generate, orchestrate, and edit code-based video scenes (Remotion) through conversational AI and data uploads. 
+Fusion is an AI-powered video creation tool that helps creators overcome the "blank canvas" problem. It lets you instantly generate, orchestrate, and edit video scenes using code (Remotion) through a conversational AI interface or by extracting data directly from a URL drop.
 
-Built for modern creators, marketers, and developers, Fusion democratizes motion graphics by combining the effortless generation of AI with the deterministic precision of a multi-track timeline.
+Designed for creators, marketers, and developers, Fusion makes motion graphics accessible by blending AI-powered automation with precise, timeline-based editing.
 
-## ✨ Key Features
-*   **Conversational Video Generation:** An intuitive, Replit-style conversational AI interface powered by Claude Sonnet 4.
-*   **Code-Based Scenes:** Generates perfectly crisp, infinitely editable React components using Remotion.
-*   **Deterministic Editing:** A tactile, multi-track timeline component with snap-to-grid for precise timing adjustments.
-*   **Brand Asset Extraction:** Seamless URL-drop extraction for logos, colors, and typography to keep videos on-brand.
-*   **Data-Driven Pipelines:** Turn structured data (PDFs/Images) directly into animated scenes.
+## Key Features
 
-## 👥 Team Contributions
+*   **Conversational Video Generation:** Chat with an intuitive AI interface to generate videos effortlessly. 
+*   **Code-Based Scenes:** Get crisp, fully editable React components for every scene using Remotion.
+*   **Precise Timeline Editing:** A multi-track timeline allows you to adjust the timing of different media elements on the generated scenes.
+*   **Brand Asset Extraction:** Drop a URL to automatically pull logos, colors, and fonts to keep your videos on-brand.
+*   **Custom Animations:** Turn static assets into dynamic, animated video content seamlessly.
 
-> **⚠️ NOTE FOR JUDGES:** The following section details the specific technical and non-technical contributions of each team member. 
+## Team Contributions
+
+> **NOTE FOR JUDGES:** Here’s who did what—both technical and non-technical contributions are highlighted.
 
 *   **Daniel Fadehan** — *Software Engineer (Lead Developer)*
-    *   **Technical:** Spearheaded the vast majority of the repository's technical execution. Implemented the Vercel AI SDK `ToolLoopAgent` on the Node.js backend, built the core React/Vite frontend (including the multi-track timeline), and authored the Remotion video generation workspace. Developed the URL brand extraction and data-driven pipelines.
+    *   **Technical:** Spearheaded the vast majority of the repository's technical execution. Implemented the Vercel AI SDK `ToolLoopAgent` on the Node.js backend, built the core React/Vite frontend (including the multi-track timeline), and authored the Remotion video generation workspace. 
     *   **Non-Technical:** Managed the complex monorepo architecture and deployment processes across the client, server, and Remotion workspaces.
 
 *   **Taiwo Ayomide** — *Software Engineer (Product & UI)*
-    *   **Technical:** Executed UI modifications and refinements in the frontend to align the application's aesthetic. Ensured accessible, clean interface components,developed the URL brand extraction.
+    *   **Technical:** Executed UI modifications and refinements in the frontend to align the application's aesthetic. Developed the URL brand extraction.
     *   **Non-Technical:** Involved in the crucial planning phase of the project. Contributed to defining the product requirements, structured the initial architecture plans.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-- Node.js (v18+)
+- Node.js (v18 or higher)
 - npm
 
-### 1. Install Dependencies
-From the root of the project, run:
+### Install Dependencies
+From the root of the project:
 ```bash
 npm install
 ```
 
-### 2. Environment Variables
-Create a `.env` file in the `server` directory (`server/.env`) and add the necessary API keys for the AI providers:
+### Set Up Environment Variables
+Create a `.env` file inside the `server/` directory (`server/.env`) and add your API keys:
 ```ini
 AI_GATEWAY_API_KEY=your_ai_gateway_api_key
 GROQ_API_KEY=your_groq_api_key
@@ -44,24 +45,24 @@ GOOGLE_GENERATIVE_AI_API_KEY=your_google_generative_ai_api_key
 ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
 
-### 3. Run the Application
-You can start the app from the root directory using the scripts defined in `package.json`:
+### Run the Application
+You can start the project using the scripts in `package.json`:
 
-- **Start Everything (Client, Server, & Remotion Studio):**
-  ```bash
-  npm run dev:all
-  ```
-- **Start the Client & Server only:**
-  ```bash
-  npm run dev
-  ```
-- **Start Only Remotion Studio:**
-  ```bash
-  npm run dev:remotion
-  ```
+*   **Start everything (Client, Server, & Remotion Studio):**
+    ```bash
+    npm run dev:all
+    ```
+*   **Start only Client & Server:**
+    ```bash
+    npm run dev
+    ```
+*   **Start only Remotion Studio:**
+    ```bash
+    npm run dev:remotion
+    ```
 
-## 📁 Project Structure
-The repository is structured as a monorepo with three main components:
-- `client/` - React + Vite frontend using shadcn/ui, Tailwind CSS, and Framer Motion.
-- `server/` - Express backend integrating the Vercel AI SDK (ToolLoopAgent).
-- `remotion/` - Video rendering workspace with reusable React animation components.
+## Project Structure
+This project is a monorepo with three main parts:
+- `client/` — React + Vite frontend with Tailwind CSS, Framer Motion, and shadcn/ui components.
+- `server/` — Express backend integrating the Vercel AI SDK (ToolLoopAgent).
+- `remotion/` — Workspace for video rendering with reusable, code-based animation components.

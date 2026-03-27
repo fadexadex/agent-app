@@ -1,0 +1,104 @@
+npm warn config optional Use `--omit=optional` to exclude optional dependencies, or
+npm warn config `--include=optional` to include them.
+npm warn config
+npm warn config       Default value does install optional deps unless otherwise omitted.
+
+> agent-ui-client@0.0.0 lint
+> eslint .
+
+
+C:\Users\Ayo\agent-app\client\src\components\BrandColorExtractor.tsx
+  75:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Ayo\agent-app\client\src\components\ai-elements\chain-of-thought.tsx
+   38:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+   55:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+  144:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\Ayo\agent-app\client\src\components\editor\AssetList.tsx
+  39:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Ayo\agent-app\client\src\components\editor\FullscreenPreviewModal.tsx
+  172:6  warning  React Hook useEffect has a missing dependency: 'seekToGlobalTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Ayo\agent-app\client\src\components\editor\RemotionTimeline.tsx
+   25:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  184:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Ayo\agent-app\client\src\components\ui\badge.tsx
+  29:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Ayo\agent-app\client\src\components\ui\button.tsx
+  47:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Ayo\agent-app\client\src\components\ui\command.tsx
+  24:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\Ayo\agent-app\client\src\components\ui\form.tsx
+  129:10  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Ayo\agent-app\client\src\components\ui\navigation-menu.tsx
+  111:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Ayo\agent-app\client\src\components\ui\sidebar.tsx
+  636:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Ayo\agent-app\client\src\components\ui\sonner.tsx
+  27:19  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Ayo\agent-app\client\src\components\ui\textarea.tsx
+  5:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\Ayo\agent-app\client\src\components\ui\toggle.tsx
+  37:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+C:\Users\Ayo\agent-app\client\src\hooks\useAgent.ts
+   31:17  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+   84:30  warning  The ref value 'renderPollIntervalsRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'renderPollIntervalsRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+  246:6   warning  React Hook useEffect has a missing dependency: 'startRenderPolling'. Either include it or remove the dependency array                                                                                                                                                                        react-hooks/exhaustive-deps
+
+C:\Users\Ayo\agent-app\client\src\pages\AnimationEditorPage.tsx
+  104:9    warning  The 'initialAssets' logical expression could make the dependencies of useEffect Hook (at line 212) change on every render. To fix this, wrap the initialization of 'initialAssets' in its own useMemo() Hook                                                                                 react-hooks/exhaustive-deps
+  141:30   warning  The ref value 'renderPollIntervalsRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'renderPollIntervalsRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+  204:6    warning  React Hook useEffect has a missing dependency: 'latestSceneId'. Either include it or remove the dependency array                                                                                                                                                                             react-hooks/exhaustive-deps
+  287:103  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+  413:199  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                     @typescript-eslint/no-explicit-any
+
+C:\Users\Ayo\agent-app\client\src\pages\EditorPage.tsx
+   44:37  error    Unexpected any. Specify a different type                                                                                                                                   @typescript-eslint/no-explicit-any
+   45:52  error    Unexpected any. Specify a different type                                                                                                                                   @typescript-eslint/no-explicit-any
+   46:66  error    Unexpected any. Specify a different type                                                                                                                                   @typescript-eslint/no-explicit-any
+   47:50  error    Unexpected any. Specify a different type                                                                                                                                   @typescript-eslint/no-explicit-any
+   48:77  error    Unexpected any. Specify a different type                                                                                                                                   @typescript-eslint/no-explicit-any
+  192:6   warning  React Hook useEffect has missing dependencies: 'passedProjectId', 'passedSceneStatuses', 'passedScenes', and 'prompt'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  200:6   warning  React Hook useEffect has a missing dependency: 'startProcessingScene'. Either include it or remove the dependency array                                                    react-hooks/exhaustive-deps
+  320:6   warning  React Hook useEffect has a missing dependency: 'startProcessingScene'. Either include it or remove the dependency array                                                    react-hooks/exhaustive-deps
+
+C:\Users\Ayo\agent-app\client\src\pages\ExportPage.tsx
+  15:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  16:46  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  17:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  18:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  19:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  89:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Ayo\agent-app\client\src\pages\GeneratingPage.tsx
+  30:9  warning  The 'assets' logical expression could make the dependencies of useEffect Hook (at line 98) change on every render. Move it inside the useEffect callback. Alternatively, wrap the initialization of 'assets' in its own useMemo() Hook            react-hooks/exhaustive-deps
+  31:9  warning  The 'brandColors' logical expression could make the dependencies of useEffect Hook (at line 98) change on every render. Move it inside the useEffect callback. Alternatively, wrap the initialization of 'brandColors' in its own useMemo() Hook  react-hooks/exhaustive-deps
+
+C:\Users\Ayo\agent-app\client\src\pages\StoryboardPage.tsx
+  36:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  39:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\Ayo\agent-app\client\tailwind.config.ts
+  109:13  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+✖ 44 problems (26 errors, 18 warnings)
+
+npm error Lifecycle script `lint` failed with error:
+npm error code 1
+npm error path C:\Users\Ayo\agent-app\client
+npm error workspace agent-ui-client@0.0.0
+npm error location C:\Users\Ayo\agent-app\client
+npm error command failed
+npm error command C:\WINDOWS\system32\cmd.exe /d /s /c eslint .

@@ -1,5 +1,6 @@
 import { Scene } from "./mockData";
 import { AgentStep } from "./agentTypes";
+import { UIMessage } from "ai";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -187,4 +188,66 @@ export function getRelativeTime(timestamp: number): string {
   if (hours > 0) return `${hours} hour${hours > 1 ? "s" : ""} ago`;
   if (minutes > 0) return `${minutes} minute${minutes > 1 ? "s" : ""} ago`;
   return "Just now";
+}
+
+// ─── Animation Chats ────────────────────────────────────────────────────────────
+
+export interface StoredAnimationChat {
+  id: string;
+  title: string;
+  createdAt: number;
+  updatedAt: number;
+  messages: UIMessage[];
+  latestVideoUrl?: string | null;
+  latestPreviewUrl?: string | null;
+  latestSceneId?: string | null;
+}
+
+const ANIMATION_CHATS_KEY = "fusion_animation_chats";
+
+export function getAllAnimationChats(): StoredAnimationChat[] {
+  try {
+    const data = localStorage.getItem(ANIMATION_CHATS_KEY);
+    if (!data) return [];
+    const chats: StoredAnimationChat[] = JSON.parse(data);
+    return chats.sort((a, b) => b.updatedAt - a.updatedAt);
+  } catch {
+    return [];
+  }
+}
+
+export function getAnimationChat(id: string): StoredAnimationChat | null {
+  const chats = getAllAnimationChats();
+  return chats.find((c) => c.id === id) || null;
+}
+
+export function saveAnimationChat(chat: StoredAnimationChat): void {
+  const chats = getAllAnimationChats();
+  const existingIndex = chats.findIndex((c) => c.id === chat.id);
+
+  if (existingIndex >= 0) {
+    chats[existingIndex] = chat;
+  } else {
+    chats.unshift(chat);
+  }
+
+  // Prune if over limit
+  if (chats.length > MAX_PROJECTS) {
+    chats.splice(MAX_PROJECTS);
+  }
+
+  try {
+    localStorage.setItem(ANIMATION_CHATS_KEY, JSON.stringify(chats));
+  } catch (e) {
+    if (e instanceof DOMException && e.name === "QuotaExceededError") {
+      chats.splice(Math.floor(MAX_PROJECTS / 2));
+      localStorage.setItem(ANIMATION_CHATS_KEY, JSON.stringify(chats));
+    }
+  }
+}
+
+export function deleteAnimationChat(id: string): void {
+  const chats = getAllAnimationChats();
+  const filtered = chats.filter((c) => c.id !== id);
+  localStorage.setItem(ANIMATION_CHATS_KEY, JSON.stringify(filtered));
 }
