@@ -8,6 +8,8 @@ interface AudioWaveformProps {
   duration: number;
   color?: string;
   backgroundColor?: string;
+  /** Unique id for the SVG clipPath element — prevents duplicate-id issues */
+  clipPathId?: string;
 }
 
 const AudioWaveform = ({
@@ -18,6 +20,7 @@ const AudioWaveform = ({
   duration,
   color = "#10B981",
   backgroundColor = "rgba(16, 185, 129, 0.2)",
+  clipPathId = "progress-clip",
 }: AudioWaveformProps) => {
   const [waveformData, setWaveformData] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -134,7 +137,7 @@ const AudioWaveform = ({
         style={{ overflow: "visible" }}
       >
         <defs>
-          <clipPath id="progress-clip">
+          <clipPath id={clipPathId}>
             <rect x={0} y={0} width={`${progressPercent}%`} height={height} />
           </clipPath>
         </defs>
@@ -144,7 +147,7 @@ const AudioWaveform = ({
           stroke={color}
           strokeWidth={2}
           strokeLinecap="round"
-          clipPath="url(#progress-clip)"
+          clipPath={`url(#${clipPathId})`}
         />
       </svg>
 

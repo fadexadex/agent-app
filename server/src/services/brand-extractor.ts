@@ -5,12 +5,37 @@
  * Used to generate brand-consistent video scenes with the extracted color palette.
  */
 
+export interface BrandFont {
+  role?: string;   // "body", "heading", etc.
+  family: string;
+  source?: string; // "google", "custom", etc.
+  weights?: number[];
+}
+
+export interface BrandColorDetail {
+  hex: string;
+  usage?: string; // "primary", "secondary", "accent", etc.
+}
+
+export interface BrandLogo {
+  url: string;
+  type?: string; // "favicon", "logo", "wordmark", etc.
+}
+
+export interface BrandBackdrop {
+  url: string;
+  description?: string; // "Open Graph image", "Hero/banner image", etc.
+}
+
 export interface BrandColors {
   brandName?: string;
-  colors: string[]; // Hex color array: ["#FF5733", "#C70039"]
-  logos?: string[];
-  /** Hero / OG images from OpenBrand (present when colors could not be derived) */
+  colors: string[];           // Plain hex array for backward compat
+  colorDetails?: BrandColorDetail[]; // Full detail with usage
+  logos?: string[];           // Plain URLs for backward compat
+  logoDetails?: BrandLogo[];  // Full detail with type label
   backdrops?: string[];
+  backdropDetails?: BrandBackdrop[];
+  fonts?: BrandFont[];
 }
 
 /** Current API: { success, data } — legacy: flat brand_name / colors on root */
@@ -30,6 +55,13 @@ interface OpenBrandPayload {
   colors?: unknown[];
   logos?: unknown[];
   backdrops?: Array<{ url: string; description?: string }>;
+  fonts?: Array<{ role?: string; family?: string; source?: string; weights?: number[] }>;
+}
+
+interface OpenBrandLogoObj {
+  url: string;
+  type?: string;
+  resolution?: { width?: number; height?: number; aspect_ratio?: number };
 }
 
 interface OpenBrandColor {
@@ -103,49 +135,82 @@ function hexFromColorEntry(entry: unknown): string | null {
   return null;
 }
 
+function colorUsageFromEntry(entry: unknown): string | undefined {
+  if (!entry || typeof entry !== "object") return undefined;
+  const o = entry as OpenBrandColor & Record<string, unknown>;
+  return typeof o.usage === "string" ? o.usage : undefined;
+}
+
 function mapToBrandColors(payload: OpenBrandPayload, fallbackUrl: string): BrandColors {
   const brandName = payload.brandName ?? payload.brand_name;
 
   const colors: string[] = [];
+  const colorDetails: BrandColorDetail[] = [];
+  const seenHex = new Set<string>();
+
   if (payload.colors && Array.isArray(payload.colors)) {
     for (const entry of payload.colors) {
       const hex = hexFromColorEntry(entry);
-      if (hex) colors.push(hex);
+      if (hex && !seenHex.has(hex)) {
+        seenHex.add(hex);
+        colors.push(hex);
+        colorDetails.push({ hex, usage: colorUsageFromEntry(entry) });
+      }
     }
   }
 
-  const uniqueColors = Array.from(new Set(colors));
-
   const logos: string[] = [];
+  const logoDetails: BrandLogo[] = [];
   if (payload.logos && Array.isArray(payload.logos)) {
     for (const logoObj of payload.logos) {
       if (typeof logoObj === "string" && /^https?:\/\//i.test(logoObj)) {
         logos.push(logoObj);
+        logoDetails.push({ url: logoObj });
         continue;
       }
       if (logoObj && typeof logoObj === "object" && "url" in logoObj) {
-        const u = (logoObj as { url: unknown }).url;
-        if (typeof u === "string" && u.length > 0) logos.push(u);
+        const lo = logoObj as OpenBrandLogoObj;
+        if (typeof lo.url === "string" && lo.url.length > 0) {
+          logos.push(lo.url);
+          logoDetails.push({ url: lo.url, type: lo.type });
+        }
       }
     }
   }
 
   const backdrops: string[] = [];
+  const backdropDetails: BrandBackdrop[] = [];
   if (payload.backdrops && Array.isArray(payload.backdrops)) {
     for (const b of payload.backdrops) {
-      if (b?.url) backdrops.push(b.url);
+      if (b?.url) {
+        backdrops.push(b.url);
+        backdropDetails.push({ url: b.url, description: b.description });
+      }
+    }
+  }
+
+  const fonts: BrandFont[] = [];
+  if (payload.fonts && Array.isArray(payload.fonts)) {
+    for (const f of payload.fonts) {
+      if (f?.family) {
+        fonts.push({ role: f.role, family: f.family, source: f.source, weights: f.weights });
+      }
     }
   }
 
   console.log(
-    `[BrandExtractor] Parsed: ${uniqueColors.length} colors, ${logos.length} logos, ${backdrops.length} backdrops for ${brandName ?? fallbackUrl}`,
+    `[BrandExtractor] Parsed: ${uniqueColors.length} colors, ${logos.length} logos, ${backdrops.length} backdrops, ${fonts.length} fonts for ${brandName ?? fallbackUrl}`,
   );
 
   return {
     brandName,
-    colors: uniqueColors,
+    colors,
+    colorDetails: colorDetails.length > 0 ? colorDetails : undefined,
     logos: logos.length > 0 ? logos : undefined,
+    logoDetails: logoDetails.length > 0 ? logoDetails : undefined,
     backdrops: backdrops.length > 0 ? backdrops : undefined,
+    backdropDetails: backdropDetails.length > 0 ? backdropDetails : undefined,
+    fonts: fonts.length > 0 ? fonts : undefined,
   };
 }
 

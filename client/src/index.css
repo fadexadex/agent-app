@@ -98,3 +98,262 @@
     font-family: 'Plus Jakarta Sans', sans-serif;
   }
 }
+
+/* ─────────────────────────────────────────────
+   Brand Extractor – expanded dashboard component
+   ───────────────────────────────────────────── */
+.brand-extractor {
+  width: 100%;
+}
+
+/* URL input row */
+.brand-extractor__input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: hsl(var(--muted) / 0.5);
+  border: 1px solid hsl(var(--border));
+  border-radius: 10px;
+  padding: 6px 8px;
+  margin: 0 4px 4px;
+  transition: border-color 0.15s;
+}
+.brand-extractor__input-row:focus-within {
+  border-color: hsl(var(--primary) / 0.5);
+  background: hsl(var(--muted) / 0.3);
+}
+.brand-extractor__input-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  color: hsl(var(--muted-foreground));
+}
+.brand-extractor__input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: hsl(var(--foreground));
+  font-family: 'Inter', sans-serif;
+  min-width: 0;
+}
+.brand-extractor__input::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+.brand-extractor__clear-url {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 50%;
+  color: hsl(var(--muted-foreground));
+  transition: color 0.1s;
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.brand-extractor__clear-url:hover { color: hsl(var(--foreground)); }
+
+.brand-extractor__extract-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+.brand-extractor__extract-btn:hover:not(:disabled) { opacity: 0.9; transform: scale(1.01); }
+.brand-extractor__extract-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.brand-extractor__spin { animation: spin 0.8s linear infinite; }
+
+/* Expanded Card Wrapper */
+.brand-extractor__expanded-card {
+  margin: 0 4px 4px;
+  border: 1px solid hsl(var(--border) / 0.6);
+  border-radius: 14px;
+  overflow: hidden;
+  background: hsl(var(--card));
+  box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+}
+
+.brand-extractor__expanded-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 0px;
+}
+.brand-extractor__expanded-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: hsl(var(--foreground));
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+.brand-extractor__remove-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.brand-extractor__remove-card:hover {
+  background: hsl(var(--destructive) / 0.15);
+  color: hsl(var(--destructive));
+}
+
+.brand-extractor__expanded-body {
+  padding: 12px 14px 16px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.brand-extractor__expanded-body::-webkit-scrollbar { width: 5px; }
+.brand-extractor__expanded-body::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 10px; }
+
+/* Dashboard Sections */
+.brand-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.brand-section.mt-4 {
+  margin-top: 16px;
+}
+.brand-section__title {
+  font-size: 10px;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.05em;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* Grids */
+.brand-grid--logos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.brand-grid--colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.brand-grid--backdrops {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+/* Items */
+.brand-item--logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.brand-item__preview-bg-check {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border) / 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-image: 
+    linear-gradient(45deg, #f0f0f0 25%, transparent 25%), 
+    linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, #f0f0f0 75%), 
+    linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  background-color: white;
+}
+.dark .brand-item__preview-bg-check {
+  background-image: 
+    linear-gradient(45deg, #222 25%, transparent 25%), 
+    linear-gradient(-45deg, #222 25%, transparent 25%), 
+    linear-gradient(45deg, transparent 75%, #222 75%), 
+    linear-gradient(-45deg, transparent 75%, #222 75%);
+  background-color: #1a1a1a;
+}
+.brand-item__img-logo {
+  max-width: 85%;
+  max-height: 85%;
+  object-fit: contain;
+}
+
+.brand-item--color {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.brand-item__swatch-box {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border) / 0.4);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+  margin-bottom: 2px;
+}
+.brand-item__sublabel {
+  font-size: 9px;
+  font-family: 'Inter', sans-serif;
+  color: hsl(var(--muted-foreground));
+  text-transform: lowercase;
+}
+
+.brand-item--backdrop {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.brand-item__backdrop-img-wrapper {
+  aspect-ratio: 16/9;
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border) / 0.6);
+  overflow: hidden;
+  background: hsl(var(--muted) / 0.3);
+}
+.brand-item__img-backdrop {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.brand-item__label {
+  font-size: 10px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Attached badge */
+.brand-extractor__attached-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  font-size: 11px;
+  color: #22c55e;
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  border-top: 1px solid hsl(var(--border) / 0.6);
+  background: hsl(var(--muted) / 0.1);
+}
+

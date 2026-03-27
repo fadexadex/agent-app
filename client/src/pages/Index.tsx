@@ -1,27 +1,46 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Zap, Film, FolderOpen, Paperclip, X, Loader2, Palette } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, Film, FolderOpen, Paperclip, X, Loader2, Globe, Wand2, Smartphone, Presentation } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import BrandColorExtractor from "@/components/BrandColorExtractor";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import BrandColorExtractor, { BrandData } from "@/components/BrandColorExtractor";
 import { examplePrompts } from "@/lib/mockData";
 import { uploadFile } from "@/lib/upload";
 
+type GenerationMode = "product-video" | "animate-media" | "social-reel" | "explainer";
+
+const modes: { id: GenerationMode; label: string; icon: React.ReactNode }[] = [
+  { id: "product-video", label: "Product Video", icon: <Film className="w-5 h-5" /> },
+  { id: "animate-media", label: "Animate Media", icon: <Wand2 className="w-5 h-5" /> },
+  { id: "social-reel", label: "Social", icon: <Smartphone className="w-5 h-5" /> },
+  { id: "explainer", label: "Explainer", icon: <Presentation className="w-5 h-5" /> },
+];
+
 const Index = () => {
   const [prompt, setPrompt] = useState("");
+  const [generationMode, setGenerationMode] = useState<GenerationMode>("product-video");
   const [assets, setAssets] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [brandColors, setBrandColors] = useState<string[]>([]);
-  const [brandName, setBrandName] = useState<string | undefined>();
-  const [isBrandDialogOpen, setIsBrandDialogOpen] = useState(false);
+  const [brand, setBrand] = useState<BrandData | null>(null);
+  const [showBrandExtractor, setShowBrandExtractor] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
   const handleGenerate = () => {
     if (!prompt.trim() && assets.length === 0) return;
-    navigate("/generating", { state: { prompt, assets, brandColors, brandName } });
+    navigate("/generating", {
+      state: {
+        prompt,
+        assets,
+        brandColors: brand?.colors ?? [],
+        brandName: brand?.brandName,
+        brandFonts: brand?.fonts,
+        brandLogos: brand?.logos,
+        generationMode,
+      },
+    });
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,6 +67,10 @@ const Index = () => {
     setAssets((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleBrandExtracted = (data: BrandData | null) => {
+    setBrand(data);
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Minimal top bar */}
@@ -57,7 +80,7 @@ const Index = () => {
             <Film className="h-4 w-4 text-primary-foreground" />
           </div>
           <span className="font-bold text-lg tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-            MotionAI
+            Fusion
           </span>
         </div>
         <Button
@@ -106,11 +129,11 @@ const Index = () => {
             <Textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Describe your product or brand... e.g. 'A productivity app for remote teams that uses AI to automate daily standups'"
+              placeholder="Describe your product or brand… e.g. 'A productivity app for remote teams that uses AI to automate daily standups'"
               className="border-0 shadow-none focus-visible:ring-0 resize-none text-base min-h-[100px] bg-transparent"
             />
-            
-            {/* Asset Thumbnails */}
+
+            {/* ── Uploaded file thumbnails ── */}
             {assets.length > 0 && (
               <div className="flex flex-wrap gap-2 px-3 pb-3">
                 {assets.map((asset, i) => (
@@ -119,7 +142,7 @@ const Index = () => {
                       <img src={asset} alt="upload" className="w-full h-full object-cover" />
                     ) : (
                       <div className="text-xs text-muted-foreground break-all p-1 text-center leading-tight">
-                        {asset.split('/').pop()?.slice(-10)}
+                        {asset.split("/").pop()?.slice(-10)}
                       </div>
                     )}
                     <button
@@ -133,26 +156,10 @@ const Index = () => {
               </div>
             )}
 
-            {brandColors.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 px-3 pb-2 pt-1">
-                {brandName && (
-                  <span className="text-xs text-muted-foreground font-medium shrink-0">{brandName}</span>
-                )}
-                <div className="flex flex-wrap gap-1.5">
-                  {brandColors.map((hex) => (
-                    <span
-                      key={hex}
-                      title={hex}
-                      className="h-7 w-7 rounded-lg border border-border shadow-sm shrink-0"
-                      style={{ backgroundColor: hex }}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-
+            {/* ── Toolbar ── */}
             <div className="flex justify-between items-end pt-1 pr-1 pl-2">
               <div className="flex items-center gap-1">
+                {/* File upload */}
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -171,35 +178,39 @@ const Index = () => {
                   {isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
                 </Button>
 
-                <Dialog open={isBrandDialogOpen} onOpenChange={setIsBrandDialogOpen}>
+                {/* Brand extract toggle */}
+                <Dialog open={showBrandExtractor} onOpenChange={setShowBrandExtractor}>
                   <DialogTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-muted-foreground hover:text-foreground relative"
-                      title="Extract brand colors"
+                      className={`relative text-muted-foreground hover:text-foreground transition-colors ${brand ? "text-primary" : ""}`}
+                      title="Extract brand from URL"
                     >
-                      <Palette className="w-5 h-5" />
-                      {brandColors.length > 0 && (
+                      <Globe className="w-5 h-5" />
+                      {brand && (
                         <span className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full text-[10px] text-primary-foreground flex items-center justify-center font-semibold">
-                          {brandColors.length}
+                          {brand.colors.length}
                         </span>
                       )}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[480px]">
+                  <DialogContent className="sm:max-w-2xl bg-card">
                     <DialogHeader>
-                      <DialogTitle>Extract Brand Colors</DialogTitle>
+                      <DialogTitle className="text-xl">Extract Brand Assets</DialogTitle>
+                      <DialogDescription>
+                        Generate a professional dashboard of logos, colors, and backgrounds from any website URL.
+                      </DialogDescription>
                     </DialogHeader>
                     <BrandColorExtractor
-                      onColorsExtracted={(colors, name) => {
-                        setBrandColors(colors);
-                        setBrandName(name);
-                      }}
+                      currentBrand={brand}
+                      onBrandExtracted={handleBrandExtracted}
+                      onClose={() => setShowBrandExtractor(false)}
                     />
                   </DialogContent>
                 </Dialog>
               </div>
+
               <Button
                 size="lg"
                 onClick={handleGenerate}
@@ -212,8 +223,39 @@ const Index = () => {
             </div>
           </div>
 
+          {/* Mode Selector (Replit style) */}
+          <div className="flex justify-center flex-wrap items-center gap-6 sm:gap-10 mb-10 overflow-x-auto pb-4 scrollbar-hide">
+            {modes.map((mode) => {
+              const isActive = generationMode === mode.id;
+              return (
+                <button
+                  key={mode.id}
+                  onClick={() => setGenerationMode(mode.id)}
+                  className={`flex flex-col items-center gap-3 transition-all outline-none ${
+                    isActive
+                      ? "text-primary scale-105"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <div
+                    className={`p-4 rounded-[1.25rem] transition-colors border shadow-sm flex items-center justify-center ${
+                      isActive
+                        ? "bg-primary/10 border-primary/20 text-primary"
+                        : "bg-card border-transparent hover:border-border hover:bg-muted/50"
+                    }`}
+                  >
+                    {mode.icon}
+                  </div>
+                  <span className={`text-sm tracking-tight ${isActive ? "font-semibold" : "font-medium"}`}>
+                    {mode.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
           {/* Example prompts */}
-          <div className="space-y-2">
+          <div className="space-y-4">
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
               Try an example
             </p>

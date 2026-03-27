@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useMemo } from "react";
 import { Play, Pause, SkipBack } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Scene, framesToSeconds } from "@/lib/mockData";
@@ -42,6 +42,22 @@ const formatTime = (seconds: number): string => {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
+const TRACK_HEIGHT = 28; // px — consistent row height (matches SingleSceneTimeline)
+const RULER_HEIGHT = 20; // px
+const SCALE_SPLIT_COUNT = 4; // sub-ticks per major interval
+const LABEL_COL_WIDTH = 112; // px
+
+/** Category → clip colour — inspired by xzdarcy effectId → style mapping */
+const CATEGORY_COLORS: Record<string, { bg: string; selected: string; dim: string }> = {
+  hook:       { bg: "bg-violet-600/80",  selected: "bg-violet-500 ring-1 ring-violet-300 ring-inset", dim: "bg-violet-700/50" },
+  intro:      { bg: "bg-indigo-600/80",  selected: "bg-indigo-500 ring-1 ring-indigo-300 ring-inset", dim: "bg-indigo-700/50" },
+  feature:    { bg: "bg-blue-600/80",    selected: "bg-blue-500 ring-1 ring-blue-300 ring-inset",     dim: "bg-blue-700/50" },
+  benefit:    { bg: "bg-cyan-600/80",    selected: "bg-cyan-500 ring-1 ring-cyan-300 ring-inset",     dim: "bg-cyan-700/50" },
+  cta:        { bg: "bg-emerald-600/80", selected: "bg-emerald-500 ring-1 ring-emerald-300 ring-inset",dim: "bg-emerald-700/50" },
+  transition: { bg: "bg-gray-600/80",   selected: "bg-gray-500 ring-1 ring-gray-300 ring-inset",     dim: "bg-gray-700/50" },
+};
+const DEFAULT_COLORS = { bg: "bg-blue-600/80", selected: "bg-blue-500 ring-1 ring-blue-300 ring-inset", dim: "bg-blue-700/50" };
+
 const SPEEDS = [0.5, 1, 2] as const;
 type Speed = (typeof SPEEDS)[number];
 
@@ -69,8 +85,10 @@ const VideoOutput = ({
   audioTrackName,
 }: VideoOutputProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const labelColRef = useRef<HTMLDivElement>(null); // synced label column
   const playheadRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
+  const autoScrollRaf = useRef<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [speed, setSpeed] = useState<Speed>(1);
 
@@ -84,12 +102,29 @@ const VideoOutput = ({
     onTimestampSelect;
 
   // Cumulative start times (in seconds)
-  const sceneStarts: number[] = [];
-  let acc = 0;
-  for (const scene of scenes) {
-    sceneStarts.push(acc);
-    acc += framesToSeconds(scene.duration);
-  }
+  const sceneStarts = useMemo(() => {
+    const starts: number[] = [];
+    let acc = 0;
+    for (const scene of scenes) {
+      starts.push(acc);
+      acc += framesToSeconds(scene.duration);
+    }
+    return starts;
+  }, [scenes]);
+
+  // ── Ruler ticks with sub-ticks (scaleSplitCount from xzdarcy) ──────────────
+  const majorInterval = zoom >= 4 ? 1 : zoom >= 2 ? 2 : 5;
+  const minorInterval = majorInterval / SCALE_SPLIT_COUNT;
+  const ticks = useMemo(() => {
+    const result: { time: number; major: boolean }[] = [];
+    if (totalDuration <= 0) return result;
+    for (let t = 0; t <= totalDuration + minorInterval / 2; t += minorInterval) {
+      const rounded = Math.round(t * 1000) / 1000;
+      const major = Math.round((rounded % majorInterval) * 1000) < Math.round(minorInterval * 1000 * 0.5);
+      result.push({ time: rounded, major });
+    }
+    return result;
+  }, [totalDuration, majorInterval, minorInterval]);
 
   const handleSpeedChange = (s: Speed) => {
     setSpeed(s);
@@ -125,6 +160,26 @@ const VideoOutput = ({
     [totalDuration],
   );
 
+  // Auto-scroll at viewport edges while dragging (xzdarcy autoScroll)
+  const startAutoScroll = useCallback((direction: "left" | "right") => {
+    const step = () => {
+      const container = scrollContainerRef.current;
+      if (!container || !isDraggingRef.current) return;
+      container.scrollLeft += direction === "right" ? 8 : -8;
+      autoScrollRaf.current = requestAnimationFrame(step);
+    };
+    if (autoScrollRaf.current === null) {
+      autoScrollRaf.current = requestAnimationFrame(step);
+    }
+  }, []);
+
+  const stopAutoScroll = useCallback(() => {
+    if (autoScrollRaf.current !== null) {
+      cancelAnimationFrame(autoScrollRaf.current);
+      autoScrollRaf.current = null;
+    }
+  }, []);
+
   // Find which scene index a global time falls into
   const findSceneAtTime = useCallback(
     (time: number): number => {
@@ -153,32 +208,29 @@ const VideoOutput = ({
     const sceneIdx = findSceneAtTime(time);
     const relativeTime = time - sceneStarts[sceneIdx];
     onScrub?.(relativeTime);
-    // Note: scene selection moved to handlePointerUp to avoid re-render thrashing
+    // Auto-scroll near edges
+    const container = scrollContainerRef.current;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const edge = 40;
+      if (e.clientX < rect.left + edge) startAutoScroll("left");
+      else if (e.clientX > rect.right - edge) startAutoScroll("right");
+      else stopAutoScroll();
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
+    stopAutoScroll();
     e.currentTarget.releasePointerCapture(e.pointerId);
     const time = computeTimeFromPointer(e);
     const sceneIdx = findSceneAtTime(time);
-    onSelectScene(sceneIdx); // Scene selection only on release (not during drag)
+    onSelectScene(sceneIdx);
     onSeek(time);
   };
 
-  // Generate ruler ticks based on zoom
-  const majorInterval = zoom >= 4 ? 1 : zoom >= 2 ? 2 : 5;
-  const minorInterval = zoom >= 4 ? 0.5 : 1;
-  const ticks: { time: number; major: boolean }[] = [];
-  if (totalDuration > 0) {
-    for (let t = 0; t <= totalDuration + 0.001; t += minorInterval) {
-      const rounded = Math.round(t * 10) / 10;
-      ticks.push({
-        time: rounded,
-        major: Math.round((rounded % majorInterval) * 10) === 0,
-      });
-    }
-  }
+  // Generate ruler ticks based on zoom — removed; now uses `ticks` memo above
 
   // Show single scene timeline for a completed single scene
   if (showSingleSceneTimeline && typeof selectedScene === "number") {
@@ -267,7 +319,7 @@ const VideoOutput = ({
               zoom === 1 ? "text-muted-foreground" : "text-foreground bg-muted",
             )}
           >
-            Fit
+            {zoom === 1 ? "Fit" : `${zoom}×`}
           </button>
           <button
             onClick={() => setZoom((z) => Math.min(8, parseFloat((z + 0.5).toFixed(1))))}
@@ -280,35 +332,49 @@ const VideoOutput = ({
 
       {/* ── Timeline ── */}
       <div className="flex-1 flex overflow-hidden bg-[#0d0f14] min-h-0">
-        {/* Left: scene label column */}
-        <div className="shrink-0 w-28 border-r border-white/10 flex flex-col">
-          <div className="h-5 shrink-0 border-b border-white/10 flex items-end px-2 pb-0.5">
+
+        {/* Left: fixed track label column */}
+        <div
+          ref={labelColRef}
+          className="shrink-0 border-r border-white/10 flex flex-col z-10"
+          style={{ width: LABEL_COL_WIDTH }}
+        >
+          {/* Ruler spacer */}
+          <div style={{ height: RULER_HEIGHT }} className="shrink-0 border-b border-white/10 flex items-end px-2 pb-0.5">
             <span className="text-[8px] text-white/20 uppercase tracking-wider">Scenes</span>
           </div>
+          {/* Scene labels */}
           <div className="flex-1 overflow-hidden">
-            {scenes.map((scene, i) => (
-              <div
-                key={scene.id}
-                className={cn(
-                  "h-7 flex items-center px-2 cursor-pointer transition-colors",
-                  selectedScene === i ? "bg-white/5" : "hover:bg-white/[0.03]",
-                )}
-                onClick={() => onSelectScene(i)}
-              >
-                <span
+            {scenes.map((scene, i) => {
+              const colors = CATEGORY_COLORS[scene.category] ?? DEFAULT_COLORS;
+              const isSelected = selectedScene === i;
+              return (
+                <div
+                  key={scene.id}
+                  style={{ height: TRACK_HEIGHT }}
                   className={cn(
-                    "text-[10px] truncate leading-none",
-                    selectedScene === i ? "text-white/80" : "text-white/40",
+                    "flex items-center gap-1.5 px-2 cursor-pointer transition-colors border-b border-white/[0.05]",
+                    isSelected ? "bg-white/5" : "hover:bg-white/[0.03]",
                   )}
+                  onClick={() => onSelectScene(i)}
                 >
-                  {scene.name}
-                </span>
-              </div>
-            ))}
+                  {/* Category color dot */}
+                  <span className={cn("h-2 w-2 rounded-full shrink-0", colors.bg)} />
+                  <span
+                    className={cn(
+                      "text-[10px] truncate leading-none",
+                      isSelected ? "text-white/80" : "text-white/40",
+                    )}
+                  >
+                    {scene.name}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Right: scrollable timeline */}
+        {/* Right: scrollable ruler + tracks */}
         <div
           ref={scrollContainerRef}
           className={cn(
@@ -323,17 +389,20 @@ const VideoOutput = ({
             style={{ width: `${zoom * 100}%`, minWidth: "100%", position: "relative" }}
             className="h-full flex flex-col"
           >
-            {/* Time ruler */}
-            <div className="h-5 shrink-0 border-b border-white/10 relative overflow-hidden">
+            {/* Time ruler — major + minor ticks */}
+            <div
+              className="shrink-0 border-b border-white/10 relative overflow-hidden bg-[#0d0f14]"
+              style={{ height: RULER_HEIGHT }}
+            >
               {ticks.map(({ time, major }) => (
                 <div
                   key={time}
                   className="absolute top-0 flex flex-col pointer-events-none"
                   style={{ left: `${(time / (totalDuration || 1)) * 100}%` }}
                 >
-                  <div className={cn("w-px", major ? "h-3 bg-white/30" : "h-1.5 bg-white/15")} />
+                  <div className={cn("w-px", major ? "h-3 bg-white/30" : "h-1.5 bg-white/12")} />
                   {major && (
-                    <span className="text-[8px] font-mono text-white/35 mt-0.5 pl-1 whitespace-nowrap">
+                    <span className="text-[8px] font-mono text-white/35 mt-0.5 pl-0.5 whitespace-nowrap">
                       {formatTime(time)}
                     </span>
                   )}
@@ -351,37 +420,47 @@ const VideoOutput = ({
                   totalDuration > 0 ? (sceneDurationSec / totalDuration) * 100 : 0;
                 const status = sceneStatuses[i];
                 const isSelected = selectedScene === i;
+                const colors = CATEGORY_COLORS[scene.category] ?? DEFAULT_COLORS;
 
                 return (
-                  <div key={scene.id} className="h-7 relative pointer-events-none">
+                  <div
+                    key={scene.id}
+                    className="relative pointer-events-none border-b border-white/[0.04]"
+                    style={{ height: TRACK_HEIGHT }}
+                  >
                     <div
                       className="absolute top-1 bottom-1 rounded-sm overflow-hidden"
                       style={{ left: `${startPct}%`, width: `${widthPct}%` }}
                     >
                       {status?.status === "complete" ? (
-                        <div
-                          className={cn(
-                            "absolute inset-0 rounded-sm",
-                            isSelected
-                              ? "bg-blue-500 ring-1 ring-blue-300 ring-inset"
-                              : "bg-blue-500/70",
-                          )}
-                        />
+                        <div className={cn("absolute inset-0 rounded-sm", isSelected ? colors.selected : colors.bg)}>
+                          {/* Clip label — inspired by xzdarcy getActionRender */}
+                          <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] font-medium text-white/80 truncate pointer-events-none select-none">
+                            {scene.name}
+                          </span>
+                        </div>
                       ) : status?.status === "generating" ? (
-                        <div className="absolute inset-0 rounded-sm bg-blue-900/50">
+                        <div className={cn("absolute inset-0 rounded-sm", colors.dim)}>
                           <motion.div
-                            className="absolute inset-y-0 left-0 bg-blue-500/50 rounded-sm"
+                            className="absolute inset-y-0 left-0 bg-white/20 rounded-sm"
                             animate={{ width: `${status.progress}%` }}
                             transition={{ duration: 0.3 }}
                           />
                           <motion.div
-                            className="absolute inset-y-0 w-12 bg-gradient-to-r from-transparent via-blue-400/30 to-transparent"
+                            className="absolute inset-y-0 w-12 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                             animate={{ x: ["-3rem", "100%"] }}
                             transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
                           />
+                          <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] text-white/50 truncate">
+                            {scene.name}
+                          </span>
                         </div>
                       ) : (
-                        <div className="absolute inset-0 rounded-sm border border-dashed border-white/15 bg-white/[0.03]" />
+                        <div className="absolute inset-0 rounded-sm border border-dashed border-white/15 bg-white/[0.03]">
+                          <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] text-white/25 truncate">
+                            {scene.name}
+                          </span>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -401,10 +480,10 @@ const VideoOutput = ({
                   className="absolute top-0 bottom-0 z-20 pointer-events-none"
                   style={{ left: `${progress}%`, willChange: "left" }}
                 >
-                  {/* Vertical line */}
-                  <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-red-500" />
-                  {/* SVG playhead handle (home-plate shape like Remotion Studio) */}
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 pointer-events-auto cursor-ew-resize">
+                  <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-red-500 opacity-80" />
+                  <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto cursor-ew-resize"
+                    style={{ top: -RULER_HEIGHT }}
+                  >
                     <svg width="11" height="14" viewBox="0 0 11 14" className="drop-shadow-sm">
                       <path
                         d="M1 0h9a1 1 0 011 1v5.5a1 1 0 01-.4.8L6 11a1.5 1.5 0 01-1 0L.4 7.3A1 1 0 010 6.5V1a1 1 0 011-1z"

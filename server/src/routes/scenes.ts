@@ -4,12 +4,13 @@ import { generateSceneScript, ProgressEvent } from "../services/scene-generator.
 const router = Router();
 
 router.post("/generate", async (req: Request, res: Response) => {
-  const { prompt, model, assets, brandColors, brandName } = req.body as {
+  const { prompt, model, assets, brandColors, brandName, generationMode } = req.body as {
     prompt?: string;
     model?: string;
     assets?: string[];
     brandColors?: string[];
     brandName?: string;
+    generationMode?: string;
   };
 
   if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
@@ -36,6 +37,7 @@ router.post("/generate", async (req: Request, res: Response) => {
       brandColors || [],
       send,
       typeof brandName === "string" ? brandName : undefined,
+      typeof generationMode === "string" ? generationMode : undefined,
     );
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";

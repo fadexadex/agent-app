@@ -27,7 +27,7 @@ export interface StoredProject {
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = "motionai_projects";
+const STORAGE_KEY = "fusion_projects";
 const MAX_PROJECTS = 20;
 
 // ─── Core CRUD Operations ──────────────────────────────────────────────────────

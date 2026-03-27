@@ -127,6 +127,7 @@ function buildSystemPrompt(
   assets: string[] = [],
   brandColors: string[] = [],
   brandName?: string,
+  generationMode?: string,
 ): string {
   let assetInstruction = "";
   if (assets.length > 0) {
@@ -147,6 +148,15 @@ For gradient backgrounds, combine 2-3 of these colors. DO NOT use random colors 
 Use these colors for text accents and UI elements where appropriate.`;
   }
 
+  let modeInstruction = "";
+  if (generationMode === "animate-media") {
+    modeInstruction = `\n\nMODE: Animate Media. The user wants to animate their provided assets (like PDFs or images). Focus on creating scenes that display the uploaded assets prominently using panning, zooming, and motion suitable for a data/media showcase. Do not invent fake product UI if they just want their media animated.`;
+  } else if (generationMode === "social-reel") {
+    modeInstruction = `\n\nMODE: Social Reel. Create short, punchy, fast-paced scenes optimized for social media engagement.`;
+  } else if (generationMode === "explainer") {
+    modeInstruction = `\n\nMODE: Explainer Video. Focus on clear, step-by-step explanatory scenes that educate the viewer. Break down complex topics into simple visuals.`;
+  }
+
   return `You are a video scene scriptwriter for Remotion animations.
 
 Generate exactly 5-6 scenes for a product demo video. Follow EXACTLY this JSON structure (the schema of one scene object — do not include the outer "scene" wrapper key):
@@ -163,7 +173,7 @@ Rules:
 - For custom elements, set component to a Remotion component name (e.g. "FeaturePill", "VoiceIndicatorPill", "AnimatedText", "MockupFrame")
 - notes: concise exit order + stagger timing guidance (e.g. "Exit order: mockup first, label last. Stagger 3 frames.")
 - id: unique kebab-case slug per scene
-- Make element descriptions vivid and specific — the Remotion developer uses them to build the component${assetInstruction}${brandInstruction}${colorInstruction}`;
+- Make element descriptions vivid and specific — the Remotion developer uses them to build the component${assetInstruction}${brandInstruction}${colorInstruction}${modeInstruction}`;
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
@@ -175,6 +185,7 @@ export async function generateSceneScript(
   brandColors: string[] = [],
   onProgress: (event: ProgressEvent) => void,
   brandName?: string,
+  generationMode?: string,
 ): Promise<void> {
   const google = createGoogleGenerativeAI({
     apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -232,7 +243,7 @@ export async function generateSceneScript(
     model: google(modelId),
     output: "array",
     schema: SceneSchema,
-    system: buildSystemPrompt(assets, brandColors, brandName),
+    system: buildSystemPrompt(assets, brandColors, brandName, generationMode),
     messages: [
       { role: "user", content: mappedParts as any }
     ],

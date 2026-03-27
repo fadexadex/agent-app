@@ -18,10 +18,19 @@ const GeneratingPage = () => {
   const collectedScenesRef = useRef<RichScene[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
-  const prompt = (location.state as any)?.prompt || "Your product";
-  const assets = (location.state as any)?.assets || [];
-  const brandColors = (location.state as any)?.brandColors || [];
-  const brandName = (location.state as any)?.brandName as string | undefined;
+  const state = location.state as {
+    prompt?: string;
+    assets?: string[];
+    brandColors?: string[];
+    brandName?: string;
+    generationMode?: string;
+  } | null;
+
+  const prompt = state?.prompt || "Your product";
+  const assets = state?.assets || [];
+  const brandColors = state?.brandColors || [];
+  const brandName = state?.brandName;
+  const generationMode = state?.generationMode || "product-video";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -30,7 +39,7 @@ const GeneratingPage = () => {
       const response = await fetch("/api/scenes/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, assets, brandColors, brandName }),
+        body: JSON.stringify({ prompt, assets, brandColors, brandName, generationMode }),
         signal: controller.signal,
       });
 
@@ -51,6 +60,7 @@ const GeneratingPage = () => {
 
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           let event: any;
           try {
             event = JSON.parse(line.slice(6));
@@ -85,7 +95,7 @@ const GeneratingPage = () => {
     });
 
     return () => controller.abort();
-  }, [prompt, navigate]);
+  }, [prompt, assets, brandColors, brandName, generationMode, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">

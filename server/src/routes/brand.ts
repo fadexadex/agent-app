@@ -59,13 +59,17 @@ router.post("/extract", async (req: Request, res: Response) => {
 
     // Check if any colors were found
     if (result.colors.length === 0) {
-      return res.status(200).json({
+    return res.status(200).json({
         success: true,
         message: "No brand colors found for this URL.",
         brandName: result.brandName,
         colors: [],
+        colorDetails: [],
         logos: result.logos || [],
+        logoDetails: result.logoDetails || [],
         backdrops: result.backdrops || [],
+        backdropDetails: result.backdropDetails || [],
+        fonts: result.fonts || [],
       });
     }
 
@@ -74,8 +78,12 @@ router.post("/extract", async (req: Request, res: Response) => {
       success: true,
       brandName: result.brandName,
       colors: result.colors,
+      colorDetails: result.colorDetails || [],
       logos: result.logos || [],
+      logoDetails: result.logoDetails || [],
       backdrops: result.backdrops || [],
+      backdropDetails: result.backdropDetails || [],
+      fonts: result.fonts || [],
     });
 
   } catch (error) {
