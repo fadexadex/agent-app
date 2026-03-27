@@ -2,5 +2,11 @@
   "installCommand": "npm install",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://agent-app-b1c979b88941.herokuapp.com/api/$1" },
+    { "source": "/previews/(.*)", "destination": "https://agent-app-b1c979b88941.herokuapp.com/previews/$1" },
+    { "source": "/exports/(.*)", "destination": "https://agent-app-b1c979b88941.herokuapp.com/exports/$1" },
+    { "source": "/uploads/(.*)", "destination": "https://agent-app-b1c979b88941.herokuapp.com/uploads/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
