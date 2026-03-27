@@ -133,6 +133,24 @@ const Index = () => {
               </div>
             )}
 
+            {brandColors.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 px-3 pb-2 pt-1">
+                {brandName && (
+                  <span className="text-xs text-muted-foreground font-medium shrink-0">{brandName}</span>
+                )}
+                <div className="flex flex-wrap gap-1.5">
+                  {brandColors.map((hex) => (
+                    <span
+                      key={hex}
+                      title={hex}
+                      className="h-7 w-7 rounded-lg border border-border shadow-sm shrink-0"
+                      style={{ backgroundColor: hex }}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-between items-end pt-1 pr-1 pl-2">
               <div className="flex items-center gap-1">
                 <input
@@ -177,9 +195,6 @@ const Index = () => {
                       onColorsExtracted={(colors, name) => {
                         setBrandColors(colors);
                         setBrandName(name);
-                        if (colors.length > 0) {
-                          setIsBrandDialogOpen(false);
-                        }
                       }}
                     />
                   </DialogContent>

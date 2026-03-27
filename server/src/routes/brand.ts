@@ -16,10 +16,8 @@ const router = Router();
  *
  * Request body:
  * {
- *   "url": "https://stripe.com",
- *   "fresh": true
+ *   "url": "https://stripe.com"
  * }
- * (`fresh` is optional — forwards to OpenBrand to skip cached extractions)
  *
  * Response (success):
  * {
@@ -37,7 +35,7 @@ const router = Router();
  */
 router.post("/extract", async (req: Request, res: Response) => {
   try {
-    const { url, fresh } = req.body as { url?: string; fresh?: boolean };
+    const { url } = req.body as { url?: string };
 
     // Validate request body
     if (!url) {
@@ -56,26 +54,14 @@ router.post("/extract", async (req: Request, res: Response) => {
 
     // Call brand extractor service
     console.log(`[BrandAPI] Extracting colors for: ${url}`);
-    const result = await extractBrandColors(url, { fresh: Boolean(fresh) });
+    const result = await extractBrandColors(url);
+    console.log(`[BrandAPI] Result: ${result.colors.length} colors, ${result.logos?.length || 0} logos`);
 
     // Check if any colors were found
     if (result.colors.length === 0) {
-      const logoN = result.logos?.length ?? 0;
-      const backdropN = result.backdrops?.length ?? 0;
-      let message =
-        "No brand colors could be derived (OpenBrand uses theme-color, manifest, and logo pixels).";
-      if (logoN > 0 || backdropN > 0) {
-        const bits: string[] = [];
-        if (logoN > 0) bits.push(`${logoN} logo asset(s)`);
-        if (backdropN > 0) bits.push(`${backdropN} backdrop image(s)`);
-        message = `Found ${bits.join(" and ")}, but no color palette. Try the homepage, another page, or enable bypass cache.`;
-      } else {
-        message +=
-          " This site may block scrapers, use a minimal landing page, or lack favicon/theme metadata.";
-      }
       return res.status(200).json({
         success: true,
-        message,
+        message: "No brand colors found for this URL.",
         brandName: result.brandName,
         colors: [],
         logos: result.logos || [],

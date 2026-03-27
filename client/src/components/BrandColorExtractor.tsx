@@ -18,7 +18,6 @@ interface BrandColorExtractorProps {
  */
 const BrandColorExtractor = ({ onColorsExtracted }: BrandColorExtractorProps) => {
   const [url, setUrl] = useState("");
-  const [bypassCache, setBypassCache] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const [brandName, setBrandName] = useState<string | undefined>();
   const [colors, setColors] = useState<string[]>([]);
@@ -36,7 +35,7 @@ const BrandColorExtractor = ({ onColorsExtracted }: BrandColorExtractorProps) =>
       const res = await fetch("/api/brand/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: url.trim(), fresh: bypassCache }),
+        body: JSON.stringify({ url: url.trim() }),
       });
 
       const raw = await res.text();
@@ -173,20 +172,6 @@ const BrandColorExtractor = ({ onColorsExtracted }: BrandColorExtractorProps) =>
               </>
             )}
           </Button>
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Palette comes from theme tags, manifest, and logo colors (via OpenBrand).
-          </p>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer shrink-0">
-            <Checkbox
-              checked={bypassCache}
-              onCheckedChange={(v) => setBypassCache(v === true)}
-              disabled={isExtracting}
-            />
-            Bypass cache
-          </label>
         </div>
       </div>
 

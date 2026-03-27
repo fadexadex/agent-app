@@ -149,18 +149,10 @@ function mapToBrandColors(payload: OpenBrandPayload, fallbackUrl: string): Brand
   };
 }
 
-export type ExtractBrandOptions = {
-  /** Ask OpenBrand to skip cache (`?fresh=true`) — useful if a past run stored an empty result */
-  fresh?: boolean;
-};
-
 /**
  * Extracts brand colors from a website URL using openbrand.sh API
  */
-export async function extractBrandColors(
-  websiteUrl: string,
-  options?: ExtractBrandOptions,
-): Promise<BrandColors> {
+export async function extractBrandColors(websiteUrl: string): Promise<BrandColors> {
   if (!websiteUrl || typeof websiteUrl !== "string") {
     throw new Error("Invalid URL: URL must be a non-empty string");
   }
@@ -176,14 +168,15 @@ export async function extractBrandColors(
     throw new Error("Invalid URL format");
   }
 
+  console.log(`[BrandExtractor] Input: "${websiteUrl}" → Normalized: "${normalizedUrl}"`);
+
   const apiKey = process.env.OPENBRAND_API_KEY?.trim();
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const freshParam = options?.fresh ? "&fresh=true" : "";
-    const apiUrl = `https://openbrand.sh/api/extract?url=${encodeURIComponent(normalizedUrl)}${freshParam}`;
+    const apiUrl = `https://openbrand.sh/api/extract?url=${encodeURIComponent(normalizedUrl)}`;
 
     console.log(`[BrandExtractor] Calling openbrand.sh API for: ${normalizedUrl}`);
 
