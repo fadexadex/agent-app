@@ -123,7 +123,7 @@ export default defineConfig(({ mode, command }) => {
       exclude: ["@remotion-scenes", "@remotion-components"],
     },
     build: {
-      outDir: path.resolve(clientDir, "../dist"),
+      outDir: path.resolve(clientDir, "dist"),
       emptyOutDir: true,
       chunkSizeWarningLimit: 1000,
       rollupOptions: {
