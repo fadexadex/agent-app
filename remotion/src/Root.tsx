@@ -2,7 +2,7 @@ import React from "react";
 import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 
-import { CleanTestScene, FeatureEmail, EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro } from "./scenes";
+import { CleanTestScene, FeatureEmail, EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, HookGrowthStruggle, IntroProductReveal, SalesTrendsScene, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -82,6 +82,110 @@ export const RemotionRoot: React.FC = () => {
         id="scene-outro"
         component={SceneOutro}
         durationInFrames={90}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                      <Composition
+        id="hook-growth-struggle"
+        component={GrowthStruggleHook}
+        durationInFrames={105}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                      <Composition
+        id="intro-product-reveal"
+        component={IntroProductReveal}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="feature-sales-trends"
+        component={SalesTrendsAnalysis}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                            <Composition
+        id="feature-customer-ltv"
+        component={CustomerLTV}
+        durationInFrames={145}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="benefit-actionable-growth"
+        component={ActionableGrowth}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="cta-start-growing"
+        component={CTAStartGrowing}
+        durationInFrames={110}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="happy-farmers-scene"
+        component={HappyFarmers}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="hook-metrics-question"
+        component={MetricsQuestionHook}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-sales-overview"
+        component={SalesOverviewScene}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-customer-insights"
+        component={FeatureCustomerInsights}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="benefit-revenue-growth"
+        component={BenefitRevenueGrowth}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="cta-start-free-trial"
+        component={CallToAction}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="growth-info-scene"
+        component={GrowthInfo}
+        durationInFrames={150}
         fps={30}
         width={1920}
         height={1080}

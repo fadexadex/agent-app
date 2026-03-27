@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Scene, generateMockScenes, framesToSeconds } from "@/lib/mockData";
+import { getProject } from "@/lib/storage";
+import { AgentStep } from "@/lib/agentTypes";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
@@ -17,6 +19,22 @@ const ExportPage = () => {
   const projectId: string | undefined = (location.state as any)?.projectId;
   const sceneStatuses = (location.state as any)?.sceneStatuses;
   const audioTrack = (location.state as any)?.audioTrack;
+
+  // Get sceneSteps from navigation state, fallback to localStorage
+  const getSceneSteps = (): Record<number, AgentStep[]> => {
+    const stateSteps = (location.state as any)?.sceneSteps;
+    if (stateSteps) return stateSteps;
+
+    // Fallback: load from localStorage if projectId exists
+    if (projectId) {
+      const savedProject = getProject(projectId);
+      if (savedProject?.agentSteps) {
+        return savedProject.agentSteps;
+      }
+    }
+    return {};
+  };
+  const sceneSteps = getSceneSteps();
 
   const [resolution, setResolution] = useState("1080p");
   const [format, setFormat] = useState("MP4");
@@ -178,7 +196,7 @@ const ExportPage = () => {
             onClick={() =>
               projectId
                 ? navigate("/editor", {
-                    state: { prompt, scenes, projectId, sceneStatuses, fromVideos: false },
+                    state: { prompt, scenes, projectId, sceneStatuses, sceneSteps, fromVideos: false },
                   })
                 : navigate("/storyboard", { state: { prompt, scenes } })
             }

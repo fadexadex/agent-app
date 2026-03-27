@@ -12,6 +12,7 @@ import {
 import { Scene } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import GeneratingAnimation from "./GeneratingAnimation";
+import CombinedVideoPlayer, { CombinedVideoPlayerHandle } from "./CombinedVideoPlayer";
 
 interface MainPreviewProps {
   scene: Scene | null;
@@ -25,6 +26,14 @@ interface MainPreviewProps {
   videoUrl?: string | null;
   generatingMessage?: string;
   videoRef?: React.RefObject<HTMLVideoElement>;
+  // All scenes props
+  allScenes?: Scene[];
+  allVideoUrls?: (string | undefined)[];
+  combinedTime?: number;
+  onCombinedTimeUpdate?: (time: number) => void;
+  isPlaying?: boolean;
+  onTogglePlay?: () => void;
+  combinedPlayerRef?: React.RefObject<CombinedVideoPlayerHandle>;
 }
 
 const MainPreview = ({
@@ -39,6 +48,13 @@ const MainPreview = ({
   videoUrl,
   generatingMessage,
   videoRef,
+  allScenes,
+  allVideoUrls,
+  combinedTime = 0,
+  onCombinedTimeUpdate,
+  isPlaying = false,
+  onTogglePlay,
+  combinedPlayerRef,
 }: MainPreviewProps) => {
   // ── All scenes view ──────────────────────────────────────────────────────────
   if (isAllScenes) {
@@ -52,6 +68,33 @@ const MainPreview = ({
       );
     }
 
+    // Check if we have videos to play
+    const hasVideos = allScenes && allVideoUrls && allVideoUrls.some(url => url);
+
+    if (hasVideos && allScenes && allVideoUrls) {
+      return (
+        <div className="flex-1 flex items-center justify-center bg-secondary/30 p-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            className="w-full max-w-2xl aspect-video rounded-xl border border-border overflow-hidden bg-card shadow-sm relative"
+          >
+            <CombinedVideoPlayer
+              ref={combinedPlayerRef}
+              scenes={allScenes}
+              videoUrls={allVideoUrls}
+              currentTime={combinedTime}
+              onTimeUpdate={onCombinedTimeUpdate}
+              isPlaying={isPlaying}
+              onTogglePlay={onTogglePlay}
+            />
+          </motion.div>
+        </div>
+      );
+    }
+
+    // Fallback: no videos yet
     return (
       <div className="flex-1 flex items-center justify-center bg-secondary/30 p-6">
         <motion.div

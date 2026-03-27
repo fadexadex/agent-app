@@ -310,9 +310,6 @@ const SingleSceneTimeline = ({
               className="flex items-center gap-1.5 px-2 border-b border-white/10 text-white/50 shrink-0"
               style={{ height: TRACK_HEIGHT }}
             >
-              <span className={cn("flex items-center justify-center h-4 w-4 rounded-sm text-white", track.color)}>
-                {track.icon}
-              </span>
               <span className="text-[9px] truncate leading-none">{track.label}</span>
             </div>
           ))}
@@ -344,19 +341,19 @@ const SingleSceneTimeline = ({
         >
           <div
             style={{ width: `${zoom * 100}%`, minWidth: "100%", position: "relative" }}
-            className="flex flex-col"
+            className="h-full flex flex-col"
           >
 
             {/* ── Time ruler with major + minor ticks (scaleSplitCount) ── */}
             <div
-              className="shrink-0 border-b border-white/10 relative overflow-hidden bg-[#0d0f14]"
+              className="shrink-0 border-b border-white/10 relative bg-[#0d0f14] z-10"
               style={{ height: RULER_HEIGHT }}
             >
               {ticks.map(({ time, major }) => (
                 <div
                   key={time}
-                  className="absolute top-0 flex flex-col pointer-events-none"
-                  style={{ left: `${(time / (duration || 1)) * 100}%` }}
+                  className="absolute top-0 flex flex-col items-center pointer-events-none"
+                  style={{ left: `${(time / (duration || 1)) * 100}%`, transform: "translateX(-50%)" }}
                 >
                   <div
                     className={cn(
@@ -365,7 +362,7 @@ const SingleSceneTimeline = ({
                     )}
                   />
                   {major && (
-                    <span className="text-[8px] font-mono text-white/35 mt-0.5 pl-0.5 whitespace-nowrap">
+                    <span className="text-[8px] font-mono text-white/35 mt-0.5 whitespace-nowrap">
                       {formatTime(time)}
                     </span>
                   )}
@@ -427,10 +424,10 @@ const SingleSceneTimeline = ({
             {duration > 0 && (
               <div
                 ref={playheadRef}
-                className="absolute top-0 bottom-0 z-20 pointer-events-none"
+                className="absolute inset-y-0 z-20 pointer-events-none"
                 style={{ left: `${progress}%`, willChange: "left" }}
               >
-                <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-red-500 opacity-80" />
+                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-red-500" />
                 {/* Home-plate playhead handle — identical to Remotion Studio */}
                 <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto cursor-ew-resize"
                   style={{ top: -RULER_HEIGHT }}
@@ -449,13 +446,13 @@ const SingleSceneTimeline = ({
       </div>
 
       {/* ── Hint bar ──────────────────────────────────────────────────────── */}
-      <div className="shrink-0 px-3 py-0.5 border-t border-white/5">
-        <p className="text-[9px] text-white/25 text-center">
-          Double-click to mark a timestamp for refinement
+      <div className="shrink-0 px-3 py-1 border-t border-white/5">
+        <p className="text-[9px] text-white/40 text-center">
+          Double-click timeline to mark a timestamp for refinement · Press Space to play/pause
           {selectedTimestamp !== null && (
             <button
               onClick={() => onTimestampSelect(null)}
-              className="ml-2 text-emerald-400/60 hover:text-emerald-400 transition-colors"
+              className="ml-2 text-emerald-400/70 hover:text-emerald-400 transition-colors"
             >
               × clear mark
             </button>

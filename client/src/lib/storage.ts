@@ -4,10 +4,21 @@ import { UIMessage } from "ai";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
+export interface SceneVersion {
+  id: string;
+  videoUrl: string;
+  previewUrl?: string;
+  createdAt: number;
+  prompt?: string; // refinement prompt that created this version
+}
+
 export interface StoredScene extends Scene {
   generationStatus: "queued" | "generating" | "complete";
   videoUrl?: string;
   previewUrl?: string;
+  // Versioning support
+  currentVersion?: number;
+  versions?: SceneVersion[];
 }
 
 export interface AudioTrack {
@@ -250,4 +261,112 @@ export function deleteAnimationChat(id: string): void {
   const chats = getAllAnimationChats();
   const filtered = chats.filter((c) => c.id !== id);
   localStorage.setItem(ANIMATION_CHATS_KEY, JSON.stringify(filtered));
+}
+
+// ─── Scene Versioning ─────────────────────────────────────────────────────────
+
+const MAX_VERSIONS_PER_SCENE = 5;
+
+/**
+ * Add a new version to a scene's version history.
+ * Called when a refinement completes successfully.
+ */
+export function addSceneVersion(
+  projectId: string,
+  sceneIndex: number,
+  version: Omit<SceneVersion, "id" | "createdAt">
+): void {
+  const project = getProject(projectId);
+  if (!project || !project.scenes[sceneIndex]) return;
+
+  const scene = project.scenes[sceneIndex];
+  const newVersion: SceneVersion = {
+    id: generateProjectId(),
+    videoUrl: version.videoUrl,
+    previewUrl: version.previewUrl,
+    createdAt: Date.now(),
+    prompt: version.prompt,
+  };
+
+  // Initialize versions array if needed
+  if (!scene.versions) {
+    scene.versions = [];
+  }
+
+  // If this is the first version and scene already has a video, save current as v1
+  if (scene.versions.length === 0 && scene.videoUrl) {
+    scene.versions.push({
+      id: generateProjectId(),
+      videoUrl: scene.videoUrl,
+      previewUrl: scene.previewUrl,
+      createdAt: project.createdAt,
+      prompt: undefined, // original generation
+    });
+  }
+
+  // Add new version
+  scene.versions.push(newVersion);
+
+  // Prune old versions if exceeding limit
+  if (scene.versions.length > MAX_VERSIONS_PER_SCENE) {
+    scene.versions = scene.versions.slice(-MAX_VERSIONS_PER_SCENE);
+  }
+
+  // Update current version number and video URL
+  scene.currentVersion = scene.versions.length;
+  scene.videoUrl = version.videoUrl;
+  scene.previewUrl = version.previewUrl;
+
+  project.updatedAt = Date.now();
+  saveProject(project);
+}
+
+/**
+ * Restore a scene to a previous version.
+ * @param versionIndex 0-based index in the versions array
+ */
+export function restoreSceneVersion(
+  projectId: string,
+  sceneIndex: number,
+  versionIndex: number
+): void {
+  const project = getProject(projectId);
+  if (!project || !project.scenes[sceneIndex]) return;
+
+  const scene = project.scenes[sceneIndex];
+  if (!scene.versions || !scene.versions[versionIndex]) return;
+
+  const targetVersion = scene.versions[versionIndex];
+
+  // Update scene to use the restored version
+  scene.videoUrl = targetVersion.videoUrl;
+  scene.previewUrl = targetVersion.previewUrl;
+  scene.currentVersion = versionIndex + 1;
+
+  project.updatedAt = Date.now();
+  saveProject(project);
+}
+
+/**
+ * Get all versions for a scene.
+ */
+export function getSceneVersions(
+  projectId: string,
+  sceneIndex: number
+): SceneVersion[] {
+  const project = getProject(projectId);
+  if (!project || !project.scenes[sceneIndex]) return [];
+  return project.scenes[sceneIndex].versions || [];
+}
+
+/**
+ * Get the current version number for a scene (1-based).
+ */
+export function getSceneCurrentVersion(
+  projectId: string,
+  sceneIndex: number
+): number {
+  const project = getProject(projectId);
+  if (!project || !project.scenes[sceneIndex]) return 1;
+  return project.scenes[sceneIndex].currentVersion || 1;
 }
