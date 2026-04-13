@@ -357,3 +357,88 @@
   background: hsl(var(--muted) / 0.1);
 }
 
+/* ─────────────────────────────────────────────
+   Delight animations — Index page
+   ───────────────────────────────────────────── */
+
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-text-animated {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--primary)),
+    hsl(160, 84%, 45%),
+    hsl(280, 80%, 65%),
+    hsl(var(--primary))
+  );
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 4s ease infinite;
+}
+
+@keyframes sparkle-twinkle {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  30%       { transform: scale(1.25) rotate(20deg); }
+  60%       { transform: scale(0.85) rotate(-10deg); }
+  80%       { transform: scale(1.1) rotate(8deg); }
+}
+
+.sparkle-animate {
+  display: inline-block;
+  animation: sparkle-twinkle 5s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateX(-50%) translateY(0px); }
+  50%       { transform: translateX(-50%) translateY(-24px); }
+}
+
+.float-animate {
+  animation: float 10s ease-in-out infinite;
+}
+
+@keyframes shimmer-sweep {
+  0%   { transform: translateX(-100%) skewX(-20deg); }
+  100% { transform: translateX(350%) skewX(-20deg); }
+}
+
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 35%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.18),
+    transparent
+  );
+  pointer-events: none;
+  animation: shimmer-sweep 2.4s ease-in-out infinite;
+  animation-delay: 0.6s;
+}
+
+@keyframes card-focus-glow {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
+  50%       { box-shadow: 0 0 0 3px hsl(var(--primary) / 0.15); }
+}
+
+.card-focused {
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.2), 0 4px 20px rgba(0,0,0,0.08);
+  transition: box-shadow 0.25s ease;
+}
+
