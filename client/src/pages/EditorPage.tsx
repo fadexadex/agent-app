@@ -36,6 +36,7 @@ import AgentThoughts from "@/components/editor/AgentThoughts";
 import FullscreenPreviewModal from "@/components/editor/FullscreenPreviewModal";
 import AddSceneModal from "@/components/editor/AddSceneModal";
 import SceneVersionHistory from "@/components/editor/SceneVersionHistory";
+import ExportModal from "@/components/editor/ExportModal";
 
 interface SceneStatus {
   status: "queued" | "generating" | "complete";
@@ -84,6 +85,7 @@ const EditorPage = () => {
   );
   const [isFullscreenPreviewOpen, setIsFullscreenPreviewOpen] = useState(false);
   const [isAddSceneModalOpen, setIsAddSceneModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   // Track steps per scene from agent
   const [sceneSteps, setSceneSteps] = useState<Record<number, AgentStep[]>>({});
@@ -103,6 +105,9 @@ const EditorPage = () => {
 
   // Track whether the user manually overrode scene selection
   const userOverrodeSelectionRef = useRef(false);
+
+  // Queue for newly-added scenes that need processing after state updates
+  const pendingNewSceneRef = useRef<{ index: number; overrides?: { assets?: string[] } } | null>(null);
 
   // Map from Remotion composition ID → scene index (for render tracking)
   const renderingScenesByIdRef = useRef<Map<string, number>>(new Map());
@@ -148,7 +153,7 @@ const EditorPage = () => {
     latestVideoUrl,
   } = useAgent({
     sceneId: currentScene?.id?.toString() || "unknown",
-    sceneContext: currentScene || undefined,
+    sceneContext: currentScene ? (currentScene as unknown as Record<string, unknown>) : undefined,
     onRenderComplete: handleRenderComplete,
   });
 
@@ -218,6 +223,20 @@ const EditorPage = () => {
     }
   }, [scenes]);
 
+  // Process newly-added scenes once React state has committed their addition
+  useEffect(() => {
+    const pending = pendingNewSceneRef.current;
+    if (pending && scenes.length > pending.index && scenes[pending.index]) {
+      pendingNewSceneRef.current = null;
+      if (processingSceneRef.current === null) {
+        if (allDone) setAllDone(false);
+        startProcessingScene(pending.index, pending.overrides);
+      }
+      // If something is currently processing, the sequential completion handler
+      // will pick up the new queued scene automatically when it finishes.
+    }
+  }, [scenes.length, allDone]);
+
   // Auto-follow the active scene during generation (unless user overrode)
   useEffect(() => {
     if (!userOverrodeSelectionRef.current) {
@@ -247,6 +266,23 @@ const EditorPage = () => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isPlaying, playheadTime, totalDuration]);
+
+  // Show player preview immediately when triggerPreview completes — don't wait for awaitRender
+  useEffect(() => {
+    if (!latestPreviewUrl || processingSceneRef.current === null) return;
+    const sceneIndex = processingSceneRef.current;
+    setSceneStatuses((prev) =>
+      prev.map((s, i) =>
+        i === sceneIndex
+          ? {
+              ...s,
+              previewUrl: latestPreviewUrl,
+              previewSceneId: latestPreviewSceneId ?? undefined,
+            }
+          : s,
+      ),
+    );
+  }, [latestPreviewUrl, latestPreviewSceneId]);
 
   // Update steps for current scene as agent processes
   useEffect(() => {
@@ -522,9 +558,28 @@ Requirements:
     }
   };
 
+  const handlePrevScene = useCallback(() => {
+    if (typeof selectedScene === "number" && selectedScene > 0) {
+      handleSelectScene(selectedScene - 1);
+    }
+  }, [selectedScene]);
+
+  const handleNextScene = useCallback(() => {
+    if (typeof selectedScene === "number" && selectedScene < scenes.length - 1) {
+      handleSelectScene(selectedScene + 1);
+    }
+  }, [selectedScene, scenes.length]);
+
   const handleAddScene = (type: "ai" | "upload", data: string, assets?: string[]) => {
-    // Generate a basic scene structure
+    // Capture the index before the state update
+    const newSceneIndex = scenes.length;
     const newSceneId = `scene-${Date.now()}`;
+
+    // Build a strong prompt for the new scene
+    const aiPrompt = type === "ai"
+      ? data
+      : `Create a scene featuring this uploaded media as the main visual element: ${data}`;
+
     const newScene: Scene = {
       id: newSceneId,
       name: type === "ai" ? "New Generated Scene" : "Uploaded Scene",
@@ -532,12 +587,12 @@ Requirements:
       duration: 150, // default 5 seconds
       background: { type: "gradient", colors: ["#4F46E5", "#10B981"] },
       elements: [],
-      notes: type === "ai" ? data : `Uploaded asset: ${data}`
+      notes: aiPrompt,
     };
 
     setScenes(prev => [...prev, newScene]);
     setSceneStatuses(prev => [...prev, { status: "queued", progress: 0 }]);
-    
+
     // Save to local storage
     if (currentProjectIdRef.current) {
       const project = getProject(currentProjectIdRef.current);
@@ -550,14 +605,9 @@ Requirements:
       }
     }
 
-    // Pass assets as overrides if present
+    // Queue for processing after React commits the state update (avoids stale closure)
     const overrides = assets ? { assets } : undefined;
-
-    // If nothing is currently generating, we can start it.
-    if (allDone && processingSceneRef.current === null) {
-      setAllDone(false); // Reset allDone
-      startProcessingScene(scenes.length, overrides);
-    }
+    pendingNewSceneRef.current = { index: newSceneIndex, overrides };
   };
 
   const handleSelectAudioTrack = (trackId: string | null) => {
@@ -681,8 +731,8 @@ Requirements:
   return (
     <div className="h-screen flex flex-col bg-background text-foreground overflow-hidden">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 py-2.5 bg-foreground shrink-0">
-        <div className="flex items-center gap-3">
+      <header className="flex items-center justify-between px-4 py-2 bg-card border-b border-border/50 shrink-0">
+        <div className="flex items-center gap-2.5">
           <Button
             variant="ghost"
             size="icon"
@@ -691,24 +741,24 @@ Requirements:
                 ? navigate("/videos")
                 : navigate("/storyboard", { state: { prompt, scenes } })
             }
-            className="text-background/60 hover:text-background hover:bg-background/10"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-3.5 w-3.5" />
           </Button>
           <span
-            className="font-bold text-sm text-background"
+            className="font-semibold text-sm text-foreground"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             {prompt.split(" ").slice(0, 4).join(" ")}
           </span>
           {!allDone && (
-            <span className="flex items-center gap-1.5 text-xs text-primary-foreground bg-primary/80 px-2 py-0.5 rounded-full">
+            <span className="flex items-center gap-1.5 text-[11px] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full">
               <Loader2 className="h-3 w-3 animate-spin" />
               Generating...
             </span>
           )}
           {allDone && (
-            <span className="flex items-center gap-1.5 text-xs text-accent-foreground bg-accent px-2 py-0.5 rounded-full">
+            <span className="flex items-center gap-1.5 text-[11px] text-accent bg-accent/10 border border-accent/20 px-2 py-0.5 rounded-full">
               <Check className="h-3 w-3" />
               Complete
             </span>
@@ -716,25 +766,25 @@ Requirements:
         </div>
         <div className="flex items-center gap-2">
           {allDone && !allRendered && (
-            <span className="flex items-center gap-1.5 text-xs text-background/70">
+            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
               Rendering videos...
             </span>
           )}
-          {allRendered && (
+          {(allDone || sceneStatuses.some(s => s.previewUrl || s.videoUrl)) && (
             <>
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-1.5 rounded-lg border-background/50 bg-background/10 text-background hover:bg-background/20"
+                className="h-7 gap-1.5 rounded-md text-xs border-border/60 text-muted-foreground hover:text-foreground"
                 onClick={() => setIsFullscreenPreviewOpen(true)}
               >
-                <Maximize className="h-3.5 w-3.5" />
-                Fullscreen Preview
+                <Maximize className="h-3 w-3" />
+                Preview
               </Button>
               <Button
                 size="sm"
-                className="gap-1.5 rounded-lg bg-accent hover:bg-accent/90 text-accent-foreground"
+                className="h-7 gap-1.5 rounded-md text-xs bg-accent hover:bg-accent/90 text-accent-foreground"
                 onClick={() =>
                   navigate("/export", {
                     state: {
@@ -742,13 +792,13 @@ Requirements:
                       scenes,
                       projectId: currentProjectIdRef.current,
                       sceneStatuses,
-                      audioTrack,
                       sceneSteps,
+                      audioTrack,
                     },
                   })
                 }
               >
-                <Download className="h-3.5 w-3.5" /> Export
+                <Download className="h-3 w-3" /> Export
               </Button>
             </>
           )}
@@ -789,6 +839,7 @@ Requirements:
                 sceneStatuses={sceneStatuses}
                 onOpenAddScene={() => setIsAddSceneModalOpen(true)}
                 sceneVersions={allSceneVersions}
+                onReorderScenes={handleReorderScenes}
               />
             </TabsContent>
             
@@ -826,6 +877,23 @@ Requirements:
                 videoUrl={displayVideoUrl}
                 generatingMessage={generatingMessage}
                 videoRef={videoRef}
+                sceneIndex={typeof selectedScene === "number" ? selectedScene : undefined}
+                sceneCount={scenes.length}
+                onPrevScene={handlePrevScene}
+                onNextScene={handleNextScene}
+                onExport={() =>
+                  navigate("/export", {
+                    state: {
+                      prompt,
+                      scenes,
+                      projectId: currentProjectIdRef.current,
+                      sceneStatuses,
+                      sceneSteps,
+                      audioTrack,
+                    },
+                  })
+                }
+                onFullscreen={() => setIsFullscreenPreviewOpen(true)}
                 // Combined video props
                 allScenes={scenes}
                 allVideoUrls={sceneStatuses.map(s => s.videoUrl)}
@@ -867,6 +935,7 @@ Requirements:
                 onScrub={handleScrub}
                 audioUrl={audioTrack ? `/audio/${audioTrack.trackId}.mp3` : undefined}
                 audioTrackName={audioTrack ? audioTrack.trackId : undefined}
+                videoRef={videoRef}
               />
             </ResizablePanel>
           </ResizablePanelGroup>
@@ -885,6 +954,7 @@ Requirements:
             selectedTimestamp={selectedTimestamp}
             onClearTimestamp={() => setSelectedTimestamp(null)}
             sceneContext={displayScene || undefined}
+            allScenes={scenes}
             onRefinementStart={handleRefinementStart}
             onRefinementComplete={handleRefinementComplete}
             versions={currentSceneVersions}
@@ -910,6 +980,13 @@ Requirements:
         onAdd={handleAddScene}
       />
 
+      <ExportModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        scenes={scenes}
+        videoUrls={sceneStatuses.map(s => s.videoUrl)}
+        projectId={currentProjectIdRef.current}
+      />
     </div>
   );
 };

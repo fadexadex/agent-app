@@ -119,27 +119,52 @@ const CombinedVideoPlayer = forwardRef<CombinedVideoPlayerHandle, CombinedVideoP
       }
     }, [isPlaying, currentVideoIndex]);
 
-    // Sync time when currentTime changes from outside
+    // Track whether the user is actively seeking via the external seek bar
+    const isUserSeekingRef = useRef(false);
+
+    // Expose methods to let parent signal seek start/end
+    // Seek is applied only when explicitly requested, not during normal playback
+    // (prevents feedback loop: video time → parent state → effect → seek back)
+    const externalSeekPendingRef = useRef<number | null>(null);
+
+    // Sync time when parent requests a seek — only when value differs significantly
     useEffect(() => {
-      if (Math.abs(currentTime - internalTimeRef.current) > 0.5) {
+      // Only apply if parent sent a seek (large jump) AND it's not our own timeupdate
+      const diff = Math.abs(currentTime - internalTimeRef.current);
+      if (diff > 1.5) {
+        externalSeekPendingRef.current = currentTime;
         const newIndex = findSceneIndex(currentTime);
         if (newIndex !== currentVideoIndex) {
           setCurrentVideoIndex(newIndex);
-        }
-        if (videoRef.current && scenesWithVideo[newIndex]) {
+        } else if (videoRef.current && scenesWithVideo[newIndex]) {
           const relativeTime = currentTime - scenesWithVideo[newIndex].startTime;
-          videoRef.current.currentTime = relativeTime;
+          videoRef.current.currentTime = Math.max(0, relativeTime);
           internalTimeRef.current = currentTime;
         }
       }
     }, [currentTime]);
 
+    // Apply pending seek when scene switches (video key changes → new src loaded)
+    useEffect(() => {
+      if (externalSeekPendingRef.current !== null && videoRef.current && scenesWithVideo[currentVideoIndex]) {
+        const targetTime = externalSeekPendingRef.current;
+        const relativeTime = targetTime - scenesWithVideo[currentVideoIndex].startTime;
+        videoRef.current.currentTime = Math.max(0, relativeTime);
+        internalTimeRef.current = targetTime;
+        externalSeekPendingRef.current = null;
+      }
+    }, [currentVideoIndex]);
+
     const handleReplay = () => {
       setCurrentVideoIndex(0);
+      internalTimeRef.current = 0;
+      externalSeekPendingRef.current = null;
       if (videoRef.current) {
         videoRef.current.currentTime = 0;
         videoRef.current.play();
       }
+      // Propagate t=0 back to parent so the seeker and controls reset
+      onTimeUpdate?.(0);
     };
 
     if (scenesWithVideo.length === 0) {

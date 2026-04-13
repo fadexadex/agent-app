@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { History, RotateCcw, ChevronDown, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Clock, RotateCcw, ChevronDown, Check, Sparkles } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { SceneVersion, getRelativeTime } from "@/lib/storage";
 import { cn } from "@/lib/utils";
@@ -26,77 +25,94 @@ const SceneVersionHistory = ({
 }: SceneVersionHistoryProps) => {
   const [isOpen, setIsOpen] = useState(false);
 
-  if (versions.length <= 1) {
-    return null; // Don't show if only one version
-  }
+  if (versions.length <= 1) return null;
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 gap-1.5 text-xs"
+        <button
           disabled={disabled}
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-all select-none",
+            "bg-muted/60 border-border/60 text-muted-foreground hover:bg-muted hover:text-foreground hover:border-border",
+            "disabled:opacity-40 disabled:cursor-not-allowed",
+            isOpen && "bg-muted border-border text-foreground"
+          )}
         >
-          <History className="h-3 w-3" />
+          <Clock className="h-3 w-3" />
           <span>v{currentVersion}</span>
-          <ChevronDown className="h-3 w-3 opacity-50" />
-        </Button>
+          <ChevronDown className={cn("h-3 w-3 opacity-50 transition-transform", isOpen && "rotate-180")} />
+        </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-64">
-        <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-          Version History
+
+      <DropdownMenuContent align="end" className="w-72 p-1.5">
+        <div className="flex items-center gap-1.5 px-2 py-1.5 mb-1">
+          <Clock className="h-3 w-3 text-muted-foreground" />
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            Version History
+          </span>
         </div>
+        <DropdownMenuSeparator className="mb-1" />
+
         {versions.map((version, index) => {
           const versionNum = index + 1;
           const isActive = versionNum === currentVersion;
+          const label = version.prompt
+            ? version.prompt.length > 45
+              ? version.prompt.slice(0, 45) + "…"
+              : version.prompt
+            : versionNum === 1
+              ? "Original generation"
+              : "Refined version";
+
           return (
             <DropdownMenuItem
               key={version.id}
               className={cn(
-                "flex items-start gap-2 py-2 cursor-pointer",
-                isActive && "bg-accent"
+                "flex items-start gap-3 py-2.5 px-2 rounded-lg cursor-pointer group",
+                isActive && "bg-primary/8"
               )}
               onClick={() => {
-                if (!isActive) {
-                  onRestore(index);
-                }
+                if (!isActive) onRestore(index);
                 setIsOpen(false);
               }}
             >
+              {/* Version badge */}
+              <div className={cn(
+                "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground group-hover:bg-muted/80"
+              )}>
+                {versionNum}
+              </div>
+
+              {/* Label + time */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-xs">v{versionNum}</span>
-                  {isActive && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                      Current
-                    </span>
-                  )}
+                <div className="flex items-center gap-1.5">
+                  {versionNum === 1 ? (
+                    <Sparkles className="h-3 w-3 text-amber-500 shrink-0" />
+                  ) : null}
+                  <p className="text-[11px] font-medium text-foreground truncate leading-tight">
+                    {label}
+                  </p>
                 </div>
-                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                  {version.prompt || (versionNum === 1 ? "Original" : "Refined")}
-                </p>
-                <p className="text-[10px] text-muted-foreground/60">
+                <p className="text-[10px] text-muted-foreground/70 mt-0.5">
                   {getRelativeTime(version.createdAt)}
                 </p>
               </div>
-              {!isActive && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRestore(index);
-                    setIsOpen(false);
-                  }}
-                >
+
+              {/* State indicator */}
+              {isActive ? (
+                <span className="shrink-0 flex items-center gap-1 text-[10px] text-primary font-medium">
+                  <Check className="h-3 w-3" />
+                  Active
+                </span>
+              ) : (
+                <span className="shrink-0 flex items-center gap-1 text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
                   <RotateCcw className="h-3 w-3" />
-                </Button>
-              )}
-              {isActive && (
-                <Check className="h-4 w-4 text-primary shrink-0" />
+                  Restore
+                </span>
               )}
             </DropdownMenuItem>
           );

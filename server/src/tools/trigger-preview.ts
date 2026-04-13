@@ -4,6 +4,7 @@ import { readFile, writeFile, mkdir } from "fs/promises";
 import { join, resolve } from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { buildPlayerBundle } from "../lib/player-bundler";
 
 const execAsync = promisify(exec);
 
@@ -122,13 +123,34 @@ export const triggerPreviewTool = tool({
         };
       }
 
-      const previewUrl = `http://localhost:3100/preview/${safeSceneId}`;
+      // ── Build player URL ────────────────────────────────────────────────────
+      // Dev mode: Vite player dev server at port 3200 (instant HMR)
+      // The client will try this URL first and fall back to the production bundle.
+      const devPlayerUrl =
+        `http://localhost:3200/player?scene=${safeSceneId}` +
+        `&component=${safeComponentName}` +
+        `&duration=${durationFrames}` +
+        `&w=${width}` +
+        `&h=${height}` +
+        `&fps=${fps}`;
+
+      // ── Kick off production bundle in background ────────────────────────────
+      // Non-blocking — the client can start previewing via the dev URL immediately.
+      buildPlayerBundle(safeSceneId, safeComponentName, durationFrames, width, height, fps)
+        .then((result) => {
+          if (!result.success) {
+            console.warn(
+              `[trigger-preview] Production bundle failed for ${safeSceneId}: ${result.error}`,
+            );
+          }
+        })
+        .catch(() => {});
 
       return {
         success: true,
         sceneId: safeSceneId,
         componentName: safeComponentName,
-        previewUrl,
+        previewUrl: devPlayerUrl,
         config: {
           durationFrames,
           width,

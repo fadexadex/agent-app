@@ -80,23 +80,36 @@ const AgentStepItem = ({ step, isActive }: AgentStepItemProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
           className={cn(
-            "flex items-center gap-2 w-full text-left py-2 pl-1 pr-2 rounded-md hover:bg-muted/50 transition-colors group",
+            "flex items-center gap-2.5 w-full text-left py-1.5 pl-0 pr-2 rounded-md hover:bg-muted/30 transition-colors group",
             !hasContent && "cursor-default"
           )}
         >
-          {/* Icon */}
-          <div className="relative z-10 flex items-center justify-center w-5 h-5 rounded-full bg-background">
-            <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+          {/* Status dot */}
+          <div className={cn(
+            "relative z-10 flex items-center justify-center w-4 h-4 rounded-full border-2 shrink-0 bg-background transition-colors",
+            step.status === "complete" && "border-primary bg-primary",
+            step.status === "active" && "border-primary",
+            step.status === "pending" && "border-muted-foreground/30",
+          )}>
+            {step.status === "complete" && (
+              <Check className="h-2 w-2 text-primary-foreground" />
+            )}
+            {step.status === "active" && isActive && (
+              <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+            )}
           </div>
 
           {/* Label with optional shimmer */}
           <div className="flex-1 min-w-0">
             {isActive && step.status !== "complete" ? (
-              <TextShimmer className="text-xs" duration={2} spread={30}>
+              <TextShimmer className="text-[11px]" duration={2} spread={30}>
                 {getFriendlyLabel(step)}
               </TextShimmer>
             ) : (
-              <span className="text-xs text-muted-foreground">
+              <span className={cn(
+                "text-[11px]",
+                step.status === "complete" ? "text-foreground" : "text-muted-foreground"
+              )}>
                 {step.status === "complete" ? getCompletedLabel(step) : getFriendlyLabel(step)}
               </span>
             )}

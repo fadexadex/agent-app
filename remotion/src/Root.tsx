@@ -2,7 +2,7 @@ import React from "react";
 import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 
-import { CleanTestScene, FeatureEmail, EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, HookGrowthStruggle, IntroProductReveal, SalesTrendsScene, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo } from "./scenes";
+import { CleanTestScene, FeatureEmail, EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, SalesTrendsScene, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, CTAGetStarted, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, GetStartedToday, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, CtaGetStarted, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -22,9 +22,9 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-              <Composition
+                    <Composition
         id="feature-email"
-        component={FeatureEmail}
+        component={EmailReplyFeature}
         durationInFrames={120}
         fps={30}
         width={1920}
@@ -186,6 +186,182 @@ export const RemotionRoot: React.FC = () => {
         id="growth-info-scene"
         component={GrowthInfo}
         durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="hook-ecommerce-challenge"
+        component={EcommerceChallengeHook}
+        durationInFrames={105}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-sales-performance"
+        component={SalesPerformanceTracker}
+        durationInFrames={140}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                            <Composition
+        id="hook-complexity-challenge"
+        component={HookComplexityChallenge}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                      <Composition
+        id="intro-testing-212"
+        component={IntroTesting212}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="feature-automated-analysis"
+        component={AutomatedAnalysisScene}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="feature-collaborative-workflows"
+        component={CollaborativeWorkflows}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="benefit-time-efficiency"
+        component={BenefitTimeEfficiency}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                            <Composition
+        id="cta-get-started"
+        component={CtaGetStarted}
+        durationInFrames={100}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                            <Composition
+        id="hook-productivity"
+        component={HookProductivity}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="intro-voiceos-assistant"
+        component={IntroVoiceOSAssistant}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-calendar"
+        component={FeatureCalendar}
+        durationInFrames={140}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="benefit-time-stress"
+        component={BenefitTimeStress}
+        durationInFrames={130}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="hook-manual-coding-pain"
+        component={HookManualCodingPain}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="hook-effortless-productivity"
+        component={EffortlessProductivityHook}
+        durationInFrames={105}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="intro-voiceos"
+        component={IntroVoiceOS}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-voice-commands"
+        component={VoiceCommandsScene}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-smart-summaries"
+        component={SmartMeetingSummaries}
+        durationInFrames={140}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="benefit-time-saving"
+        component={BenefitTimeSaving}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                      <Composition
+        id="bouncing-ball-scene"
+        component={BouncingBall}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="hook-digital-chaos"
+        component={HookDigitalChaos}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="intro-testos"
+        component={IntroTestOS}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="moving-logo-scene"
+        component={MovingLogo}
+        durationInFrames={120}
         fps={30}
         width={1920}
         height={1080}

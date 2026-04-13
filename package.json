@@ -12,8 +12,9 @@
   "scripts": {
     "start": "npm run start -w server",
     "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w client\"",
-    "dev:all": "concurrently \"npm run dev -w server\" \"npm run dev -w client\" \"npm run dev -w remotion\"",
+    "dev:all": "concurrently \"npm run dev -w server\" \"npm run dev -w client\" \"npm run dev -w remotion\" \"npm run dev:player -w remotion\"",
     "dev:remotion": "npm run dev -w remotion",
+    "dev:player": "npm run dev:player -w remotion",
     "build": "npm run build -w client",
     "install:all": "npm install",
     "test:models": "npx tsx scripts/test-gemini-models.ts"

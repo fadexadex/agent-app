@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useMemo } from "react";
-import { Play, Pause, SkipBack } from "lucide-react";
+import { Play, Pause, SkipBack, RotateCcw, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Scene, framesToSeconds } from "@/lib/mockData";
 import { motion } from "framer-motion";
@@ -34,6 +34,7 @@ interface VideoOutputProps {
   onSpeedChange?: (speed: number) => void;
   audioUrl?: string;
   audioTrackName?: string;
+  videoRef?: React.RefObject<HTMLVideoElement>;
 }
 
 const formatTime = (seconds: number): string => {
@@ -83,6 +84,7 @@ const VideoOutput = ({
   onSpeedChange,
   audioUrl,
   audioTrackName,
+  videoRef,
 }: VideoOutputProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const labelColRef = useRef<HTMLDivElement>(null); // synced label column
@@ -277,6 +279,7 @@ const VideoOutput = ({
         onSpeedChange={handleSpeedChange}
         audioUrl={audioUrl}
         audioTrackName={audioTrackName}
+        videoRef={videoRef}
       />
     );
   }
@@ -284,43 +287,61 @@ const VideoOutput = ({
   return (
     <div className="h-full flex flex-col bg-card border-t border-border select-none">
       {/* ── Controls bar ── */}
-      <div className="flex items-center gap-2 px-3 py-1 border-b border-border shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-muted-foreground hover:text-foreground"
-          disabled={!allDone}
-          onClick={onReset}
-          title="Go to start"
-        >
-          <SkipBack className="h-3 w-3" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-muted-foreground hover:text-foreground"
-          disabled={!allDone}
-          onClick={onTogglePlay}
-        >
-          {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-        </Button>
-        <span className="text-[10px] font-mono text-muted-foreground tabular-nums w-24">
-          {formatTime(currentTime)} / {formatTime(totalDuration)}
-        </span>
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground bg-muted/50 hover:bg-muted"
+            disabled={!allDone}
+            onClick={onReset}
+            title="Go to start"
+          >
+            <SkipBack className="h-4 w-4" fill="currentColor" />
+          </Button>
+          <Button
+            variant="default"
+            size="icon"
+            className="h-8 w-8 bg-black text-white hover:bg-black/90 rounded-md dark:bg-white dark:text-black dark:hover:bg-white/90"
+            disabled={!allDone}
+            onClick={onTogglePlay}
+          >
+            {isPlaying ? <Pause className="h-4 w-4" fill="currentColor" /> : <Play className="h-4 w-4" fill="currentColor" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground bg-muted/50 hover:bg-muted"
+            disabled={!allDone}
+            onClick={onReset}
+            title="Replay"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-4 text-sm font-mono ml-2">
+          <span className="text-muted-foreground tabular-nums">
+            {formatTime(currentTime)} / {formatTime(totalDuration)}
+          </span>
+          <span className="text-foreground font-sans text-sm font-medium">
+            {selectedScene === "all" ? "All Scenes" : scenes[selectedScene as number]?.name}
+          </span>
+        </div>
 
         <div className="flex-1" />
 
         {/* Speed pills */}
-        <div className="flex items-center gap-0.5 bg-muted rounded-md p-0.5">
+        <div className="flex items-center gap-0.5 bg-muted/40 p-1 rounded-md border border-border/50">
           {SPEEDS.map((s) => (
             <button
               key={s}
               onClick={() => handleSpeedChange(s)}
               className={cn(
-                "text-[10px] px-2 py-0.5 rounded transition-colors",
+                "text-xs px-2.5 py-1 rounded-sm transition-colors",
                 speed === s
-                  ? "bg-card text-foreground shadow-sm font-medium"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-black text-white shadow-sm font-medium dark:bg-white dark:text-black"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted",
               )}
             >
               {s}×
@@ -328,211 +349,135 @@ const VideoOutput = ({
           ))}
         </div>
 
-        <div className="w-px h-3.5 bg-border mx-1" />
+        <div className="w-px h-4 bg-border mx-1" />
 
         {/* Zoom */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setZoom((z) => Math.max(1, parseFloat((z - 0.5).toFixed(1))))}
-            className="text-[10px] w-5 h-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            −
-          </button>
+        <div className="flex items-center gap-0.5 bg-muted/40 p-1 rounded-md border border-border/50">
           <button
             onClick={handleZoomReset}
             className={cn(
-              "text-[9px] px-1.5 py-0.5 rounded transition-colors font-medium",
-              zoom === 1 ? "text-muted-foreground" : "text-foreground bg-muted",
+              "text-xs px-2.5 py-1 rounded-sm transition-colors font-medium",
+              zoom === 1 ? "text-foreground bg-black text-white dark:bg-white dark:text-black" : "text-muted-foreground hover:text-foreground hover:bg-muted",
             )}
           >
-            {zoom === 1 ? "Fit" : `${zoom}×`}
+            Fit
+          </button>
+          <button
+            onClick={() => setZoom((z) => Math.max(1, parseFloat((z - 0.5).toFixed(1))))}
+            className="text-muted-foreground hover:text-foreground hover:bg-muted w-7 h-6 flex items-center justify-center rounded-sm transition-colors"
+          >
+            <Minus className="h-3 w-3" />
           </button>
           <button
             onClick={() => setZoom((z) => Math.min(8, parseFloat((z + 0.5).toFixed(1))))}
-            className="text-[10px] w-5 h-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted w-7 h-6 flex items-center justify-center rounded-sm transition-colors"
           >
-            +
+            <Plus className="h-3 w-3" />
           </button>
         </div>
       </div>
 
       {/* ── Timeline ── */}
-      <div className="flex-1 flex overflow-hidden bg-[#0d0f14] min-h-0">
-
-        {/* Left: fixed track label column */}
-        <div
-          ref={labelColRef}
-          className="shrink-0 border-r border-white/10 flex flex-col z-10"
-          style={{ width: LABEL_COL_WIDTH }}
-        >
-          {/* Ruler spacer */}
-          <div style={{ height: RULER_HEIGHT }} className="shrink-0 border-b border-white/10 flex items-end px-2 pb-0.5">
-            <span className="text-[8px] text-white/20 uppercase tracking-wider">Scenes</span>
-          </div>
-          {/* Scene labels */}
-          <div className="flex-1 overflow-hidden">
-            {scenes.map((scene, i) => {
-              const colors = CATEGORY_COLORS[scene.category] ?? DEFAULT_COLORS;
-              const isSelected = selectedScene === i;
-              return (
-                <div
-                  key={scene.id}
-                  style={{ height: TRACK_HEIGHT }}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2 cursor-pointer transition-colors border-b border-white/[0.05]",
-                    isSelected ? "bg-white/5" : "hover:bg-white/[0.03]",
-                  )}
-                  onClick={() => onSelectScene(i)}
-                >
-                  {/* Category color dot */}
-                  <span className={cn("h-2 w-2 rounded-full shrink-0", colors.bg)} />
-                  <span
-                    className={cn(
-                      "text-[10px] truncate leading-none",
-                      isSelected ? "text-white/80" : "text-white/40",
-                    )}
-                  >
-                    {scene.name}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Right: scrollable ruler + tracks */}
-        <div
+      <div className="flex-1 flex flex-col bg-[#0a0a0a] min-h-0 relative px-4 py-6">
+        
+        {/* Scrollable Container */}
+        <div 
           ref={scrollContainerRef}
           className={cn(
-            "flex-1 overflow-x-auto overflow-y-hidden relative",
-            allDone ? "cursor-ew-resize" : "cursor-default",
+            "flex-1 overflow-x-auto overflow-y-hidden relative custom-scrollbar",
+            allDone ? "cursor-ew-resize" : "cursor-default"
           )}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onDoubleClick={handleDoubleClick}
         >
-          <div
-            style={{ width: `${zoom * 100}%`, minWidth: "100%", position: "relative" }}
-            className="h-full flex flex-col"
-          >
-            {/* Time ruler — major + minor ticks */}
-            <div
-              className="shrink-0 border-b border-white/10 relative bg-[#0d0f14]"
-              style={{ height: RULER_HEIGHT }}
-            >
-              {ticks.map(({ time, major }) => (
-                <div
-                  key={time}
-                  className="absolute top-0 flex flex-col pointer-events-none"
-                  style={{ left: `${(time / (totalDuration || 1)) * 100}%` }}
-                >
-                  <div className={cn("w-px", major ? "h-2.5 bg-white/40" : "h-1.5 bg-white/15")} />
-                  {major && (
-                    <span className="text-[9px] font-mono text-white/50 mt-0.5 pl-0.5 whitespace-nowrap select-none">
-                      {formatTime(time)}
-                    </span>
-                  )}
-                </div>
-              ))}
+          <div style={{ width: `${zoom * 100}%`, minWidth: "100%" }} className="flex flex-col h-full relative">
+            
+            {/* Top time labels */}
+            <div className="flex justify-between items-end mb-2 text-[10px] text-white/50 font-mono select-none px-2 shrink-0">
+               <span>0:00.0</span>
+               <span>{formatTime(totalDuration)}.0</span>
             </div>
 
-            {/* Track rows */}
-            <div className="flex-1 relative">
+            {/* Track Container */}
+            <div className="relative h-14 bg-black/50 border border-white/10 rounded-sm w-full flex overflow-hidden shrink-0">
               {scenes.map((scene, i) => {
-                const sceneDurationSec = framesToSeconds(scene.duration);
-                const startPct =
-                  totalDuration > 0 ? (sceneStarts[i] / totalDuration) * 100 : 0;
-                const widthPct =
-                  totalDuration > 0 ? (sceneDurationSec / totalDuration) * 100 : 0;
-                const status = sceneStatuses[i];
+                const durationSec = framesToSeconds(scene.duration);
+                const widthPct = totalDuration > 0 ? (durationSec / totalDuration) * 100 : 0;
                 const isSelected = selectedScene === i;
-                const colors = CATEGORY_COLORS[scene.category] ?? DEFAULT_COLORS;
-
+                
+                // Replicating the purple colors from the image
+                const bgClass = isSelected ? "bg-[#5326a6]" : "bg-[#332269] hover:bg-[#412885]";
+                
                 return (
-                  <div
-                    key={scene.id}
-                    className="relative pointer-events-none border-b border-white/[0.04]"
-                    style={{ height: TRACK_HEIGHT }}
+                  <div 
+                    key={scene.id} 
+                    className={cn(
+                      "h-full border-r border-black/80 flex items-center px-3 transition-colors relative overflow-hidden",
+                      bgClass
+                    )}
+                    style={{ width: `${widthPct}%` }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectScene(i);
+                    }}
                   >
-                    <div
-                      className="absolute top-1 bottom-1 rounded-sm overflow-hidden"
-                      style={{ left: `${startPct}%`, width: `${widthPct}%` }}
-                    >
-                      {status?.status === "complete" ? (
-                        <div className={cn("absolute inset-0 rounded-sm", isSelected ? colors.selected : colors.bg)}>
-                          {/* Clip label — inspired by xzdarcy getActionRender */}
-                          <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] font-medium text-white/80 truncate pointer-events-none select-none">
-                            {scene.name}
-                          </span>
-                        </div>
-                      ) : status?.status === "generating" ? (
-                        <div className={cn("absolute inset-0 rounded-sm", colors.dim)}>
-                          <motion.div
-                            className="absolute inset-y-0 left-0 bg-white/20 rounded-sm"
-                            animate={{ width: `${status.progress}%` }}
-                            transition={{ duration: 0.3 }}
-                          />
-                          <motion.div
-                            className="absolute inset-y-0 w-12 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                            animate={{ x: ["-3rem", "100%"] }}
-                            transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                          />
-                          <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] text-white/50 truncate">
-                            {scene.name}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="absolute inset-0 rounded-sm border border-dashed border-white/15 bg-white/[0.03]">
-                          <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[9px] text-white/25 truncate">
-                            {scene.name}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                    <span className="text-[11px] text-white/90 font-medium truncate pointer-events-none select-none z-10">
+                      {scene.name}
+                    </span>
+
+                    {/* Progress bar inside block if generating */}
+                    {sceneStatuses[i]?.status === "generating" && (
+                       <motion.div
+                         className="absolute inset-y-0 left-0 bg-white/20"
+                         animate={{ width: `${sceneStatuses[i].progress}%` }}
+                         transition={{ duration: 0.3 }}
+                       />
+                    )}
                   </div>
-                );
+                )
               })}
 
-              {scenes.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <span className="text-[10px] text-white/20">No scenes yet</span>
-                </div>
-              )}
-
-              {/* Red Playhead — imperative position during drag, React-controlled otherwise */}
+              {/* Red Playhead */}
               {totalDuration > 0 && (
                 <div
                   ref={playheadRef}
-                  className="absolute inset-y-0 z-20 pointer-events-none"
+                  className="absolute top-0 bottom-0 z-20 pointer-events-none"
                   style={isDragging ? { willChange: "left" } : { left: `${progress}%`, willChange: "left" }}
                 >
-                  <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-red-500" />
-                  <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto cursor-ew-resize"
-                    style={{ top: -RULER_HEIGHT }}
-                  >
-                    <svg width="11" height="14" viewBox="0 0 11 14" className="drop-shadow-sm">
-                      <path
-                        d="M1 0h9a1 1 0 011 1v5.5a1 1 0 01-.4.8L6 11a1.5 1.5 0 01-1 0L.4 7.3A1 1 0 010 6.5V1a1 1 0 011-1z"
-                        fill="#ef4444"
-                      />
-                    </svg>
+                  <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.5)]" />
+                  <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto cursor-ew-resize -top-2">
+                    <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-red-500"></div>
                   </div>
                 </div>
               )}
             </div>
+
+            {/* Bottom ruler */}
+            <div className="flex relative h-6 mt-1 text-[10px] text-white/40 font-mono select-none shrink-0">
+              {scenes.map((scene, i) => {
+                const startPct = totalDuration > 0 ? (sceneStarts[i] / totalDuration) * 100 : 0;
+                return (
+                  <div key={i} className="absolute top-0 flex flex-col" style={{ left: `${startPct}%` }}>
+                    <span className="mt-1 pl-1">
+                      {formatTime(sceneStarts[i])}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
           </div>
+        </div>
+
+        {/* Footer info */}
+        <div className="mt-auto flex justify-center pb-2 shrink-0">
+          <span className="text-[11px] text-white/30 font-sans">
+            Double-click a scene to jump to it · Drag to trim
+          </span>
         </div>
       </div>
 
-      {/* Hint bar */}
-      {selectedScene === "all" && allDone && (
-        <div className="shrink-0 px-3 py-0.5 border-t border-white/5 bg-[#0d0f14]">
-          <p className="text-[9px] text-white/25 text-center">
-            Double-click a scene to jump to it
-          </p>
-        </div>
-      )}
     </div>
   );
 };

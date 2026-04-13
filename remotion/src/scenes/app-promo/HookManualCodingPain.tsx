@@ -1,10 +1,13 @@
 
 import React from 'react';
-import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring, interpolate, Sequence } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, useVideoConfig, spring, interpolate } from 'remotion';
 import { AnimatedText } from '@/components/AnimatedText';
 import { Background } from '@/components/Global';
 import { MockupFrame } from '@/components/MockupFrame';
 import { MotionContainer } from '@/components/Layout';
+import { loadFont } from "@remotion/google-fonts/Inter";
+
+const { fontFamily } = loadFont();
 
 interface HookManualCodingPainProps {}
 
@@ -143,8 +146,19 @@ export const HookManualCodingPain: React.FC<HookManualCodingPainProps> = () => {
   const vscodeExitFrame = 115; // 5 frames stagger from Figma
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#1A1A1A', opacity: overallOpacity }}>
-      <Background layers={[{ type: 'solid', color: '#1A1A1A' }]} />
+    <AbsoluteFill style={{ backgroundColor: '#09090B', opacity: overallOpacity, fontFamily }}>
+      {/* 
+         Background with subtle glow. 
+         Note: The Background component has zIndex: -1 by default in its source code.
+         I'm using a deeper dark color (#09090B) to match the cinematic style.
+      */}
+      <Background 
+        layers={[
+          { type: 'solid', color: '#09090B' },
+          { type: 'glow', color: '#3b82f6', x: 50, y: 80, radius: 400, opacity: 0.15 },
+          { type: 'noise', opacity: 0.02 }
+        ]} 
+      />
 
       {/* Main text: "Turning designs into code is a headache." */}
       <AnimatedText
@@ -152,9 +166,9 @@ export const HookManualCodingPain: React.FC<HookManualCodingPainProps> = () => {
         preset="typewriter"
         startFrame={textStartFrame}
         anchor="center"
-        offsetY={-150}
+        offsetY={-200}
         fontSize={56}
-        fontWeight={600}
+        fontWeight={700}
         color="#FFFFFF"
         exit={{
           startFrame: textExitFrame,
@@ -170,10 +184,10 @@ export const HookManualCodingPain: React.FC<HookManualCodingPainProps> = () => {
         duration={20}
         exit="scale-down"
         exitStartFrame={emojiExitFrame}
-        style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', marginTop: -50 }}
+        style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', marginTop: -80, zIndex: 10 }}
       >
         <FrustratedEmoji
-          size={50}
+          size={60}
           shakeStartFrame={emojiEnterFrame + 10} // Start shaking after appearing
           shakeEndFrame={emojiExitFrame}
         />
@@ -182,18 +196,18 @@ export const HookManualCodingPain: React.FC<HookManualCodingPainProps> = () => {
       {/* Figma Design Mockup */}
       <MockupFrame
         type="browser"
-        src="https://picsum.photos/600/400" // New placeholder image
+        src="https://picsum.photos/seed/figma/600/400"
         preset="slideInLeft"
         delay={figmaEnterFrame}
         exitPreset="slideLeft"
         exitStartFrame={figmaExitFrame}
-        width={600}
-        height={400}
+        width={550}
+        height={350}
         anchor="center"
-        offsetX={-250}
-        offsetY={50}
-        browserConfig={{ url: "https://figma.com/project/design-system-example" }}
-        glass={{ blur: 8, opacity: 0.1 }}
+        offsetX={-280}
+        offsetY={100}
+        browserConfig={{ url: "https://figma.com/design" }}
+        glass={{ blur: 12, opacity: 0.1 }}
       />
 
       {/* VS Code Code Mockup */}
@@ -203,21 +217,21 @@ export const HookManualCodingPain: React.FC<HookManualCodingPainProps> = () => {
         delay={vscodeEnterFrame}
         exitPreset="slideRight"
         exitStartFrame={vscodeExitFrame}
-        width={600}
-        height={400}
+        width={550}
+        height={350}
         anchor="center"
-        offsetX={250}
-        offsetY={50}
+        offsetX={280}
+        offsetY={100}
         theme="dark"
         glass
       >
         <pre
           style={{
             fontFamily: 'monospace',
-            fontSize: 18,
+            fontSize: 16,
             color: '#D4D4D4',
             backgroundColor: '#1E1E1E',
-            padding: 20,
+            padding: 24,
             margin: 0,
             whiteSpace: 'pre-wrap',
             wordWrap: 'break-word',
@@ -227,12 +241,11 @@ export const HookManualCodingPain: React.FC<HookManualCodingPainProps> = () => {
         >
           {`import React from 'react';
 
-// TODO: fix styling
-const MyComponent = ({ title, description }) => {
+const Card = ({ title }) => {
   return (
-    <div className="flex flex-col items-center p-4">
+    <div className="card">
       <h3>{title}</h3>
-      <p>{description}</p>
+      <p>Hard-coding sucks...</p>
     </div>
   );
 };`}

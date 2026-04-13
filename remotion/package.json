@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "remotion studio --port 3100",
+    "dev:player": "vite --config vite.player.config.ts",
     "build": "remotion bundle",
+    "build:player": "vite build --config vite.player.config.ts",
     "render": "remotion render"
   },
   "dependencies": {
@@ -13,18 +15,19 @@
     "@remotion/lambda": "^4.0.440",
     "@remotion/media-utils": "^4.0.439",
     "@remotion/transitions": "^4.0.0",
+    "@types/react": "^18.2.0",
     "lucide-react": "^1.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "@types/react": "^18.2.0",
-    "typescript": "^5.8.3",
-    "remotion": "^4.0.0",
+    "remotion": "4.0.440",
     "remotion-animate-text": "^1.1.0",
     "remotion-animated": "^2.2.0",
-    "remotion-time": "^0.0.3"
+    "remotion-time": "^0.0.3",
+    "typescript": "^5.8.3"
   },
   "devDependencies": {
-    
-    
+    "@remotion/player": "4.0.440",
+    "@vitejs/plugin-react": "^6.0.1",
+    "vite": "^8.0.3"
   }
 }

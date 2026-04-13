@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback, useId, useMemo } from "react";
+import { useRef, useState, useCallback, useId, useMemo, useEffect } from "react";
 import { Play, Pause, SkipBack, RotateCcw, Music, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Scene, framesToSeconds } from "@/lib/mockData";
@@ -20,6 +20,8 @@ interface SingleSceneTimelineProps {
   onSpeedChange?: (speed: 0.5 | 1 | 2) => void;
   audioUrl?: string | null;
   audioTrackName?: string | null;
+  /** Native video element ref — enables zero-rerender real-time playhead tracking */
+  videoRef?: React.RefObject<HTMLVideoElement>;
 }
 
 const formatTime = (seconds: number): string => {
@@ -56,6 +58,7 @@ const SingleSceneTimeline = ({
   onSpeedChange,
   audioUrl,
   audioTrackName,
+  videoRef,
 }: SingleSceneTimelineProps) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const playheadRef = useRef<HTMLDivElement>(null);
@@ -64,6 +67,21 @@ const SingleSceneTimeline = ({
   const uid = useId(); // unique per-instance — fixes the duplicate clipPath id bug
 
   const duration = framesToSeconds(scene.duration);
+
+  // ── Real-time playhead via RAF (zero React re-renders during playback) ────────
+  useEffect(() => {
+    if (!videoRef?.current) return;
+    let rafId: number;
+    const loop = () => {
+      if (videoRef!.current && playheadRef.current && duration > 0 && !isDraggingRef.current) {
+        const pct = (videoRef!.current.currentTime / duration) * 100;
+        playheadRef.current.style.left = `${pct}%`;
+      }
+      rafId = requestAnimationFrame(loop);
+    };
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
+  }, [videoRef, duration]);
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const markerPosition =
     selectedTimestamp !== null && duration > 0

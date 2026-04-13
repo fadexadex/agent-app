@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Brain, Loader2, Send, Clock, AlertCircle, Paperclip, X } from "lucide-react";
+import { Brain, Loader2, Send, Clock, AlertCircle, Paperclip, X, Layers } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import AgentStepItem from "./AgentStepItem";
 import { uploadFile } from "@/lib/upload";
 import SceneVersionHistory from "./SceneVersionHistory";
 import { SceneVersion } from "@/lib/storage";
+import { Scene } from "@/lib/mockData";
 
 interface AgentThoughtsProps {
   steps: AgentStep[];
@@ -20,6 +21,7 @@ interface AgentThoughtsProps {
   selectedTimestamp?: number | null;
   onClearTimestamp?: () => void;
   sceneContext?: Record<string, unknown>;
+  allScenes?: Scene[];
   onRefinementStart?: (sceneIndex: number, prompt: string) => void;
   onRefinementComplete?: (sceneIndex: number, videoUrl: string, prompt: string) => void;
   versions?: SceneVersion[];
@@ -45,6 +47,7 @@ interface ChatMessage {
 interface UseRefinementChatOptions {
   selectedScene: number | "all";
   sceneContext?: Record<string, unknown>;
+  allScenes?: Scene[];
   onRefinementStart?: (sceneIndex: number, prompt: string) => void;
   onRefinementComplete?: (sceneIndex: number, videoUrl: string, prompt: string) => void;
 }
@@ -62,10 +65,11 @@ interface UseRefinementChatResult {
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   removeAsset: (index: number) => void;
   handleChat: () => void;
+  multiSceneProgress: { current: number; total: number; sceneName: string } | null;
 }
 
 function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChatResult {
-  const { selectedScene, sceneContext, onRefinementStart, onRefinementComplete } = options;
+  const { selectedScene, sceneContext, allScenes, onRefinementStart, onRefinementComplete } = options;
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [messageIdCounter, setMessageIdCounter] = useState(0);
@@ -76,6 +80,11 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
   const hasCompletedRef = useRef(false);
   // Capture the scene index when refinement starts - prevents wrong scene updates when user switches tabs
   const refiningSceneRef = useRef<number | null>(null);
+
+  // Multi-scene editing queue
+  const [multiSceneProgress, setMultiSceneProgress] = useState<{ current: number; total: number; sceneName: string } | null>(null);
+  const multiSceneQueueRef = useRef<Array<{ index: number; scene: Scene; message: string }>>([]);
+  const multiSceneMsgRef = useRef<string>("");
 
   const handleRenderComplete = (renderSceneId: string, videoUrl: string) => {
     const targetScene = refiningSceneRef.current;
@@ -107,6 +116,38 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
       refiningSceneRef.current = null;
     }
   }, [isProcessing, latestVideoUrl, onRefinementComplete]);
+
+  // Multi-scene: when agent finishes, process next scene in queue
+  useEffect(() => {
+    if (isProcessing || multiSceneQueueRef.current.length === 0) return;
+    // Agent just finished — pick next scene
+    const next = multiSceneQueueRef.current.shift();
+    if (!next) {
+      setMultiSceneProgress(null);
+      return;
+    }
+    const { index, scene, message } = next;
+    const remaining = multiSceneQueueRef.current.length;
+    const total = multiSceneProgress?.total ?? 1;
+    setMultiSceneProgress({ current: total - remaining, total, sceneName: scene.name });
+
+    setMessageIdCounter((c) => {
+      setChatMessages((prev) => [
+        ...prev,
+        { id: c, role: "agent", text: `Editing Scene ${index + 1} — ${scene.name}...` },
+      ]);
+      return c + 1;
+    });
+
+    hasCompletedRef.current = false;
+    refiningSceneRef.current = index;
+    lastPromptRef.current = message;
+    onRefinementStart?.(index, message);
+
+    const editPrefix = `EDIT THE EXISTING SCENE — do NOT create a new one. Scene ID: "${scene.id}". Call readFile first, then make targeted changes, then writeSceneCode with same sceneId.\n\nUser request: `;
+    sendMessage(editPrefix + message, { sceneId: scene.id, sceneContext: scene as any });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isProcessing]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -159,7 +200,40 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
     setChatInput("");
     setAssets([]);
 
-    sendMessage(message, { assets: currentAssets });
+    // Multi-scene mode: queue edits across all scenes sequentially
+    if (selectedScene === "all" && allScenes && allScenes.length > 0) {
+      const queue = allScenes.map((scene, index) => ({ index, scene, message }));
+      const total = queue.length;
+      const first = queue.shift()!;
+      multiSceneQueueRef.current = queue;
+      multiSceneMsgRef.current = message;
+      setMultiSceneProgress({ current: 1, total, sceneName: first.scene.name });
+
+      setMessageIdCounter((c) => {
+        setChatMessages((prev) => [
+          ...prev,
+          { id: c, role: "agent", text: `Editing Scene 1 — ${first.scene.name}...` },
+        ]);
+        return c + 1;
+      });
+
+      hasCompletedRef.current = false;
+      refiningSceneRef.current = first.index;
+      lastPromptRef.current = message;
+      onRefinementStart?.(first.index, message);
+
+      const editPrefix = `EDIT THE EXISTING SCENE — do NOT create a new one. Scene ID: "${first.scene.id}". Call readFile first, then make targeted changes, then writeSceneCode with same sceneId.\n\nUser request: `;
+      sendMessage(editPrefix + message, { sceneId: first.scene.id, sceneContext: first.scene as any, assets: currentAssets });
+      return;
+    }
+
+    // Single-scene: prepend edit instruction when refining an existing scene
+    const sceneId = typeof sceneContext?.id === "string" ? sceneContext.id : undefined;
+    const editPrefix = sceneId
+      ? `EDIT THE EXISTING SCENE — do NOT create a new one. Scene ID: "${sceneId}". Call readFile first to read the current code, then make targeted changes, then writeSceneCode using the same sceneId.\n\nUser request: `
+      : "";
+
+    sendMessage(editPrefix + message, { assets: currentAssets });
   };
 
   return {
@@ -175,6 +249,7 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
     handleFileChange,
     removeAsset,
     handleChat,
+    multiSceneProgress,
   };
 }
 
@@ -301,26 +376,23 @@ const RefinementChatInput = ({
   handleChat,
 }: RefinementChatInputProps) => {
   return (
-    <div className="border-t border-border p-3 shrink-0 bg-background">
+    <div className="border-t border-border/50 px-3 py-3 shrink-0 bg-background">
       {selectedTimestamp !== null && (
-        <div className="text-[10px] text-muted-foreground mb-1.5 flex items-center gap-1 bg-muted/50 px-2 py-1 rounded">
-          <Clock className="h-3 w-3" />
-          <span>Refinement at {formatTime(selectedTimestamp)}</span>
+        <div className="text-[10px] text-muted-foreground mb-2 flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded-md border border-border/40">
+          <Clock className="h-3 w-3 shrink-0" />
+          <span>At {formatTime(selectedTimestamp)}</span>
           {onClearTimestamp && (
-            <button
-              onClick={onClearTimestamp}
-              className="ml-auto hover:text-foreground"
-            >
-              ×
+            <button onClick={onClearTimestamp} className="ml-auto text-muted-foreground hover:text-foreground">
+              <X className="h-3 w-3" />
             </button>
           )}
         </div>
       )}
 
       {assets.length > 0 && (
-        <div className="flex flex-wrap gap-2 pb-2">
+        <div className="flex flex-wrap gap-1.5 pb-2">
           {assets.map((asset, i) => (
-            <div key={i} className="relative group rounded-md border overflow-hidden bg-muted h-10 w-10 flex items-center justify-center">
+            <div key={i} className="relative group rounded-lg border border-border/50 overflow-hidden bg-muted h-10 w-10 flex items-center justify-center">
               {asset.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
                 <img src={asset} alt="upload" className="w-full h-full object-cover" />
               ) : (
@@ -330,7 +402,7 @@ const RefinementChatInput = ({
               )}
               <button
                 onClick={() => removeAsset(i)}
-                className="absolute top-0 right-0 bg-black/50 text-white rounded-bl-sm p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-0 right-0 bg-black/60 text-white rounded-bl-sm p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X className="w-2.5 h-2.5" />
               </button>
@@ -339,50 +411,55 @@ const RefinementChatInput = ({
         </div>
       )}
 
-      <div className="flex gap-1.5">
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          multiple
-        />
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8 shrink-0 text-muted-foreground"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isProcessing || isUploading}
-          title="Upload assets"
-        >
-          {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
-        </Button>
-        <Input
-          value={chatInput}
-          onChange={(e) => setChatInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleChat()}
-          placeholder={
-            selectedScene === "all"
-              ? "Ask about all scenes..."
-              : selectedTimestamp !== null
-                ? `Describe changes at ${formatTime(selectedTimestamp)}...`
-                : "Ask for edits..."
-          }
-          className="h-8 text-xs"
-          disabled={isProcessing}
-        />
-        <Button
-          size="icon"
-          className="h-8 w-8 shrink-0 bg-primary hover:bg-primary/90"
-          onClick={handleChat}
-          disabled={isProcessing || isUploading || (!chatInput.trim() && assets.length === 0)}
-        >
-          {isProcessing ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <Send className="h-3 w-3" />
-          )}
-        </Button>
+      <div className="flex items-end gap-1.5">
+        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" multiple />
+        <div className="flex-1 relative">
+          <textarea
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleChat();
+              }
+            }}
+            placeholder={
+              selectedScene === "all"
+                ? "Edit all scenes (e.g. 'make backgrounds darker')..."
+                : selectedTimestamp !== null
+                  ? `Change at ${formatTime(selectedTimestamp)}...`
+                  : "Describe edits for this scene..."
+            }
+            rows={1}
+            className="w-full resize-none bg-muted/40 border border-border/50 rounded-xl px-3 py-2 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors disabled:opacity-50"
+            style={{ maxHeight: "80px", overflowY: "auto" }}
+            disabled={isProcessing}
+          />
+        </div>
+        <div className="flex flex-col gap-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isProcessing || isUploading}
+            title="Attach file"
+          >
+            {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3" />}
+          </Button>
+          <Button
+            size="icon"
+            className="h-7 w-7 shrink-0 bg-primary hover:bg-primary/90 rounded-lg"
+            onClick={handleChat}
+            disabled={isProcessing || isUploading || (!chatInput.trim() && assets.length === 0)}
+          >
+            {isProcessing ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Send className="h-3 w-3" />
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -399,6 +476,7 @@ const AgentThoughts = ({
   selectedTimestamp = null,
   onClearTimestamp,
   sceneContext,
+  allScenes,
   onRefinementStart,
   onRefinementComplete,
   versions = [],
@@ -416,6 +494,7 @@ const AgentThoughts = ({
   const refinementChat = useRefinementChat({
     selectedScene,
     sceneContext,
+    allScenes,
     onRefinementStart,
     onRefinementComplete,
   });
@@ -430,14 +509,16 @@ const AgentThoughts = ({
   return (
     <div className="flex flex-col h-full bg-background overflow-hidden">
       {/* Header */}
-      <div className="p-3 border-b border-border flex items-center gap-2 shrink-0">
-        <Brain className="h-4 w-4 text-muted-foreground" />
-        <span
-          className="text-xs font-bold text-foreground"
-          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-        >
-          AI Agent
-        </span>
+      <div className="px-3 py-2.5 border-b border-border/50 flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full bg-primary" />
+          <span
+            className="text-xs font-semibold text-foreground"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            AI Agent
+          </span>
+        </div>
         <div className="flex items-center gap-2 ml-auto">
           {versions.length > 1 && onRestoreVersion && (
             <SceneVersionHistory
@@ -447,7 +528,7 @@ const AgentThoughts = ({
               disabled={isGenerating}
             />
           )}
-          <span className="text-[10px] text-muted-foreground">
+          <span className="text-[10px] text-muted-foreground bg-muted/40 px-2 py-0.5 rounded">
             {selectedScene === "all"
               ? "All Scenes"
               : `Scene ${(selectedScene as number) + 1}`}
@@ -458,9 +539,9 @@ const AgentThoughts = ({
       {/* Agent log - scrollable area */}
       <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
         <div className="relative p-3">
-          {/* Vertical timeline line */}
-          {steps.length > 0 && (
-            <div className="absolute left-[11px] top-4 bottom-4 w-px bg-border" style={{ left: "calc(0.75rem + 11px)" }} />
+          {/* Vertical timeline line connecting steps */}
+          {steps.length > 1 && (
+            <div className="absolute w-px bg-border/50" style={{ left: "calc(0.75rem + 7px)", top: "1.5rem", bottom: "1.5rem" }} />
           )}
 
           {/* Generation steps */}
@@ -517,12 +598,30 @@ const AgentThoughts = ({
 
           {/* Refinement chat content — only after all scenes finish */}
           {showRefinement && (
-            <RefinementChatContent
-              chatMessages={refinementChat.chatMessages}
-              agentSteps={refinementChat.agentSteps}
-              isProcessing={refinementChat.isProcessing}
-              error={refinementChat.error}
-            />
+            <>
+              {refinementChat.multiSceneProgress && (
+                <motion.div
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 py-2 px-3 mb-2 rounded-lg bg-primary/10 border border-primary/20"
+                >
+                  <Layers className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-medium text-primary truncate">
+                      Editing Scene {refinementChat.multiSceneProgress.current} of {refinementChat.multiSceneProgress.total}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground truncate">{refinementChat.multiSceneProgress.sceneName}</p>
+                  </div>
+                  <Loader2 className="h-3 w-3 text-primary animate-spin shrink-0" />
+                </motion.div>
+              )}
+              <RefinementChatContent
+                chatMessages={refinementChat.chatMessages}
+                agentSteps={refinementChat.agentSteps}
+                isProcessing={refinementChat.isProcessing}
+                error={refinementChat.error}
+              />
+            </>
           )}
         </div>
       </ScrollArea>

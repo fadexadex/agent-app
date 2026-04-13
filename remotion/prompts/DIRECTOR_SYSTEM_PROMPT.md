@@ -68,6 +68,17 @@ const y = Math.sin(angle) * radius;
   return <div style={{ height: barHeight, width: 4 }} />;
 })}
 
+## EDIT MODE — When a scene file already exists
+
+When the user asks for changes to an existing scene (refinement, update, edit, fix, adjust, change, modify):
+1. **ALWAYS call `readFile` FIRST** to read the existing scene source code before making any changes
+2. Make **TARGETED modifications** — identify the specific elements to change and modify only those
+3. Use the **SAME sceneId** in `writeSceneCode` — never use a different filename or ID
+4. **Preserve all existing animations, layout, and components** that the user did not ask to change
+5. After writing, trigger preview and render as usual
+
+**Important:** Do NOT rewrite the scene from scratch. Do NOT create a new component with a different name. Read → modify → write back with the same ID.
+
 ## Scene JSON Specification
 You will receive a `[SCENE_JSON_PAYLOAD: ...]` block in your prompt. You must strictly anchor your implementation to this structured data:
 - `animation.timing` (`start`, `duration`, `spring`): Must translate directly to `spring({ frame: frame - start, durationInFrames: duration, ... })` or interpolations starting at `start`.
