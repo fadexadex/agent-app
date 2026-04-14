@@ -1,7 +1,6 @@
 // Auto-generated barrel export for scenes
 export { CleanTestScene } from "./integration-test/CleanTestScene";
 export { EmailFeature } from "./email-feature/EmailFeature";
-export { FeatureEmail } from "./feature-email/FeatureEmail";
 export { SceneHook } from "./the-minimalist-hook/scene-hook";
 export { SceneWorkspaceAssembly } from "./workspace-assembly/SceneWorkspaceAssembly";
 export { Hook } from "./notion-promo/Hook";
@@ -47,4 +46,11 @@ export { CtaGetStarted } from "./voiceos-cta/cta-get-started";
 export { IntroTestOS } from "./testos-intro/intro-testos";
 export { HookDigitalChaos } from "./hook-series/hook-digital-chaos";
 export { MovingLogo } from "./branding/MovingLogo";
-export { BouncingBall } from "./basic-animations/BouncingBall";
+export { RollingBall } from "./physics-demo/RollingBall";
+export { BouncingBall } from "./ball-animation/BouncingBall";
+export { HookManualChaos } from "./hook-manual-chaos/HookManualChaos";
+export { IntroAscend } from "./ascend-intro/IntroAscend";
+export { WorkflowAutomationScene } from "./feature-workflow-automation/feature-workflow-automation";
+export { FeatureAIInsights } from "./voiceos-features/feature-ai-insights";
+export { KineticTypography } from "./kinetic-text-v1/KineticTypography";
+export { AnimatingBiro } from "./biro-animation/AnimatingBiro";

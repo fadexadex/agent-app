@@ -33,3 +33,5 @@ server/public
 remotion/build
 reference-videos/
 *.zip
+
+remotion/src/scenes/*

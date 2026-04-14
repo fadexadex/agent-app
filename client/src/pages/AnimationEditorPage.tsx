@@ -129,6 +129,7 @@ const AnimationEditorPageInner = () => {
   const [versions, setVersions] = useState<SceneVersion[]>(existingChat?.versions || []);
   const [isRendering, setIsRendering] = useState(false);
   const [historyChats, setHistoryChats] = useState<StoredAnimationChat[]>([]);
+  const [isPlaying, setIsPlaying] = useState(true);
   
   const hasStartedRef = useRef(false);
   const activeChatId = useRef(chatId || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString()));
@@ -165,6 +166,12 @@ const AnimationEditorPageInner = () => {
       renderPollIntervalsRef.current.clear();
     };
   }, []);
+
+  useEffect(() => {
+    if (latestPreviewUrl || latestVideoUrl) {
+      setIsPlaying(true);
+    }
+  }, [latestPreviewUrl, latestVideoUrl]);
 
   const startRenderPolling = useCallback((renderSceneId: string, videoUrl: string) => {
     setIsRendering(true);
@@ -622,6 +629,8 @@ const AnimationEditorPageInner = () => {
                     isProcessing ? "AI is refining the animation..." : undefined
                   }
                   videoRef={{ current: null } as React.RefObject<HTMLVideoElement>}
+                  isPlaying={isPlaying}
+                  onTogglePlay={() => setIsPlaying((playing) => !playing)}
                 />
               </div>
             ) : (

@@ -18,7 +18,12 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Force the workspace-local React 18 for both the app and @remotion/player,
+      // preventing the root node_modules React 19 from leaking into this bundle.
+      "react": path.resolve(__dirname, "node_modules/react"),
+      "react-dom": path.resolve(__dirname, "node_modules/react-dom"),
     },
+    dedupe: ["react", "react-dom", "remotion", "@remotion/player", "@remotion/core"],
   },
   server: {
     port: 3200,
