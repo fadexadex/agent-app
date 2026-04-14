@@ -732,113 +732,120 @@ const AnimationEditorPageInner = () => {
 
         <ResizableHandle withHandle />
 
-        {/* Right Pane: Video Player */}
-        <ResizablePanel defaultSize={65} className="bg-black/5 relative overflow-hidden">
-          <div className="h-full w-full p-4 flex flex-col gap-3">
-            {/* Version Switcher */}
-            {versions.length > 1 && (
-              <div className="flex items-center gap-3 bg-card/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-border shadow-lg self-center shrink-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  disabled={currentVersion <= 1}
-                  onClick={() => {
-                    const newIdx = currentVersion - 2;
-                    restoreChatVersion(activeChatId.current, newIdx);
-                    setCurrentVersion(currentVersion - 1);
-                    const v = versions[newIdx];
-                    setLatestVideoUrl(v.videoUrl);
-                    if (v.previewUrl) setLatestPreviewUrl(v.previewUrl);
-                  }}
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                </Button>
+        {/* Right Pane: Video + Controls */}
+        <ResizablePanel defaultSize={65}>
+          <ResizablePanelGroup direction="vertical">
+            {/* Video preview */}
+            <ResizablePanel defaultSize={70} className="relative bg-black/5">
+              <div className="h-full w-full flex flex-col">
+                {/* Version Switcher */}
+                {versions.length > 1 && (
+                  <div className="flex items-center justify-center pt-3 shrink-0">
+                    <div className="flex items-center gap-3 bg-card/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-border shadow-lg">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground disabled:opacity-30"
+                        disabled={currentVersion <= 1}
+                        onClick={() => {
+                          const newIdx = currentVersion - 2;
+                          restoreChatVersion(activeChatId.current, newIdx);
+                          setCurrentVersion(currentVersion - 1);
+                          const v = versions[newIdx];
+                          setLatestVideoUrl(v.videoUrl);
+                          if (v.previewUrl) setLatestPreviewUrl(v.previewUrl);
+                        }}
+                      >
+                        <ArrowLeft className="h-3.5 w-3.5" />
+                      </Button>
+                      <div className="text-[11px] font-bold tracking-tight uppercase text-muted-foreground select-none">
+                        Version <span className="text-foreground">{currentVersion}</span> / {versions.length}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground disabled:opacity-30"
+                        disabled={currentVersion >= versions.length}
+                        onClick={() => {
+                          const newIdx = currentVersion;
+                          restoreChatVersion(activeChatId.current, newIdx);
+                          setCurrentVersion(currentVersion + 1);
+                          const v = versions[newIdx];
+                          setLatestVideoUrl(v.videoUrl);
+                          if (v.previewUrl) setLatestPreviewUrl(v.previewUrl);
+                        }}
+                      >
+                        <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
-                <div className="text-[11px] font-bold tracking-tight uppercase text-muted-foreground select-none">
-                  Version <span className="text-foreground">{currentVersion}</span> / {versions.length}
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  disabled={currentVersion >= versions.length}
-                  onClick={() => {
-                    const newIdx = currentVersion;
-                    restoreChatVersion(activeChatId.current, newIdx);
-                    setCurrentVersion(currentVersion + 1);
-                    const v = versions[newIdx];
-                    setLatestVideoUrl(v.videoUrl);
-                    if (v.previewUrl) setLatestPreviewUrl(v.previewUrl);
-                  }}
-                >
-                  <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
-                </Button>
+                {latestPreviewUrl || latestVideoUrl ? (
+                  <div className="flex-1 min-h-0 p-4 pb-0">
+                    <div className="h-full w-full rounded-xl overflow-hidden border border-border/30 bg-black shadow-2xl">
+                      <MainPreview
+                        scene={{ id: latestSceneId || "animation", name: "Custom Animation", category: "Generated Scene", duration: 150, elements: [], background: { type: "solid", colors: ["#000"] } } as any}
+                        isGenerating={isProcessing && !isRendering}
+                        isQueued={false}
+                        isComplete={!isProcessing && !isRendering}
+                        isAllScenes={false}
+                        allScenesGenerating={false}
+                        previewUrl={latestPreviewUrl || undefined}
+                        previewSceneId={latestSceneId || undefined}
+                        videoUrl={latestVideoUrl || undefined}
+                        generatingMessage={
+                          isRendering ? "Rendering video..." :
+                          isProcessing ? "AI is refining the animation..." : undefined
+                        }
+                        videoRef={videoRef}
+                        isPlaying={isPlaying}
+                        onTogglePlay={() => setIsPlaying((playing) => !playing)}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground opacity-50 space-y-4">
+                    <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+                      <Play className="h-8 w-8 text-muted-foreground/50" />
+                    </div>
+                    <p className="text-sm font-medium">Video preview will appear here</p>
+                  </div>
+                )}
               </div>
-            )}
+            </ResizablePanel>
 
-            {latestPreviewUrl || latestVideoUrl ? (
-              <>
-                {/* Video — fills remaining space */}
-                <div className="flex-1 min-h-0 rounded-xl overflow-hidden shadow-2xl border border-border/50 bg-black">
-                  <MainPreview
-                    scene={{ id: latestSceneId || "animation", name: "Custom Animation", category: "Generated Scene", duration: 150, elements: [], background: { type: "solid", colors: ["#000"] } } as any}
-                    isGenerating={isProcessing && !isRendering}
-                    isQueued={false}
-                    isComplete={!isProcessing && !isRendering}
-                    isAllScenes={false}
-                    allScenesGenerating={false}
-                    previewUrl={latestPreviewUrl || undefined}
-                    previewSceneId={latestSceneId || undefined}
-                    videoUrl={latestVideoUrl || undefined}
-                    generatingMessage={
-                      isRendering ? "Rendering video..." :
-                      isProcessing ? "AI is refining the animation..." : undefined
-                    }
-                    videoRef={videoRef}
-                    isPlaying={isPlaying}
-                    onTogglePlay={() => setIsPlaying((playing) => !playing)}
-                  />
-                </div>
-                {/* Controls — separate panel below */}
-                <div className="shrink-0 rounded-xl border border-border/50 overflow-hidden shadow-lg">
-                  <AnimationControls
-                    duration={videoDuration}
-                    currentTime={videoCurrentTime}
-                    isPlaying={isPlaying}
-                    onTogglePlay={() => setIsPlaying((p) => !p)}
-                    onSeek={(t) => {
-                      if (videoRef.current) videoRef.current.currentTime = t;
-                      setVideoCurrentTime(t);
-                    }}
-                    onScrub={(t) => {
-                      if (videoRef.current) {
-                        videoRef.current.pause();
-                        videoRef.current.currentTime = t;
-                      }
-                      setVideoCurrentTime(t);
-                    }}
-                    selectedTimestamp={selectedTimestamp}
-                    onTimestampSelect={setSelectedTimestamp}
-                    videoUrl={latestVideoUrl}
-                    speed={speed}
-                    onSpeedChange={(s) => {
-                      setSpeed(s);
-                      if (videoRef.current) videoRef.current.playbackRate = s;
-                    }}
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground opacity-50 space-y-4">
-                <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
-                  <Play className="h-8 w-8 text-muted-foreground/50" />
-                </div>
-                <p className="text-sm font-medium">Video preview will appear here</p>
-              </div>
-            )}
-          </div>
+            <ResizableHandle withHandle />
+
+            {/* Controls panel */}
+            <ResizablePanel defaultSize={30} minSize={20} maxSize={45}>
+              <AnimationControls
+                duration={videoDuration}
+                currentTime={videoCurrentTime}
+                isPlaying={isPlaying}
+                onTogglePlay={() => setIsPlaying((p) => !p)}
+                onSeek={(t) => {
+                  if (videoRef.current) videoRef.current.currentTime = t;
+                  setVideoCurrentTime(t);
+                }}
+                onScrub={(t) => {
+                  if (videoRef.current) {
+                    videoRef.current.pause();
+                    videoRef.current.currentTime = t;
+                  }
+                  setVideoCurrentTime(t);
+                }}
+                selectedTimestamp={selectedTimestamp}
+                onTimestampSelect={setSelectedTimestamp}
+                videoUrl={latestVideoUrl}
+                speed={speed}
+                onSpeedChange={(s) => {
+                  setSpeed(s);
+                  if (videoRef.current) videoRef.current.playbackRate = s;
+                }}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

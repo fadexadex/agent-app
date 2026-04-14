@@ -112,55 +112,55 @@ const AnimationControls = ({
     : null;
 
   return (
-    <div className="shrink-0 bg-[#0d0d0d] border-t border-white/10 select-none">
+    <div className="h-full flex flex-col bg-card border-t border-border select-none overflow-hidden">
       {/* Controls bar */}
-      <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-white/5">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0">
         {/* Transport */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-white/50 hover:text-white hover:bg-white/10"
+            className="h-8 w-8 text-muted-foreground bg-muted/50 hover:bg-muted"
             disabled={!hasVideo}
             onClick={() => { onSeek(0); }}
             title="Go to start"
           >
-            <SkipBack className="h-3.5 w-3.5" fill="currentColor" />
+            <SkipBack className="h-4 w-4" fill="currentColor" />
           </Button>
           <Button
-            variant="ghost"
+            variant="default"
             size="icon"
-            className="h-8 w-8 rounded-full bg-white text-black hover:bg-white/90 disabled:opacity-40"
+            className="h-8 w-8 bg-black text-white hover:bg-black/90 rounded-md dark:bg-white dark:text-black dark:hover:bg-white/90"
             disabled={!hasVideo}
             onClick={onTogglePlay}
           >
             {isPlaying
-              ? <Pause className="h-3.5 w-3.5" fill="currentColor" />
-              : <Play className="h-3.5 w-3.5" fill="currentColor" />
+              ? <Pause className="h-4 w-4" fill="currentColor" />
+              : <Play className="h-4 w-4" fill="currentColor" />
             }
           </Button>
         </div>
 
         {/* Time display */}
-        <span className="text-[11px] font-mono text-white/50 tabular-nums ml-1">
+        <span className="text-sm font-mono text-muted-foreground tabular-nums ml-1">
           {formatTime(currentTime)}
-          <span className="text-white/25"> / </span>
+          <span className="text-muted-foreground/50"> / </span>
           {formatTime(duration)}
         </span>
 
         <div className="flex-1" />
 
         {/* Speed pills */}
-        <div className="flex items-center gap-0.5 bg-white/5 p-1 rounded-md border border-white/10">
+        <div className="flex items-center gap-0.5 bg-muted/40 p-1 rounded-md border border-border/50">
           {SPEEDS.map((s) => (
             <button
               key={s}
               onClick={() => handleSpeedChange(s)}
               className={cn(
-                "text-[11px] px-2 py-0.5 rounded-sm transition-colors",
+                "text-xs px-2.5 py-1 rounded-sm transition-colors",
                 speed === s
-                  ? "bg-white text-black font-semibold"
-                  : "text-white/40 hover:text-white hover:bg-white/10",
+                  ? "bg-black text-white shadow-sm font-medium dark:bg-white dark:text-black"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted",
               )}
             >
               {s}×
@@ -171,13 +171,13 @@ const AnimationControls = ({
         {/* Export */}
         {videoUrl && (
           <>
-            <div className="w-px h-4 bg-white/10 mx-0.5" />
+            <div className="w-px h-4 bg-border mx-1" />
             <a href={videoUrl} download="animation.mp4" className="shrink-0">
               <Button
                 size="sm"
-                className="h-7 gap-1.5 text-[11px] bg-emerald-600 hover:bg-emerald-500 text-white border-0 rounded-md px-3"
+                className="h-8 gap-1.5 text-xs bg-accent hover:bg-accent/90 text-accent-foreground rounded-md"
               >
-                <Download className="h-3 w-3" />
+                <Download className="h-3.5 w-3.5" />
                 Export
               </Button>
             </a>
@@ -185,13 +185,19 @@ const AnimationControls = ({
         )}
       </div>
 
-      {/* Timeline bar */}
-      <div className="px-4 pt-3 pb-1">
+      {/* Timeline area */}
+      <div className="flex-1 flex flex-col bg-[#0a0a0a] min-h-0 px-4 py-4">
+        {/* Top time labels */}
+        <div className="flex justify-between items-end mb-2 text-[10px] text-white/40 font-mono select-none shrink-0">
+          <span>{formatTime(0)}</span>
+          <span>{formatTime(duration)}</span>
+        </div>
+
         {/* Track */}
         <div
           ref={trackRef}
           className={cn(
-            "relative h-10 w-full bg-white/5 rounded-md overflow-visible border border-white/10",
+            "relative h-12 w-full bg-black/50 border border-white/10 rounded-sm overflow-visible shrink-0",
             hasVideo ? "cursor-ew-resize" : "cursor-default",
           )}
           onPointerDown={handlePointerDown}
@@ -201,7 +207,7 @@ const AnimationControls = ({
         >
           {/* Progress fill */}
           <div
-            className="absolute inset-y-0 left-0 bg-[#5326a6]/70 rounded-l-md transition-none"
+            className="absolute inset-y-0 left-0 bg-[#5326a6]/80 transition-none"
             style={{ width: `${progress}%` }}
           />
 
@@ -211,9 +217,8 @@ const AnimationControls = ({
               className="absolute top-0 bottom-0 z-20 pointer-events-none"
               style={{ left: `${progress}%` }}
             >
-              <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.6)]" />
-              {/* Home-plate cap */}
-              <div className="absolute -top-[1px] left-1/2 -translate-x-1/2">
+              <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.5)]" />
+              <div className="absolute left-1/2 -translate-x-1/2 -top-2">
                 <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-red-500" />
               </div>
             </div>
@@ -232,29 +237,29 @@ const AnimationControls = ({
         </div>
 
         {/* Timestamp ruler */}
-        {hasVideo && (
-          <div className="relative h-5 mt-0.5 text-[10px] text-white/30 font-mono select-none">
-            {ticks.map((t) => {
-              const pct = (t / duration) * 100;
-              return (
-                <div
-                  key={t}
-                  className="absolute top-0 flex flex-col items-start"
-                  style={{ left: `${pct}%` }}
-                >
-                  <span className="mt-0.5">{formatTime(t)}</span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+        <div className="relative h-5 mt-1 shrink-0">
+          {hasVideo && ticks.map((t) => {
+            const pct = (t / duration) * 100;
+            return (
+              <div
+                key={t}
+                className="absolute top-0 flex flex-col items-start"
+                style={{ left: `${pct}%` }}
+              >
+                <span className="text-[10px] text-white/40 font-mono mt-0.5 pl-1">
+                  {formatTime(t)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
 
-      {/* Hint */}
-      <div className="flex justify-center pb-2.5 pt-0">
-        <span className="text-[10px] text-white/20 font-sans">
-          Double-click to mark a timestamp for AI edits · Drag to scrub
-        </span>
+        {/* Hint */}
+        <div className="mt-auto flex justify-center pt-2 shrink-0">
+          <span className="text-[11px] text-white/25 font-sans">
+            Double-click to mark a timestamp for AI edits · Drag to scrub
+          </span>
+        </div>
       </div>
     </div>
   );
