@@ -314,6 +314,26 @@ const AnimationEditorPageInner = () => {
     }
   }, [speed, isPlaying]);
 
+  // Spacebar → play/pause (ignore when typing in inputs)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        setIsPlaying((p) => {
+          const next = !p;
+          if (videoRef.current) {
+            if (next) videoRef.current.play().catch(() => {});
+            else videoRef.current.pause();
+          }
+          return next;
+        });
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const startRenderPolling = useCallback((renderSceneId: string, videoUrl: string) => {
     setIsRendering(true);
     const existing = renderPollIntervalsRef.current.get(renderSceneId);
