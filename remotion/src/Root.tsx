@@ -2,7 +2,7 @@ import React from "react";
 import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 
-import { CleanTestScene, EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, SalesTrendsScene, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, CTAGetStarted, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, GetStartedToday, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, CtaGetStarted, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, RollingBall, HookManualChaos, IntroAscend, WorkflowAutomationScene, FeatureAIInsights, KineticTypography, AnimatingBiro } from "./scenes";
+import { CleanTestScene, EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, SalesTrendsScene, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, CTAGetStarted, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, CtaGetStarted, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, RollingBall, HookManualChaos, IntroAscend, WorkflowAutomationScene, FeatureAIInsights, KineticTypography, AnimatingBiro, BenefitBoostGrowth, LogoReveal, LogoRevealV3 } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -246,10 +246,10 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                            <Composition
+                                  <Composition
         id="cta-get-started"
         component={CtaGetStarted}
-        durationInFrames={100}
+        durationInFrames={110}
         fps={30}
         width={1920}
         height={1080}
@@ -382,7 +382,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+                            <Composition
         id="hook-manual-chaos"
         component={HookManualChaos}
         durationInFrames={100}
@@ -390,7 +390,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+                            <Composition
         id="intro-ascend"
         component={IntroAscend}
         durationInFrames={120}
@@ -398,7 +398,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+                <Composition
         id="feature-workflow-automation"
         component={WorkflowAutomationScene}
         durationInFrames={130}
@@ -406,7 +406,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+                <Composition
         id="feature-ai-insights"
         component={FeatureAIInsights}
         durationInFrames={130}
@@ -442,6 +442,46 @@ export const RemotionRoot: React.FC = () => {
         id="biro-scene"
         component={AnimatingBiro}
         durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="benefit-boost-growth"
+        component={BenefitBoostGrowth}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="logo-reveal-scene"
+        component={LogoReveal}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="logo-reveal"
+        component={LogoReveal}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="logo-reveal-v2"
+        component={LogoReveal}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="logo-reveal-v3"
+        component={LogoRevealV3}
+        durationInFrames={120}
         fps={30}
         width={1920}
         height={1080}
