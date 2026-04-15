@@ -1,5 +1,4 @@
 // Auto-generated barrel export for scenes
-export { CleanTestScene } from "./integration-test/CleanTestScene";
 export { EmailFeature } from "./email-feature/EmailFeature";
 export { SceneHook } from "./the-minimalist-hook/scene-hook";
 export { SceneWorkspaceAssembly } from "./workspace-assembly/SceneWorkspaceAssembly";
@@ -47,7 +46,6 @@ export { HookDigitalChaos } from "./hook-series/hook-digital-chaos";
 export { MovingLogo } from "./branding/MovingLogo";
 export { RollingBall } from "./physics-demo/RollingBall";
 export { BouncingBall } from "./ball-animation/BouncingBall";
-export { KineticTypography } from "./kinetic-text-v1/KineticTypography";
 export { AnimatingBiro } from "./biro-animation/AnimatingBiro";
 export { HookManualChaos } from "./hook-manual-chaos/hook-manual-chaos";
 export { IntroAscend } from "./ascend-promo/intro-ascend";
@@ -57,3 +55,15 @@ export { BenefitBoostGrowth } from "./benefit-boost-growth/benefit-boost-growth"
 export { CtaGetStarted } from "./cta-get-started/cta-get-started";
 export { LogoReveal } from "./branding/LogoReveal";
 export { LogoRevealV3 } from "./branding/LogoRevealV3";
+export { FinancialPDFScene } from "./pdf-breakdown/FinancialPDFScene";
+export { TestScene } from "./test-project/TestScene";
+export { KineticTypography } from "./kinetic-text-v1/KineticTypography";
+export { BankStatementVideo } from "./fintech-vids/BankStatementVideo";
+export { CleanTestScene } from "./integration-test/CleanTestScene";
+export { HookDrowningTasks } from "./productivity-solutions/hook-drowning-tasks";
+export { MeetAscendFlow } from "./ascendflow-promo/intro-ascendflow-reveal";
+export { FeatureAIAutomation } from "./feature-showcase/feature-ai-automation";
+export { CollaborativeCanvas } from "./feature-collaboration-video/feature-collaborative-canvas";
+export { BenefitBoostProductivity } from "./benefit-boost-productivity/BenefitBoostProductivity";
+export { GetStartedFree } from "./voiceos-cta/cta-get-started-free";
+export { LogoIntro } from "./enyata-brand-final-v2/LogoIntroFinal";

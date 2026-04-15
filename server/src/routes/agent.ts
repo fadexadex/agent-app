@@ -61,7 +61,37 @@ router.post("/chat", async (req: Request, res: Response) => {
 
     console.log(`[API] Processing chat with ${messages.length} messages. History length: ${JSON.stringify(messages).length} chars.`);
 
-    // Attach base64 data to the last user message if there are assets
+    // Resolve FileUIPart server-relative URLs into raw base64 payloads across ALL user messages.
+    // For the agent streaming path, passing a data: URL causes the AI SDK to treat
+    // it as a downloadable URL and reject it before provider conversion. Raw base64
+    // keeps the part inline and lets the SDK use the declared media type.
+    // We must resolve ALL messages (not just the last) so that follow-up messages
+    // don't replay unresolved paths from earlier turns into the model, causing
+    // "Base64 decoding failed for /uploads/..." errors.
+    for (const msg of messages) {
+      if (msg?.role === "user" && Array.isArray(msg.parts)) {
+        for (const part of msg.parts) {
+          if (
+            part.type === "file" &&
+            typeof part.url === "string" &&
+            (part.url.startsWith("/uploads/") || part.url.startsWith("/generated/"))
+          ) {
+            try {
+              const localPath = join(UPLOADS_DIR, part.url.replace(/^\//, ""));
+              const fileData = await readFile(localPath);
+              const mimeType = mime.lookup(localPath) || part.mediaType || "application/octet-stream";
+              part.mediaType = mimeType;
+              part.url = fileData.toString("base64");
+              console.log(`[API] Resolved FileUIPart ${part.filename || localPath} → base64 bytes`);
+            } catch (err) {
+              console.error(`[API] Failed to resolve FileUIPart url ${part.url}:`, err);
+            }
+          }
+        }
+      }
+    }
+
+    // Legacy: Attach base64 data to the last user message if there are assets passed via body
     if (assets && assets.length > 0 && messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage.role === "user") {

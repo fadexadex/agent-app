@@ -35,3 +35,7 @@ reference-videos/
 *.zip
 
 remotion/src/scenes/*
+
+remotion/public/generated
+
+remotion/public/uploads
