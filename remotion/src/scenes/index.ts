@@ -45,15 +45,6 @@ export { BenefitTimeSaving } from "./voiceos-benefits/benefit-time-saving";
 export { IntroTestOS } from "./testos-intro/intro-testos";
 export { HookDigitalChaos } from "./hook-series/hook-digital-chaos";
 export { MovingLogo } from "./branding/MovingLogo";
-export { RollingBall } from "./physics-demo/RollingBall";
 export { BouncingBall } from "./ball-animation/BouncingBall";
-export { KineticTypography } from "./kinetic-text-v1/KineticTypography";
-export { AnimatingBiro } from "./biro-animation/AnimatingBiro";
-export { HookManualChaos } from "./hook-manual-chaos/hook-manual-chaos";
-export { IntroAscend } from "./ascend-promo/intro-ascend";
-export { WorkflowAutomationScene } from "./feature-workflow-automation/feature-workflow-automation";
-export { FeatureAIInsights } from "./feature-demos/feature-ai-insights";
-export { BenefitBoostGrowth } from "./benefit-boost-growth/benefit-boost-growth";
-export { CtaGetStarted } from "./cta-get-started/cta-get-started";
-export { LogoReveal } from "./branding/LogoReveal";
-export { LogoRevealV3 } from "./branding/LogoRevealV3";
+
+export { HookOverwhelmedFeeling } from "./hook-scenes/hook-overwhelmed-feeling";
