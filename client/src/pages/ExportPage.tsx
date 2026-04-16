@@ -102,15 +102,20 @@ const ExportPage = () => {
 
   const totalDuration = scenes.reduce((a, s) => a + framesToSeconds(s.duration), 0);
 
-  // Use previewSceneId (the actual ID the agent registered) when available, fallback to scene.id
-  const getSceneVideoId = (index: number): string =>
-    (sceneStatuses?.[index] as any)?.previewSceneId || scenes[index]?.id || "";
+  // Returns the versioned video URL for a scene (e.g. /previews/projId/sceneId/v2.mp4).
+  // Falls back to the legacy flat path if no versioned URL is stored yet.
+  const getSceneVideoUrl = (index: number): string => {
+    const status = sceneStatuses?.[index] as any;
+    if (status?.videoUrl) return status.videoUrl;
+    // Legacy fallback: construct from previewSceneId or scene.id
+    const id = status?.previewSceneId || scenes[index]?.id || "";
+    return id ? `/previews/${id}.mp4` : "";
+  };
 
   const handleDownload = async () => {
-    // Use previewSceneId when available — it's the actual filename on disk
-    const sceneIds = scenes.map((s, i) => getSceneVideoId(i)).filter(Boolean);
+    const videoUrls = scenes.map((_, i) => getSceneVideoUrl(i)).filter(Boolean);
 
-    if (sceneIds.length === 0) {
+    if (videoUrls.length === 0) {
       toast.error("No scenes available to export.");
       return;
     }
@@ -126,7 +131,8 @@ const ExportPage = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          sceneIds,
+          videoUrls,
+          sceneIds: [], // kept for server backward-compat, videoUrls takes precedence
           resolution,
           format,
           aspectRatio: aspect,
@@ -141,7 +147,7 @@ const ExportPage = () => {
 
       const data = await response.json();
       setExportJobId(data.exportId);
-      toast.success(`Exporting ${sceneIds.length} scenes... This may take a moment.`);
+      toast.success(`Exporting ${videoUrls.length} scenes... This may take a moment.`);
     } catch (error) {
       console.error(error);
       toast.error("Failed to start export process.");
@@ -241,8 +247,8 @@ const ExportPage = () => {
                 <>
                   <video
                     ref={videoRef}
-                    key={getSceneVideoId(activeScene)}
-                    src={`/previews/${getSceneVideoId(activeScene)}.mp4`}
+                    key={getSceneVideoUrl(activeScene)}
+                    src={getSceneVideoUrl(activeScene)}
                     className="w-full h-full object-contain"
                     muted
                     playsInline

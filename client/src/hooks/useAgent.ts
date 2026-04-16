@@ -8,12 +8,14 @@ interface UseAgentOptions {
   sceneContext?: Record<string, unknown>;
   onRenderComplete?: (sceneId: string, videoUrl: string) => void;
   assets?: string[];
+  projectId?: string;
 }
 
 interface SendMessageOverrides {
   sceneId?: number | string | "all";
   sceneContext?: Record<string, unknown>;
   assets?: string[];
+  projectId?: string;
 }
 
 interface UseAgentReturn {
@@ -29,18 +31,19 @@ interface UseAgentReturn {
 function makeChat(
   sceneId: number | string | "all" | undefined,
   sceneContext: any | undefined,
-  assets?: string[]
+  assets?: string[],
+  projectId?: string
 ) {
   return new Chat<UIMessage>({
     transport: new DefaultChatTransport({
       api: "/api/agent/chat",
-      body: { sceneId, sceneContext, assets },
+      body: { sceneId, sceneContext, assets, projectId },
     }),
   });
 }
 
 export function useAgent(options: UseAgentOptions = {}): UseAgentReturn {
-  const { sceneId, sceneContext, onRenderComplete, assets } = options;
+  const { sceneId, sceneContext, onRenderComplete, assets, projectId } = options;
   const [steps, setSteps] = useState<AgentStep[]>([]);
   const [latestPreviewUrl, setLatestPreviewUrl] = useState<string | null>(null);
   const [latestPreviewSceneId, setLatestPreviewSceneId] = useState<
@@ -58,13 +61,15 @@ export function useAgent(options: UseAgentOptions = {}): UseAgentReturn {
   const sceneIdRef = useRef(sceneId);
   const sceneContextRef = useRef(sceneContext);
   const assetsRef = useRef(assets);
+  const projectIdRef = useRef(projectId);
   sceneIdRef.current = sceneId;
   sceneContextRef.current = sceneContext;
   assetsRef.current = assets;
+  projectIdRef.current = projectId;
 
   // Chat instance in state — swapped on each sendMessage for clean isolation
   const [currentChat, setCurrentChat] = useState<Chat<UIMessage>>(
-    () => makeChat(sceneId, sceneContext, assets),
+    () => makeChat(sceneId, sceneContext, assets, projectId),
   );
 
   const {
@@ -253,7 +258,8 @@ export function useAgent(options: UseAgentOptions = {}): UseAgentReturn {
       const effectiveSceneId = overrides?.sceneId ?? sceneIdRef.current;
       const effectiveContext = overrides?.sceneContext ?? sceneContextRef.current;
       const effectiveAssets = overrides?.assets ?? assetsRef.current;
-      const freshChat = makeChat(effectiveSceneId, effectiveContext, effectiveAssets);
+      const effectiveProjectId = overrides?.projectId ?? projectIdRef.current;
+      const freshChat = makeChat(effectiveSceneId, effectiveContext, effectiveAssets, effectiveProjectId);
       setCurrentChat(freshChat);
 
       // Reset per-message state

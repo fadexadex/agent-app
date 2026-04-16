@@ -13,6 +13,7 @@ import {
   markRenderComplete,
   markRenderFailed,
 } from "../lib/render-state.js";
+import { getNextVersion } from "../lib/version-manager.js";
 import {
   deploySite,
   getOrCreateBucket,
@@ -75,9 +76,16 @@ to check completion status.`,
         "The Remotion composition id — must exactly match the id used in triggerPreview " +
           "(e.g. 'hook-intro', 'the-hook')"
       ),
+    projectId: z
+      .string()
+      .optional()
+      .describe(
+        "Project identifier used to organise render outputs under a project folder. " +
+          "Read from [PROJECT_CONTEXT: projectId=\"...\"] in the user message. Defaults to \"default\" if absent."
+      ),
   }),
 
-  execute: async ({ sceneId }) => {
+  execute: async ({ sceneId, projectId }) => {
     // 1. Sanity-check: composition must be registered before rendering
     try {
       await assertSceneExists(sceneId);
@@ -87,20 +95,25 @@ to check completion status.`,
       return { success: false, sceneId, error: message };
     }
 
-    // 2. Ensure the output directory exists
+    // 2. Build versioned output path: previews/<projectFolder>/<sceneId>/v<N>.mp4
+    const projectFolder =
+      (projectId || "default").replace(/[^a-zA-Z0-9_-]/g, "") || "default";
+    const outputDir = join(PREVIEWS_DIR, projectFolder, sceneId);
     try {
-      await mkdir(PREVIEWS_DIR, { recursive: true });
+      await mkdir(outputDir, { recursive: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[renderScene] Could not create previews dir: ${message}`);
+      console.error(`[renderScene] Could not create output dir: ${message}`);
       return { success: false, sceneId, error: message };
     }
 
-    const outputFile = join(PREVIEWS_DIR, `${sceneId}.mp4`);
+    const version = await getNextVersion(outputDir);
+    const outputFile = join(outputDir, `v${version}.mp4`);
+    const videoUrl = `/previews/${projectFolder}/${sceneId}/v${version}.mp4`;
 
     // Initialize render state for tracking
     initRenderState(sceneId);
-    appendOutputLog(sceneId, `Starting Lambda render process for ${sceneId}...`);
+    appendOutputLog(sceneId, `Starting render for ${sceneId} → v${version}...`);
 
     // 3. Run the render process in the background
     (async () => {
@@ -148,7 +161,7 @@ to check completion status.`,
           });
 
           appendOutputLog(sceneId, `Successfully rendered to ${outputFile}`);
-          markRenderComplete(sceneId, `/previews/${sceneId}.mp4`);
+          markRenderComplete(sceneId, videoUrl);
           return;
         }
 
@@ -252,7 +265,7 @@ to check completion status.`,
         }
         
         appendOutputLog(sceneId, `Successfully downloaded to ${outputFile}`);
-        markRenderComplete(sceneId, `/previews/${sceneId}.mp4`);
+        markRenderComplete(sceneId, videoUrl);
 
       } catch (error) {
         console.error(`[renderScene] Lambda render error for ${sceneId}:`, error);
@@ -262,14 +275,12 @@ to check completion status.`,
     })();
 
     // Return immediately — render continues in background
-    const videoUrl = `/previews/${sceneId}.mp4`;
-
     return {
       success: true,
       status: "rendering",
       sceneId,
       videoUrl,
-      message: `Lambda render started for "${sceneId}". Video will be available at ${videoUrl} when complete.`,
+      message: `Render started for "${sceneId}". Video will be available at ${videoUrl} when complete.`,
     };
   },
 });

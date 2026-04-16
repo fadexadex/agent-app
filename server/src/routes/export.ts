@@ -30,7 +30,8 @@ mkdir(EXPORTS_DIR, { recursive: true }).catch((err) =>
 );
 
 interface ExportRequest {
-  sceneIds: string[]; // Array of scene IDs to concatenate
+  sceneIds: string[]; // Array of scene IDs (legacy, used if videoUrls absent)
+  videoUrls?: string[]; // Full versioned video paths e.g. /previews/projId/sceneId/v2.mp4
   resolution: string; // "720p" | "1080p" | "4K"
   format: string; // "MP4" | "WebM" | "GIF"
   aspectRatio: string; // "16:9" | "9:16" | "1:1"
@@ -38,20 +39,31 @@ interface ExportRequest {
   audioVolume?: number;
 }
 
+/**
+ * Resolve a client-facing video URL to an absolute filesystem path.
+ * Handles both new versioned paths (/previews/proj/scene/v1.mp4)
+ * and legacy flat paths (/previews/scene.mp4).
+ */
+function resolveVideoPath(url: string): string {
+  // Strip leading /previews/ and resolve under PREVIEWS_DIR
+  const relative = url.replace(/^\/previews\//, "");
+  return join(PREVIEWS_DIR, relative);
+}
+
 // Create FFmpeg concat file
-async function createConcatFile(sceneIds: string[], exportId: string): Promise<string> {
+async function createConcatFile(videoPaths: string[], exportId: string): Promise<string> {
   const concatFilePath = join(EXPORTS_DIR, `concat-${exportId}.txt`);
-  const lines = sceneIds.map(id => `file '${join(PREVIEWS_DIR, `${id}.mp4`)}'`);
+  const lines = videoPaths.map(p => `file '${p}'`);
   await writeFile(concatFilePath, lines.join('\n'));
   return concatFilePath;
 }
 
 router.post("/", async (req: Request, res: Response) => {
   try {
-    const { sceneIds, resolution, format, aspectRatio } = req.body as ExportRequest;
+    const { sceneIds, videoUrls, resolution, format, aspectRatio } = req.body as ExportRequest;
 
-    if (!sceneIds || sceneIds.length === 0) {
-      return res.status(400).json({ error: "sceneIds array is required" });
+    if ((!sceneIds || sceneIds.length === 0) && (!videoUrls || videoUrls.length === 0)) {
+      return res.status(400).json({ error: "sceneIds or videoUrls array is required" });
     }
 
     const exportId = randomUUID();
@@ -67,12 +79,18 @@ router.post("/", async (req: Request, res: Response) => {
     const outputFile = join(EXPORTS_DIR, outputFileName);
     const videoUrl = `/exports/${outputFileName}`;
 
+    // Resolve absolute filesystem paths for each scene's video
+    // Prefer videoUrls (versioned) over legacy sceneIds
+    const resolvedPaths: string[] = videoUrls && videoUrls.length > 0
+      ? videoUrls.map(resolveVideoPath)
+      : sceneIds.map(id => join(PREVIEWS_DIR, `${id}.mp4`));
+
     const job: ExportJob = {
       id: exportId,
       status: "rendering",
       progress: 0,
       outputFile,
-      totalScenes: sceneIds.length,
+      totalScenes: resolvedPaths.length,
     };
 
     activeExports.set(exportId, job);
@@ -80,20 +98,19 @@ router.post("/", async (req: Request, res: Response) => {
     res.json({ exportId, status: "rendering", progress: 0 });
 
     // Verify all preview videos exist
-    for (const sceneId of sceneIds) {
-      const previewPath = join(PREVIEWS_DIR, `${sceneId}.mp4`);
+    for (const videoPath of resolvedPaths) {
       try {
-        await access(previewPath);
+        await access(videoPath);
       } catch {
         job.status = "error";
-        job.error = `Preview video for scene "${sceneId}" not found. Please render all scenes first.`;
-        console.error(`[export/${exportId}] Missing preview: ${previewPath}`);
+        job.error = `Preview video not found: ${videoPath}. Please render all scenes first.`;
+        console.error(`[export/${exportId}] Missing preview: ${videoPath}`);
         return;
       }
     }
 
     // Create FFmpeg concat file
-    const concatFile = await createConcatFile(sceneIds, exportId);
+    const concatFile = await createConcatFile(resolvedPaths, exportId);
     console.log(`[export/${exportId}] Created concat file: ${concatFile}`);
 
     // FFmpeg command for concatenation

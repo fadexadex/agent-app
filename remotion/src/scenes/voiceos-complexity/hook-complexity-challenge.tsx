@@ -5,7 +5,6 @@ import {
   spring,
   useCurrentFrame,
   useVideoConfig,
-  Easing,
 } from 'remotion';
 import { loadFont } from '@remotion/google-fonts/Inter';
 
@@ -83,18 +82,19 @@ const AnimatedText: React.FC<{
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Entrance: Word-by-word reveal with translateY
+  // Unified Text Reveal Pattern: Word-by-word with mask/translate effect
   const words = text.split(' ');
   
-  // Exit: Fade and slight blur
   const exitProgress = spring({
     frame: frame - exitFrame,
     fps,
     config: { damping: 200 },
   });
+  
   const opacity = interpolate(frame, [exitFrame, exitFrame + 10], [1, 0], {
     extrapolateRight: 'clamp',
   });
+  
   const blur = interpolate(exitProgress, [0, 1], [0, 10]);
 
   return (
@@ -112,33 +112,43 @@ const AnimatedText: React.FC<{
         color: '#2D3748',
         display: 'flex',
         justifyContent: 'center',
-        gap: '20px',
+        flexWrap: 'wrap',
+        gap: '0 20px',
         opacity,
         filter: `blur(${blur}px)`,
       }}
     >
       {words.map((word, i) => {
-        const wordStart = startFrame + i * 5;
+        const wordStart = startFrame + i * 4; // Faster, tighter stagger
         const wordSpring = spring({
           frame: frame - wordStart,
           fps,
-          config: { damping: 200 },
+          config: { damping: 200 }, // Smooth, professional
         });
 
-        const wordOpacity = interpolate(wordSpring, [0, 1], [0, 1]);
-        const translateY = interpolate(wordSpring, [0, 1], [20, 0]);
+        // "Masked" slide up effect
+        const translateY = interpolate(wordSpring, [0, 1], [50, 0]);
+        const wordOpacity = interpolate(wordSpring, [0, 0.5], [0, 1]);
 
         return (
-          <span
+          <div
             key={i}
             style={{
+              overflow: 'hidden',
               display: 'inline-block',
-              opacity: wordOpacity,
-              transform: `translateY(${translateY}px)`,
+              padding: '0 4px',
             }}
           >
-            {word}
-          </span>
+            <span
+              style={{
+                display: 'inline-block',
+                opacity: wordOpacity,
+                transform: `translateY(${translateY}px)`,
+              }}
+            >
+              {word}
+            </span>
+          </div>
         );
       })}
     </div>
@@ -174,8 +184,8 @@ export const HookComplexityChallenge: React.FC = () => {
       <AnimatedText
         text="Struggling with insights?"
         y={40}
-        startFrame={40}
-        exitFrame={93} // Staggered by 3 frames
+        startFrame={35} // Slightly sooner for better rhythm
+        exitFrame={93} 
       />
     </AbsoluteFill>
   );

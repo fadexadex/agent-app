@@ -22,11 +22,13 @@ interface AgentThoughtsProps {
   onClearTimestamp?: () => void;
   sceneContext?: Record<string, unknown>;
   allScenes?: Scene[];
+  allSceneStatuses?: Array<{ previewSceneId?: string }>;
   onRefinementStart?: (sceneIndex: number, prompt: string) => void;
   onRefinementComplete?: (sceneIndex: number, videoUrl: string, prompt: string) => void;
   versions?: SceneVersion[];
   currentVersion?: number;
   onRestoreVersion?: (versionIndex: number) => void;
+  projectId?: string;
 }
 
 const formatTime = (seconds: number): string => {
@@ -48,8 +50,10 @@ interface UseRefinementChatOptions {
   selectedScene: number | "all";
   sceneContext?: Record<string, unknown>;
   allScenes?: Scene[];
+  allSceneStatuses?: Array<{ previewSceneId?: string }>;
   onRefinementStart?: (sceneIndex: number, prompt: string) => void;
   onRefinementComplete?: (sceneIndex: number, videoUrl: string, prompt: string) => void;
+  projectId?: string;
 }
 
 interface UseRefinementChatResult {
@@ -66,10 +70,30 @@ interface UseRefinementChatResult {
   removeAsset: (index: number) => void;
   handleChat: () => void;
   multiSceneProgress: { current: number; total: number; sceneName: string } | null;
+  refinementSceneIndex: number | null;
+}
+
+/**
+ * Builds a robust edit instruction for the agent.
+ * Tells it to discover the file via listFiles rather than guessing the path,
+ * which prevents it from creating a brand-new scene when the file is in a subfolder.
+ */
+function buildEditPrefix(compositionId: string): string {
+  return (
+    `EDIT THE EXISTING SCENE — do NOT create a new one.\n` +
+    `Remotion composition ID: "${compositionId}"\n` +
+    `Steps:\n` +
+    `1. Call listFiles("src/scenes") to locate the subfolder containing this scene\n` +
+    `2. Call readFile on the found file to read the current code\n` +
+    `3. Make ONLY the specific targeted changes described below — preserve all other animations, layout, and components\n` +
+    `4. Call writeSceneCode with the SAME sceneId "${compositionId}"\n` +
+    `5. Call triggerPreview → renderScene\n\n` +
+    `User request: `
+  );
 }
 
 function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChatResult {
-  const { selectedScene, sceneContext, allScenes, onRefinementStart, onRefinementComplete } = options;
+  const { selectedScene, sceneContext, allScenes, allSceneStatuses, onRefinementStart, onRefinementComplete, projectId } = options;
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [messageIdCounter, setMessageIdCounter] = useState(0);
@@ -83,10 +107,28 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
 
   // Multi-scene editing queue
   const [multiSceneProgress, setMultiSceneProgress] = useState<{ current: number; total: number; sceneName: string } | null>(null);
+  const multiSceneProgressActiveRef = useRef(false); // mirrors multiSceneProgress !== null for use inside effects
   const multiSceneQueueRef = useRef<Array<{ index: number; scene: Scene; message: string }>>([]);
   const multiSceneMsgRef = useRef<string>("");
+  // Maps scene string-ID → array index so background renders are attributed to the right slot
+  const sceneIndexMapRef = useRef<Map<string, number>>(new Map());
+  // Guard: prevents the queue effect from advancing twice during the brief idle
+  // window when a fresh Chat is created but hasn't yet reported status="submitted"
+  const isStartingNextSceneRef = useRef(false);
+  // Tracks which scene index is currently being refined (for UI relevance check)
+  const [refinementSceneIndex, setRefinementSceneIndex] = useState<number | null>(null);
 
   const handleRenderComplete = (renderSceneId: string, videoUrl: string) => {
+    // Prefer the ID-based map so background renders from earlier scenes are always
+    // attributed to the correct slot even after the queue has advanced.
+    const mappedIndex = sceneIndexMapRef.current.get(renderSceneId);
+    if (mappedIndex !== undefined) {
+      sceneIndexMapRef.current.delete(renderSceneId);
+      hasCompletedRef.current = true; // prevent useEffect double-fire
+      onRefinementComplete?.(mappedIndex, videoUrl, multiSceneMsgRef.current || lastPromptRef.current);
+      return;
+    }
+    // Single-scene fallback (no map entry found)
     const targetScene = refiningSceneRef.current;
     if (targetScene !== null && !hasCompletedRef.current) {
       hasCompletedRef.current = true;
@@ -104,32 +146,63 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
   } = useAgent({
     sceneId: selectedScene,
     sceneContext,
+    projectId,
     onRenderComplete: handleRenderComplete,
   });
 
-  // Detect completion when processing stops and we have a video URL
+  // Detect completion when processing stops and we have a video URL.
+  // handleRenderComplete (polling path) is the primary attribution mechanism;
+  // this effect is a safety net for synchronous renders or if polling fires late.
   useEffect(() => {
+    if (isProcessing || !latestVideoUrl || hasCompletedRef.current) return;
     const targetScene = refiningSceneRef.current;
-    if (!isProcessing && latestVideoUrl && targetScene !== null && !hasCompletedRef.current) {
+    if (targetScene !== null) {
       hasCompletedRef.current = true;
       onRefinementComplete?.(targetScene, latestVideoUrl, lastPromptRef.current);
       refiningSceneRef.current = null;
     }
   }, [isProcessing, latestVideoUrl, onRefinementComplete]);
 
-  // Multi-scene: when agent finishes, process next scene in queue
+  // Reset the guard once the agent actually starts processing
   useEffect(() => {
-    if (isProcessing || multiSceneQueueRef.current.length === 0) return;
-    // Agent just finished — pick next scene
+    if (isProcessing) {
+      isStartingNextSceneRef.current = false;
+    }
+  }, [isProcessing]);
+
+  // Multi-scene: when agent finishes, process next scene in queue (or clear banner when done)
+  useEffect(() => {
+    // Guard: isProcessing is briefly false while the fresh Chat object transitions
+    // from "idle" to "submitted". Without this flag the effect fires twice, skipping
+    // a scene or sending it the wrong context.
+    if (isProcessing || isStartingNextSceneRef.current) return;
+    if (multiSceneQueueRef.current.length === 0) {
+      // If the progress banner is still showing and queue is done, clear it
+      if (multiSceneProgressActiveRef.current) {
+        multiSceneProgressActiveRef.current = false;
+        setMultiSceneProgress(null);
+        setRefinementSceneIndex(null);
+      }
+      return;
+    }
+
+    // Claim the slot before any async work
+    isStartingNextSceneRef.current = true;
+
     const next = multiSceneQueueRef.current.shift();
     if (!next) {
       setMultiSceneProgress(null);
+      isStartingNextSceneRef.current = false;
       return;
     }
     const { index, scene, message } = next;
     const remaining = multiSceneQueueRef.current.length;
-    const total = multiSceneProgress?.total ?? 1;
-    setMultiSceneProgress({ current: total - remaining, total, sceneName: scene.name });
+
+    multiSceneProgressActiveRef.current = true;
+    setMultiSceneProgress((prev) => {
+      const total = prev?.total ?? 1;
+      return { current: total - remaining, total, sceneName: scene.name };
+    });
 
     setMessageIdCounter((c) => {
       setChatMessages((prev) => [
@@ -142,10 +215,15 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
     hasCompletedRef.current = false;
     refiningSceneRef.current = index;
     lastPromptRef.current = message;
+    sceneIndexMapRef.current.set(scene.id, index);
+    setRefinementSceneIndex(index);
     onRefinementStart?.(index, message);
 
-    const editPrefix = `EDIT THE EXISTING SCENE — do NOT create a new one. Scene ID: "${scene.id}". Call readFile first, then make targeted changes, then writeSceneCode with same sceneId.\n\nUser request: `;
-    sendMessage(editPrefix + message, { sceneId: scene.id, sceneContext: scene as any });
+    // Use the actual Remotion composition ID (previewSceneId) if available,
+    // otherwise fall back to scene.id
+    const compositionId = allSceneStatuses?.[index]?.previewSceneId || scene.id;
+    const editPrefix = buildEditPrefix(compositionId);
+    sendMessage(editPrefix + message, { sceneId: compositionId, sceneContext: scene as any, projectId });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isProcessing]);
 
@@ -207,6 +285,7 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
       const first = queue.shift()!;
       multiSceneQueueRef.current = queue;
       multiSceneMsgRef.current = message;
+      multiSceneProgressActiveRef.current = true;
       setMultiSceneProgress({ current: 1, total, sceneName: first.scene.name });
 
       setMessageIdCounter((c) => {
@@ -220,20 +299,36 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
       hasCompletedRef.current = false;
       refiningSceneRef.current = first.index;
       lastPromptRef.current = message;
+      isStartingNextSceneRef.current = true;
+      sceneIndexMapRef.current.set(first.scene.id, first.index);
+      setRefinementSceneIndex(first.index);
       onRefinementStart?.(first.index, message);
 
-      const editPrefix = `EDIT THE EXISTING SCENE — do NOT create a new one. Scene ID: "${first.scene.id}". Call readFile first, then make targeted changes, then writeSceneCode with same sceneId.\n\nUser request: `;
-      sendMessage(editPrefix + message, { sceneId: first.scene.id, sceneContext: first.scene as any, assets: currentAssets });
+      const firstCompositionId = allSceneStatuses?.[first.index]?.previewSceneId || first.scene.id;
+      sendMessage(buildEditPrefix(firstCompositionId) + message, {
+        sceneId: firstCompositionId,
+        sceneContext: first.scene as any,
+        assets: currentAssets,
+        projectId,
+      });
       return;
     }
 
     // Single-scene: prepend edit instruction when refining an existing scene
     const sceneId = typeof sceneContext?.id === "string" ? sceneContext.id : undefined;
-    const editPrefix = sceneId
-      ? `EDIT THE EXISTING SCENE — do NOT create a new one. Scene ID: "${sceneId}". Call readFile first to read the current code, then make targeted changes, then writeSceneCode using the same sceneId.\n\nUser request: `
-      : "";
+    // Prefer the actual Remotion composition ID from scene status over the scene JSON id
+    const compositionId = (typeof selectedScene === "number" && allSceneStatuses?.[selectedScene]?.previewSceneId)
+      || sceneId;
 
-    sendMessage(editPrefix + message, { assets: currentAssets });
+    if (compositionId && typeof selectedScene === "number") {
+      sceneIndexMapRef.current.set(compositionId, selectedScene);
+      setRefinementSceneIndex(selectedScene);
+    }
+
+    sendMessage(compositionId ? buildEditPrefix(compositionId) + message : message, {
+      assets: currentAssets,
+      projectId,
+    });
   };
 
   return {
@@ -250,6 +345,7 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
     removeAsset,
     handleChat,
     multiSceneProgress,
+    refinementSceneIndex,
   };
 }
 
@@ -477,11 +573,13 @@ const AgentThoughts = ({
   onClearTimestamp,
   sceneContext,
   allScenes,
+  allSceneStatuses,
   onRefinementStart,
   onRefinementComplete,
   versions = [],
   currentVersion = 1,
   onRestoreVersion,
+  projectId,
 }: AgentThoughtsProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -495,9 +593,18 @@ const AgentThoughts = ({
     selectedScene,
     sceneContext,
     allScenes,
+    allSceneStatuses,
     onRefinementStart,
     onRefinementComplete,
+    projectId,
   });
+
+  // When the user clicks a specific scene while a multi-scene edit is running,
+  // only show the refinement steps if they belong to this scene.
+  const showRefinementSteps =
+    refinementChat.refinementSceneIndex === null ||
+    selectedScene === "all" ||
+    refinementChat.refinementSceneIndex === selectedScene;
 
   // Auto-scroll when new steps arrive or refinement content changes
   useEffect(() => {
@@ -617,8 +724,8 @@ const AgentThoughts = ({
               )}
               <RefinementChatContent
                 chatMessages={refinementChat.chatMessages}
-                agentSteps={refinementChat.agentSteps}
-                isProcessing={refinementChat.isProcessing}
+                agentSteps={showRefinementSteps ? refinementChat.agentSteps : []}
+                isProcessing={showRefinementSteps ? refinementChat.isProcessing : false}
                 error={refinementChat.error}
               />
             </>

@@ -964,6 +964,8 @@ Requirements:
                 handleRestoreVersion(selectedScene, versionIndex);
               }
             }}
+            projectId={currentProjectIdRef.current ?? undefined}
+            allSceneStatuses={sceneStatuses}
           />
         </ResizablePanel>
       </ResizablePanelGroup>

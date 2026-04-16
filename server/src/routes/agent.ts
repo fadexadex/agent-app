@@ -22,13 +22,14 @@ interface ChatRequest {
   sceneId?: string;
   sceneContext?: Record<string, unknown>;
   assets?: string[]; // Array of file URLs like "/uploads/foo.png"
+  projectId?: string; // Project UUID for organising render outputs
 }
 
 const UPLOADS_DIR = resolve(process.cwd(), "../remotion/public");
 
 router.post("/chat", async (req: Request, res: Response) => {
   try {
-    const { messages: rawMessages, sceneId, sceneContext, assets } = req.body as ChatRequest;
+    const { messages: rawMessages, sceneId, sceneContext, assets, projectId } = req.body as ChatRequest;
 
     // Deep clone to avoid mutating req.body accidentally
     let messages = JSON.parse(JSON.stringify(rawMessages));
@@ -150,6 +151,25 @@ router.post("/chat", async (req: Request, res: Response) => {
 
     if (sceneContext) {
       console.log(`[API] Injected Scene context JSON payload`);
+    }
+
+    // Inject project context so the agent knows which projectId to pass to renderScene
+    if (projectId && messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === "user") {
+        const projectText = `[PROJECT_CONTEXT: projectId="${projectId}"]\nWhen calling renderScene, always pass this projectId so videos are stored under the project folder.\n\n`;
+        if (typeof lastMessage.content === "string") {
+          lastMessage.content = projectText + lastMessage.content;
+        } else if (Array.isArray(lastMessage.content)) {
+          const textPartIndex = lastMessage.content.findIndex((p: any) => p.type === "text");
+          if (textPartIndex !== -1) {
+            lastMessage.content[textPartIndex].text = projectText + lastMessage.content[textPartIndex].text;
+          } else {
+            lastMessage.content.unshift({ type: "text", text: projectText });
+          }
+        }
+        console.log(`[API] Injected project context for projectId=${projectId}`);
+      }
     }
 
     await pipeAgentUIStreamToResponse({

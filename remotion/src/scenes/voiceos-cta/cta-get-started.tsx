@@ -5,48 +5,50 @@ import {
   spring,
   useCurrentFrame,
   useVideoConfig,
+  Easing,
 } from 'remotion';
 import { loadFont } from '@remotion/google-fonts/Inter';
 
 const { fontFamily } = loadFont();
 
 const CallToActionButton: React.FC<{ frame: number; fps: number }> = ({ frame, fps }) => {
+  // Snappy but smooth button entrance
   const entrance = spring({
-    frame: frame - 45,
+    frame: frame - 40,
     fps,
-    config: { damping: 12, stiffness: 200 },
+    config: { damping: 15, stiffness: 100 },
   });
 
-  const exit = spring({
-    frame: frame - 86,
-    fps,
-    config: { damping: 200 },
-  });
-
-  const scale = interpolate(entrance - exit, [0, 1], [0, 1], {
-    extrapolateRight: 'clamp',
-  });
+  // Pulse effect to draw attention
+  const pulse = Math.sin(frame / 10) * 0.03;
+  const scale = entrance + (entrance > 0.9 ? pulse : 0);
 
   return (
     <div
       style={{
         transform: `scale(${scale})`,
+        opacity: entrance,
         backgroundColor: '#8BC34A',
-        padding: '20px 60px',
-        borderRadius: '50px',
-        boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-        marginTop: '80px',
+        padding: '18px 50px',
+        borderRadius: '16px', // Modern slightly rounded corners
+        boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+        marginTop: '60px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '1px solid rgba(255,255,255,0.2)',
       }}
     >
       <span
         style={{
           color: 'white',
           fontSize: '32px',
-          fontWeight: 'bold',
+          fontWeight: 700,
           fontFamily,
+          letterSpacing: '-0.5px',
         }}
       >
-        Get Started Now
+        Get Started Free
       </span>
     </div>
   );
@@ -56,99 +58,179 @@ export const CtaGetStarted: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Animations for Question
-  const questionEntrance = spring({
-    frame: frame - 10,
-    fps,
-    config: { damping: 200 },
+  // Background entrance
+  const bgScale = interpolate(frame, [0, 100], [1.1, 1], {
+    easing: Easing.out(Easing.quad),
+    extrapolateRight: 'clamp',
   });
-  const questionExit = interpolate(frame, [80, 95], [1, 0], { extrapolateRight: 'clamp' });
 
-  // Animations for Website URL
+  // Hero Text Animation (Smoother slide + fade)
+  const textEntrance = spring({
+    frame: frame - 15,
+    fps,
+    config: { damping: 20 },
+  });
+  
+  const textSlide = interpolate(textEntrance, [0, 1], [30, 0]);
+  const textOpacity = interpolate(textEntrance, [0, 1], [0, 1]);
+
+  // URL Animation (Staggered)
   const urlEntrance = spring({
     frame: frame - 25,
     fps,
-    config: { damping: 200 },
+    config: { damping: 20 },
   });
-  const urlExit = interpolate(frame, [83, 98], [1, 0], { extrapolateRight: 'clamp' });
+  
+  const urlSlide = interpolate(urlEntrance, [0, 1], [20, 0]);
+  const urlOpacity = interpolate(urlEntrance, [0, 1], [0, 1]);
 
-  // Animations for Logo
-  const logoEntrance = interpolate(frame, [50, 65], [0, 1], { extrapolateRight: 'clamp' });
-  const logoExit = interpolate(frame, [89, 100], [1, 0], { extrapolateRight: 'clamp' });
+  // Floating background elements for depth
+  const floatY = Math.sin(frame / 30) * 15;
 
   return (
-    <AbsoluteFill style={{ backgroundColor: '#303F9F', fontFamily }}>
-      {/* Background Glow */}
+    <AbsoluteFill 
+      style={{ 
+        backgroundColor: '#09090B', // Sleek dark mode background
+        fontFamily,
+        overflow: 'hidden',
+      }}
+    >
+      {/* Dynamic Background */}
       <div
         style={{
           position: 'absolute',
-          width: '600px',
-          height: '600px',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(48,63,159,0) 70%)',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
+          width: '120%',
+          height: '120%',
+          top: '-10%',
+          left: '-10%',
+          background: 'radial-gradient(circle at center, #1E293B 0%, #09090B 70%)',
+          transform: `scale(${bgScale})`,
+          opacity: 0.6,
         }}
       />
+      
+      {/* Decorative Blur Orbs */}
+      <div style={{
+        position: 'absolute',
+        width: '600px',
+        height: '600px',
+        borderRadius: '50%',
+        background: 'rgba(139, 195, 74, 0.1)',
+        filter: 'blur(100px)',
+        top: '10%',
+        left: '60%',
+        transform: `translateY(${floatY}px)`,
+      }} />
 
-      {/* Question Text */}
+      <div style={{
+        position: 'absolute',
+        width: '400px',
+        height: '400px',
+        borderRadius: '50%',
+        background: 'rgba(48, 63, 159, 0.2)',
+        filter: 'blur(80px)',
+        bottom: '10%',
+        right: '70%',
+        transform: `translateY(${-floatY}px)`,
+      }} />
+
+      {/* Main Content Layout */}
       <div
         style={{
-          position: 'absolute',
-          top: '25%',
-          width: '100%',
-          textAlign: 'center',
-          opacity: questionEntrance * questionExit,
-          transform: `translateY(${interpolate(questionEntrance, [0, 1], [20, 0])}px)`,
-          color: 'white',
-          fontSize: '48px',
-          fontWeight: 500,
-        }}
-      >
-        Ready to Experience True Productivity?
-      </div>
-
-      {/* Main Content Area */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          width: '100%',
+          zIndex: 10,
         }}
       >
+        {/* Top Headline with Mask Reveal effect (simulated via slide + opacity) */}
         <div
           style={{
-            opacity: urlEntrance * urlExit,
-            transform: `scale(${interpolate(urlEntrance, [0, 1], [0.95, 1])})`,
-            color: 'white',
-            fontSize: '72px',
-            fontWeight: 'bold',
+            opacity: textOpacity,
+            transform: `translateY(${textSlide}px)`,
+            marginBottom: '20px',
           }}
         >
-          Visit VoiceOS.com
+          <div
+            style={{
+              color: 'rgba(255,255,255,0.7)',
+              fontSize: '32px',
+              fontWeight: 500,
+              textAlign: 'center',
+              letterSpacing: '2px',
+              textTransform: 'uppercase',
+            }}
+          >
+            Join the future
+          </div>
+          <div
+            style={{
+              color: 'white',
+              fontSize: '72px',
+              fontWeight: 800,
+              textAlign: 'center',
+              letterSpacing: '-2px',
+              marginTop: '10px',
+              lineHeight: 1,
+            }}
+          >
+            VoiceOS Assistant
+          </div>
         </div>
 
-        <CallToActionButton frame={frame} fps={fps} />
+        {/* Staggered Divider */}
+        <div style={{
+            width: interpolate(frame - 20, [0, 30], [0, 100], { extrapolateRight: 'clamp' }) + 'px',
+            height: '4px',
+            background: '#8BC34A',
+            margin: '40px 0',
+            borderRadius: '2px'
+        }} />
+
+        {/* Website URL */}
+        <div
+          style={{
+            opacity: urlOpacity,
+            transform: `translateY(${urlSlide}px)`,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          <div
+            style={{
+              color: 'white',
+              fontSize: '48px',
+              fontWeight: 300,
+              fontFamily: 'monospace',
+              opacity: 0.9,
+            }}
+          >
+            www.voiceos.com
+          </div>
+          
+          <CallToActionButton frame={frame} fps={fps} />
+        </div>
       </div>
 
-      {/* Small Logo Footer */}
+      {/* Footer Branding */}
       <div
         style={{
           position: 'absolute',
-          bottom: '30px',
-          right: '30px',
-          opacity: logoEntrance * logoExit,
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '24px',
-          fontWeight: 600,
-          letterSpacing: '1px',
+          bottom: '60px',
+          width: '100%',
+          textAlign: 'center',
+          opacity: interpolate(frame, [60, 80], [0, 0.5], { extrapolateRight: 'clamp' }),
+          color: 'white',
+          fontSize: '18px',
+          letterSpacing: '4px',
+          textTransform: 'uppercase',
         }}
       >
-        VoiceOS
+        Productivity Unleashed
       </div>
     </AbsoluteFill>
   );
