@@ -2,7 +2,7 @@ import React from "react";
 import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 
-import { CleanTestScene, EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, SalesTrendsScene, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, CTAGetStarted, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, HookOverwhelmedFeeling } from "./scenes";
+import { CleanTestScene, EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, SalesTrendsScene, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, CTAGetStarted, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, HookOverwhelmedFeeling, HookFutureWork, IntroSynergyOS, TaskManagementFeature, HookManyTabs, IntroProductName, PriceTrackingFeature, FeatureComparison, BenefitSaveScene, CTAStartShopping, HookOTPDelay, IntroApiIntegration, FeatureProcessingDelivery, FeatureVerificationSecurity, CtaBrandLockup } from "./scenes";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -367,10 +367,130 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-      <Composition
+            <Composition
         id="hook-overwhelmed-feeling"
         component={HookOverwhelmedFeeling}
         durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="hook-future-work"
+        component={HookFutureWork}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="intro-synergyos"
+        component={IntroSynergyOS}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-task-management"
+        component={TaskManagementFeature}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="hook-many-tabs"
+        component={HookManyTabs}
+        durationInFrames={105}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                      <Composition
+        id="intro-product-name"
+        component={IntroProductName}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="hook-many-tabs-v2"
+        component={HookManyTabs}
+        durationInFrames={105}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-price-tracking"
+        component={PriceTrackingFeature}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="feature-comparison"
+        component={FeatureComparison}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="benefit-save"
+        component={BenefitSaveScene}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="cta-start-shopping"
+        component={CTAStartShopping}
+        durationInFrames={105}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="hook-otp-delay"
+        component={HookOTPDelay}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="intro-api-integration"
+        component={IntroApiIntegration}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-processing-delivery"
+        component={FeatureProcessingDelivery}
+        durationInFrames={140}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-verification-security"
+        component={FeatureVerificationSecurity}
+        durationInFrames={130}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="cta-brand-lockup"
+        component={CtaBrandLockup}
+        durationInFrames={100}
         fps={30}
         width={1920}
         height={1080}
