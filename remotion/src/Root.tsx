@@ -2,7 +2,7 @@ import React from "react";
 import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 
-import { CleanTestScene, EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, SalesTrendsScene, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, CTAGetStarted, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, CtaGetStarted, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, RollingBall, HookManualChaos, IntroAscend, WorkflowAutomationScene, FeatureAIInsights, KineticTypography, AnimatingBiro, BenefitBoostGrowth, LogoReveal, LogoRevealV3, FinancialPDFScene, TestScene, BankStatementVideo, HookDrowningTasks, MeetAscendFlow, FeatureAIAutomation, LogoIntro, CollaborativeCanvas, BenefitBoostProductivity, GetStartedFree } from "./scenes";
+import { CleanTestScene, EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, SalesTrendsScene, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, CTAGetStarted, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, HookMissingSales, IntroWhatsNaijaAI, HookMissedChats, IntroWhatsNaijaAi, InstantReplies, ProductOrdersScene, BenefitGrowthSatisfaction, GetWhatsNaijaAI, ImageDepthEffect, FrustratedCheckoutHook, IntroSolutionArrive, FeatureOneClick, AISmartRecommendations, BenefitIncreaseConversion, HookProductivityChallenge, UnifiedWorkspace, CrossAppSearchFeature, KineticTypography } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -246,14 +246,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                                  <Composition
-        id="cta-get-started"
-        component={CtaGetStarted}
-        durationInFrames={110}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
+
                             <Composition
         id="hook-productivity"
         component={HookProductivity}
@@ -366,14 +359,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                      <Composition
-        id="rolling-ball-scene"
-        component={RollingBall}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
+
           <Composition
         id="bouncing-ball-scene-v2"
         component={BouncingBall}
@@ -382,234 +368,163 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                            <Composition
-        id="hook-manual-chaos"
-        component={HookManualChaos}
-        durationInFrames={100}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-                            <Composition
-        id="intro-ascend"
-        component={IntroAscend}
+          <Composition
+        id="hook-missing-sales"
+        component={HookMissingSales}
         durationInFrames={120}
         fps={30}
         width={1920}
         height={1080}
       />
                 <Composition
-        id="feature-workflow-automation"
-        component={WorkflowAutomationScene}
+        id="intro-whats-naija-ai"
+        component={IntroWhatsNaijaAi}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+
+          <Composition
+        id="hook-missed-chats"
+        component={HookMissedChats}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-instant-replies"
+        component={InstantReplies}
         durationInFrames={130}
         fps={30}
         width={1920}
         height={1080}
       />
-                <Composition
-        id="feature-ai-insights"
-        component={FeatureAIInsights}
-        durationInFrames={130}
+          <Composition
+        id="feature-product-orders"
+        component={ProductOrdersScene}
+        durationInFrames={140}
         fps={30}
         width={1920}
         height={1080}
       />
           <Composition
-        id="kinetic-typo-1"
-        component={KineticTypography}
-        durationInFrames={180}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="kinetic-demo"
-        component={KineticTypography}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="kinetic-main"
-        component={KineticTypography}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="biro-scene"
-        component={AnimatingBiro}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="benefit-boost-growth"
-        component={BenefitBoostGrowth}
+        id="benefit-growth-satisfaction"
+        component={BenefitGrowthSatisfaction}
         durationInFrames={120}
         fps={30}
         width={1920}
         height={1080}
       />
                 <Composition
-        id="logo-reveal-scene"
-        component={LogoReveal}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="logo-reveal"
-        component={LogoReveal}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="logo-reveal-v2"
-        component={LogoReveal}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="logo-reveal-v3"
-        component={LogoRevealV3}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="financial-pdf-scene"
-        component={FinancialPDFScene}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="financial-pdf-scene-v2"
-        component={FinancialPDFScene}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="test-scene"
-        component={TestScene}
-        durationInFrames={90}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-                <Composition
-        id="kinetic-scene-1"
-        component={KineticTypography}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="bank-story"
-        component={BankStatementVideo}
-        durationInFrames={600}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="hook-drowning-tasks"
-        component={HookDrowningTasks}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="intro-ascendflow-reveal"
-        component={MeetAscendFlow}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="feature-ai-automation"
-        component={FeatureAIAutomation}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="logo-intro"
-        component={LogoIntro}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="feature-collaborative-canvas"
-        component={CollaborativeCanvas}
-        durationInFrames={150}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="benefit-boost-productivity"
-        component={BenefitBoostProductivity}
-        durationInFrames={120}
-        fps={30}
-        width={1920}
-        height={1080}
-      />
-          <Composition
-        id="cta-get-started-free"
-        component={GetStartedFree}
+        id="cta-try-whats-naija"
+        component={GetWhatsNaijaAI}
         durationInFrames={100}
         fps={30}
         width={1920}
         height={1080}
       />
           <Composition
-        id="logo-intro-v2"
-        component={LogoIntro}
+        id="depth-effect-scene"
+        component={ImageDepthEffect}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="hook-frustrated-shopper"
+        component={FrustratedCheckoutHook}
         durationInFrames={120}
         fps={30}
         width={1920}
         height={1080}
       />
           <Composition
-        id="logo-intro-v3"
-        component={LogoIntro}
+        id="intro-solution-arrive"
+        component={IntroSolutionArrive}
         durationInFrames={120}
         fps={30}
         width={1920}
         height={1080}
       />
           <Composition
-        id="logo-final-v1"
-        component={LogoIntro}
+        id="feature-one-click"
+        component={FeatureOneClick}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-one-click-v2"
+        component={FeatureOneClick}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="feature-smart-recommendations"
+        component={AISmartRecommendations}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="benefit-increase-conversion"
+        component={BenefitIncreaseConversion}
         durationInFrames={120}
         fps={30}
         width={1920}
         height={1080}
       />
           <Composition
-        id="logo-final-v2"
-        component={LogoIntro}
+        id="cta-get-started"
+        component={CTAGetStarted}
+        durationInFrames={105}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="hook-productivity-challenge"
+        component={HookProductivityChallenge}
         durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="intro-unified-workspace"
+        component={UnifiedWorkspace}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-intelligent-search"
+        component={CrossAppSearchFeature}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="kinetic-typography-main"
+        component={KineticTypography}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-intelligent-search-new"
+        component={CrossAppSearchFeature}
+        durationInFrames={135}
         fps={30}
         width={1920}
         height={1080}

@@ -199,7 +199,7 @@ function mapToBrandColors(payload: OpenBrandPayload, fallbackUrl: string): Brand
   }
 
   console.log(
-    `[BrandExtractor] Parsed: ${uniqueColors.length} colors, ${logos.length} logos, ${backdrops.length} backdrops, ${fonts.length} fonts for ${brandName ?? fallbackUrl}`,
+    `[BrandExtractor] Parsed: ${colors.length} colors, ${logos.length} logos, ${backdrops.length} backdrops, ${fonts.length} fonts for ${brandName ?? fallbackUrl}`,
   );
 
   return {
