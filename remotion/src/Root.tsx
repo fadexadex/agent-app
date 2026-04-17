@@ -2,7 +2,7 @@ import React from "react";
 import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 
-import { EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, HookProblemIntro, APIIntegrationScene, VerificationSecurity, TestScene, FeatureApiIntegration, FeatureProcessingDelivery, BenefitVerificationSecurity, InterswitchBrandOutro, ProblemIntro, APIIntegration, ProcessingDeliveryScene, SceneOutroBrand, CtaGetStarted, ProblemIntroMinimal, ProblemProductIntro, ApiIntegration, ProcessingDelivery, BenefitsOutro, AppleParticleReveal, AppleParticleRevealSmart, AppleParticleRevealSmartV2, LinearMotion, LinearReveal } from "./scenes";
+import { EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, HookProblemIntro, APIIntegrationScene, VerificationSecurity, TestScene, FeatureApiIntegration, FeatureProcessingDelivery, BenefitVerificationSecurity, InterswitchBrandOutro, ProblemIntro, APIIntegration, ProcessingDeliveryScene, SceneOutroBrand, CtaGetStarted, ProblemIntroMinimal, ProblemProductIntro, ApiIntegration, ProcessingDelivery, BenefitsOutro, AppleParticleReveal, AppleParticleRevealSmart, LinearMotion, LinearReveal, LinearLogoAnimation, LinearLogo, LinearLogoReveal, AIAutomationScene, FeatureTeamCollaboration, BenefitTimeFocus, MotionArtScene } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -86,7 +86,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                      <Composition
+                            <Composition
         id="intro-product-reveal"
         component={IntroProductReveal}
         durationInFrames={120}
@@ -327,10 +327,10 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                <Composition
+                      <Composition
         id="hook-digital-chaos"
         component={HookDigitalChaos}
-        durationInFrames={120}
+        durationInFrames={105}
         fps={30}
         width={1920}
         height={1080}
@@ -528,26 +528,10 @@ export const RemotionRoot: React.FC = () => {
         width={1280}
         height={720}
       />
-          <Composition
-        id="apple_reveal_smart_final_scene"
-        component={AppleParticleRevealSmart}
-        durationInFrames={750}
-        fps={30}
-        width={1280}
-        height={720}
-      />
-          <Composition
-        id="apple-reveal-smart-final-scene-v2-final-preview"
-        component={AppleParticleRevealSmartV2}
-        durationInFrames={750}
-        fps={30}
-        width={1280}
-        height={720}
-      />
-                <Composition
+                      <Composition
         id="linear-reveal"
-        component={LinearMotion}
-        durationInFrames={120}
+        component={LinearLogoReveal}
+        durationInFrames={90}
         fps={30}
         width={1080}
         height={1080}
@@ -574,6 +558,62 @@ export const RemotionRoot: React.FC = () => {
         durationInFrames={120}
         fps={30}
         width={1080}
+        height={1080}
+      />
+                                        <Composition
+        id="linear-logo-reveal"
+        component={LinearLogo}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="linear-reveal-v2"
+        component={LinearLogoReveal}
+        durationInFrames={90}
+        fps={30}
+        width={1080}
+        height={1080}
+      />
+          <Composition
+        id="feature-ai-automation"
+        component={AIAutomationScene}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-team-collaboration"
+        component={FeatureTeamCollaboration}
+        durationInFrames={135}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="benefit-time-focus"
+        component={BenefitTimeFocus}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="cta-sign-up"
+        component={CallToAction}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="motion-art-01"
+        component={MotionArtScene}
+        durationInFrames={660}
+        fps={30}
+        width={1920}
         height={1080}
       />
     </>

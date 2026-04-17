@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Terminal } from "lucide-react";
+import { Loader2, Terminal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import GeneratingAnimation from "./GeneratingAnimation";
 
@@ -24,6 +24,8 @@ interface ScenePlayerProps {
   sceneTitle?: string;
   /** Ref forwarded for the native <video> element (rendered stage) */
   videoRef?: React.RefObject<HTMLVideoElement>;
+  /** True when a refinement/re-render is in progress — shows status overlay */
+  isRefining?: boolean;
   className?: string;
 }
 
@@ -49,6 +51,7 @@ const ScenePlayer = ({
   onNextScene,
   generatingMessage,
   videoRef,
+  isRefining = false,
   className,
 }: ScenePlayerProps) => {
   return (
@@ -72,7 +75,7 @@ const ScenePlayer = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="w-full h-full bg-black"
+            className="w-full h-full bg-black relative"
           >
             <RenderedStage
               videoUrl={videoUrl}
@@ -80,6 +83,27 @@ const ScenePlayer = ({
               isPlaying={isPlaying}
               onNextScene={onNextScene}
             />
+            {/* Refinement overlay — shown while agent is writing updated code */}
+            <AnimatePresence>
+              {isRefining && (
+                <motion.div
+                  key="refining-overlay"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0 pointer-events-none"
+                >
+                  {/* Animated top border */}
+                  <div className="absolute top-0 inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent animate-pulse" />
+                  {/* Status badge */}
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 bg-black/70 backdrop-blur-sm border border-white/10 px-2.5 py-1 rounded-full">
+                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                    <span className="text-[11px] text-white/70 font-medium">Updating scene...</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         ) : stage === "preview" && playerUrl ? (
           <motion.div
@@ -88,13 +112,29 @@ const ScenePlayer = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="w-full h-full bg-black"
+            className="w-full h-full bg-black relative"
           >
             <PreviewStage
               playerUrl={playerUrl}
               isPlaying={isPlaying}
               onTogglePlay={onTogglePlay}
             />
+            {/* Refinement overlay — shown while rendering the final video */}
+            <AnimatePresence>
+              {isRefining && (
+                <motion.div
+                  key="rendering-badge"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.25 }}
+                  className="absolute top-3 right-3 pointer-events-none flex items-center gap-1.5 bg-black/70 backdrop-blur-sm border border-white/10 px-2.5 py-1 rounded-full"
+                >
+                  <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                  <span className="text-[11px] text-white/70 font-medium">Rendering final...</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         ) : (
           <motion.div

@@ -18,6 +18,7 @@ export interface SceneGenerationTask {
   sceneIndex: number;
   sceneContext: Record<string, unknown>;
   prompt: string;
+  assets?: string[]; // uploaded file URLs like "/uploads/file-xxx.webp"
 }
 
 /**
@@ -82,7 +83,7 @@ async function generateSingleScene(
   task: SceneGenerationTask,
   onProgress?: (update: SceneProgressUpdate) => void
 ): Promise<SceneGenerationResult> {
-  const { sceneId, sceneIndex, sceneContext, prompt } = task;
+  const { sceneId, sceneIndex, sceneContext, prompt, assets } = task;
 
   try {
     onProgress?.({
@@ -94,9 +95,25 @@ async function generateSingleScene(
 
     const agent = createSceneAgent(sceneId);
 
+    // Build reference assets block if assets were provided
+    let referenceAssetsBlock = "";
+    if (assets && assets.length > 0) {
+      const assetLines = assets
+        .map((url) => {
+          const normalized = url.replace(/^\//, "");
+          return `- staticFile('${normalized}')`;
+        })
+        .join("\n");
+      referenceAssetsBlock =
+        `[REFERENCE_ASSETS]\n` +
+        `Reference image(s) are available in the Remotion public folder. Use staticFile() to reference them (import { staticFile } from 'remotion'):\n\n` +
+        `${assetLines}\n` +
+        `[/REFERENCE_ASSETS]\n\n`;
+    }
+
     // Build the prompt with scene context
     const fullPrompt = `
-[SCENE_CONTEXT]
+${referenceAssetsBlock}[SCENE_CONTEXT]
 Scene Index: ${sceneIndex}
 Scene ID: ${sceneId}
 Scene Data:

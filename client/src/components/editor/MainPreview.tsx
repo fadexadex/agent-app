@@ -16,6 +16,10 @@ interface MainPreviewProps {
   previewSceneId?: string | null;
   /** Rendered MP4 URL */
   videoUrl?: string | null;
+  /** True once triggerPreview fires during a refinement cycle */
+  refinementPreviewReady?: boolean;
+  /** True when a refinement (or re-render) is in progress */
+  isRefining?: boolean;
   generatingMessage?: string;
   videoRef?: React.RefObject<HTMLVideoElement>;
   // Per-scene extras for ScenePlayer controls
@@ -45,6 +49,8 @@ const MainPreview = ({
   previewUrl,
   previewSceneId,
   videoUrl,
+  refinementPreviewReady = false,
+  isRefining = false,
   generatingMessage,
   videoRef,
   sceneIndex,
@@ -127,6 +133,10 @@ const MainPreview = ({
   let stage: PlayerStage = "generating";
   if (isQueued) {
     stage = "generating";
+  } else if (isGenerating && refinementPreviewReady && previewUrl) {
+    // Refinement in progress AND triggerPreview has fired with updated code:
+    // show the live player so the user sees new code before the render finishes.
+    stage = "preview";
   } else if ((isComplete || isGenerating) && videoUrl) {
     stage = "rendered";
   } else if (previewUrl) {
@@ -182,6 +192,7 @@ const MainPreview = ({
         onNextScene={onNextScene}
         generatingMessage={isQueued ? "Queued..." : generatingMessage}
         videoRef={videoRef}
+        isRefining={isRefining}
       />
     </motion.div>
   );

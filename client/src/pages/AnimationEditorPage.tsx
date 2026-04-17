@@ -257,6 +257,9 @@ const AnimationEditorPageInner = () => {
   const [currentVersion, setCurrentVersion] = useState(existingChat?.currentVersion || (existingChat?.versions?.length || 0));
   const [versions, setVersions] = useState<SceneVersion[]>(existingChat?.versions || []);
   const [isRendering, setIsRendering] = useState(false);
+  // True once triggerPreview fires during a refinement round — signals the live
+  // preview should be shown instead of the (stale) last rendered video.
+  const [refinementPreviewReady, setRefinementPreviewReady] = useState(false);
   const [historyChats, setHistoryChats] = useState<StoredAnimationChat[]>([]);
   const [isPlaying, setIsPlaying] = useState(true);
   const [videoCurrentTime, setVideoCurrentTime] = useState(0);
@@ -279,6 +282,9 @@ const AnimationEditorPageInner = () => {
   const latestPreviewUrlRef = useRef<string | null>(existingChat?.latestPreviewUrl || null);
   const latestVideoUrlRef = useRef<string | null>(existingChat?.latestVideoUrl || null);
   const latestSceneIdRef = useRef<string | null>(existingChat?.latestSceneId || null);
+  // Ref mirrors for use inside the messages effect (avoids adding state to deps)
+  const isProcessingRef = useRef(false);
+  const prevIsProcessingRef = useRef(false);
 
   useEffect(() => {
     setHistoryChats(getAllAnimationChats());
@@ -296,6 +302,25 @@ const AnimationEditorPageInner = () => {
   const { messages, status, error } = useChat({ chat });
 
   const isProcessing = status === "streaming" || status === "submitted";
+
+  // Keep isProcessingRef in sync so the messages effect can read it without
+  // adding isProcessing as a dep (which would create an update cascade).
+  useEffect(() => {
+    isProcessingRef.current = isProcessing;
+  });
+
+  // Detect refinement start/end to control the live-preview overlay state.
+  // When processing starts and there is already a rendered video → it's a
+  // refinement; reset refinementPreviewReady until triggerPreview fires again.
+  useEffect(() => {
+    if (isProcessing && !prevIsProcessingRef.current && latestVideoUrlRef.current) {
+      setRefinementPreviewReady(false);
+    } else if (!isProcessing && prevIsProcessingRef.current) {
+      // Agent finished — keep refinementPreviewReady as-is so the live preview
+      // stays visible while render polling completes.
+    }
+    prevIsProcessingRef.current = isProcessing;
+  }, [isProcessing]);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -444,6 +469,12 @@ const AnimationEditorPageInner = () => {
           if (result.previewUrl && result.previewUrl !== latestPreviewUrlRef.current) {
             latestPreviewUrlRef.current = result.previewUrl;
             setLatestPreviewUrl(result.previewUrl);
+            // If this triggerPreview fires during a refinement (agent is running and
+            // there is already a rendered video), mark the live preview as ready so
+            // MainPreview can switch to showing the new code immediately.
+            if (isProcessingRef.current && latestVideoUrlRef.current) {
+              setRefinementPreviewReady(true);
+            }
           }
           if (result.sceneId && result.sceneId !== latestSceneIdRef.current) {
             latestSceneIdRef.current = result.sceneId;
@@ -967,6 +998,8 @@ const AnimationEditorPageInner = () => {
                         previewUrl={latestPreviewUrl || undefined}
                         previewSceneId={latestSceneId || undefined}
                         videoUrl={latestVideoUrl || undefined}
+                        refinementPreviewReady={refinementPreviewReady}
+                        isRefining={(isProcessing || isRendering) && !!latestVideoUrl}
                         generatingMessage={
                           isRendering ? "Rendering video..." :
                           isProcessing ? "AI is refining the animation..." : undefined

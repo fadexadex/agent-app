@@ -69,7 +69,14 @@ router.post("/chat", async (req: Request, res: Response) => {
     // We must resolve ALL messages (not just the last) so that follow-up messages
     // don't replay unresolved paths from earlier turns into the model, causing
     // "Base64 decoding failed for /uploads/..." errors.
-    for (const msg of messages) {
+    const lastUserMsgIndex = messages.reduce(
+      (lastIdx: number, msg: any, i: number) => (msg?.role === "user" ? i : lastIdx),
+      -1
+    );
+    const lastUserMsgAssets: Array<{ path: string; filename: string }> = [];
+
+    for (let msgIdx = 0; msgIdx < messages.length; msgIdx++) {
+      const msg = messages[msgIdx];
       if (msg?.role === "user" && Array.isArray(msg.parts)) {
         for (const part of msg.parts) {
           if (
@@ -78,18 +85,64 @@ router.post("/chat", async (req: Request, res: Response) => {
             (part.url.startsWith("/uploads/") || part.url.startsWith("/generated/"))
           ) {
             try {
-              const localPath = join(UPLOADS_DIR, part.url.replace(/^\//, ""));
+              const originalUrl = part.url; // capture before overwrite
+              const localPath = join(UPLOADS_DIR, originalUrl.replace(/^\//, ""));
               const fileData = await readFile(localPath);
               const mimeType = mime.lookup(localPath) || part.mediaType || "application/octet-stream";
               part.mediaType = mimeType;
               part.url = fileData.toString("base64");
               console.log(`[API] Resolved FileUIPart ${part.filename || localPath} → base64 bytes`);
+
+              // Track assets from the last user message so we can tell the agent their paths
+              if (msgIdx === lastUserMsgIndex) {
+                lastUserMsgAssets.push({
+                  path: originalUrl.replace(/^\//, ""), // "uploads/file-xxx.webp"
+                  filename: part.filename || originalUrl.split("/").pop() || originalUrl,
+                });
+              }
             } catch (err) {
               console.error(`[API] Failed to resolve FileUIPart url ${part.url}:`, err);
             }
           }
         }
       }
+    }
+
+    // Inject [REFERENCE_ASSETS] block so the agent knows how to use staticFile() for uploaded images
+    if (lastUserMsgAssets.length > 0 && lastUserMsgIndex !== -1) {
+      const assetLines = lastUserMsgAssets
+        .map(({ path, filename }) => `- "${filename}"  →  staticFile('${path}')`)
+        .join("\n");
+
+      const referenceAssetsText =
+        `[REFERENCE_ASSETS]\n` +
+        `The user has uploaded reference image(s) saved in the Remotion project's public folder.\n` +
+        `Use staticFile() to reference them in scene code (import { staticFile } from 'remotion'):\n\n` +
+        `${assetLines}\n` +
+        `[/REFERENCE_ASSETS]\n\n`;
+
+      const lastMessage = messages[lastUserMsgIndex];
+      // Inject into msg.parts (AI SDK UIMessage format)
+      if (Array.isArray(lastMessage.parts)) {
+        const textPartIdx = lastMessage.parts.findIndex((p: any) => p.type === "text");
+        if (textPartIdx !== -1) {
+          lastMessage.parts[textPartIdx].text = referenceAssetsText + lastMessage.parts[textPartIdx].text;
+        } else {
+          lastMessage.parts.unshift({ type: "text", text: referenceAssetsText });
+        }
+      }
+      // Also inject into msg.content (legacy/wire format)
+      if (typeof lastMessage.content === "string") {
+        lastMessage.content = referenceAssetsText + lastMessage.content;
+      } else if (Array.isArray(lastMessage.content)) {
+        const textPartIdx = lastMessage.content.findIndex((p: any) => p.type === "text");
+        if (textPartIdx !== -1) {
+          lastMessage.content[textPartIdx].text = referenceAssetsText + lastMessage.content[textPartIdx].text;
+        } else {
+          lastMessage.content.unshift({ type: "text", text: referenceAssetsText });
+        }
+      }
+      console.log(`[API] Injected [REFERENCE_ASSETS] block with ${lastUserMsgAssets.length} asset(s)`);
     }
 
     // Legacy: Attach base64 data to the last user message if there are assets passed via body
@@ -255,6 +308,7 @@ interface BatchGenerateRequest {
     sceneContext: Record<string, unknown>;
   }>;
   prompt: string;
+  assets?: string[]; // uploaded file URLs like "/uploads/file-xxx.webp"
 }
 
 router.post("/generate-batch", async (req: Request, res: Response) => {
@@ -264,7 +318,7 @@ router.post("/generate-batch", async (req: Request, res: Response) => {
     });
   }
 
-  const { scenes, prompt } = req.body as BatchGenerateRequest;
+  const { scenes, prompt, assets } = req.body as BatchGenerateRequest;
 
   if (!scenes || !Array.isArray(scenes) || scenes.length === 0) {
     return res.status(400).json({ error: "No scenes provided" });
@@ -281,6 +335,7 @@ router.post("/generate-batch", async (req: Request, res: Response) => {
     sceneIndex: scene.sceneIndex,
     sceneContext: scene.sceneContext,
     prompt,
+    assets,
   }));
 
   const onProgress = (update: SceneProgressUpdate) => {

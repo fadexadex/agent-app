@@ -126,13 +126,17 @@ export const triggerPreviewTool = tool({
       // ── Build player URL ────────────────────────────────────────────────────
       // Dev mode: Vite player dev server at port 3200 (instant HMR)
       // The client will try this URL first and fall back to the production bundle.
+      // &_t= is a cache-bust timestamp so that every triggerPreview call (including
+      // refinements on the same sceneId) returns a unique URL, forcing the client
+      // to detect the change and reload the preview iframe.
       const devPlayerUrl =
         `http://localhost:3200/player?scene=${safeSceneId}` +
         `&component=${safeComponentName}` +
         `&duration=${durationFrames}` +
         `&w=${width}` +
         `&h=${height}` +
-        `&fps=${fps}`;
+        `&fps=${fps}` +
+        `&_t=${Date.now()}`;
 
       // ── Kick off production bundle in background ────────────────────────────
       // Non-blocking — the client can start previewing via the dev URL immediately.
