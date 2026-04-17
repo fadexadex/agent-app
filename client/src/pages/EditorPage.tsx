@@ -55,6 +55,12 @@ const EditorPage = () => {
   const fromVideos: boolean = (location.state as any)?.fromVideos || false;
   const passedSceneStatuses: SceneStatus[] | undefined = (location.state as any)?.sceneStatuses;
   const passedSceneSteps: Record<number, AgentStep[]> | undefined = (location.state as any)?.sceneSteps;
+  const passedAssets: string[] = (location.state as any)?.assets || [];
+  const brandColors: string[] = (location.state as any)?.brandColors || [];
+  const brandName: string | undefined = (location.state as any)?.brandName;
+  const brandFonts: { role?: string; family: string }[] = (location.state as any)?.brandFonts || [];
+  const brandLogos: string[] = (location.state as any)?.brandLogos || [];
+  const brandBackdrops: string[] = (location.state as any)?.brandBackdrops || [];
 
   const [scenes, setScenes] = useState<Scene[]>(passedScenes);
   const [selectedScene, setSelectedScene] = useState<number | "all">(0);
@@ -419,8 +425,8 @@ const EditorPage = () => {
       // Pass scene data directly to avoid stale closure issues during transitions
       sendMessage(scenePrompt, {
         sceneId: String(scene.id),
-        sceneContext: scene,
-        assets: overrides?.assets
+        sceneContext: { ...scene, brandColors, brandName },
+        assets: overrides?.assets || passedAssets
       });
     },
     [scenes, sendMessage],
@@ -443,8 +449,29 @@ Requirements:
 7. Apply scene transition: ${JSON.stringify(scene.transition ?? { type: "blur", duration: 15 })}
 8. Follow the notes: "${scene.notes ?? "Exit elements in order, stagger by 3 frames."}"`;
 
+    let reqIdx = 9;
+    if (brandColors && brandColors.length > 0) {
+      prompt += `\n${reqIdx++}. BRAND COLORS (REQUIRED): Use these exact colors for backgrounds, text, and UI elements: ${brandColors.join(", ")}.`;
+    }
+    if (brandName) {
+      prompt += `\n${reqIdx++}. BRAND NAME: Display "${brandName}" in titles, logos, or CTA copy where appropriate.`;
+    }
+    if (brandLogos && brandLogos.length > 0) {
+      prompt += `\n${reqIdx++}. BRAND LOGOS: Use these logo URLs directly in Img components or as src props: ${brandLogos.join(", ")}`;
+    }
+    if (brandBackdrops && brandBackdrops.length > 0) {
+      prompt += `\n${reqIdx++}. BRAND BACKDROPS: These backdrop/hero images are available for backgrounds: ${brandBackdrops.join(", ")}`;
+    }
+    if (brandFonts && brandFonts.length > 0) {
+      const fontList = brandFonts.map(f => `${f.family}${f.role ? ` (${f.role})` : ""}`).join(", ");
+      prompt += `\n${reqIdx++}. BRAND FONTS: Apply these font families via inline style fontFamily: ${fontList}.`;
+    }
+    if (passedAssets && passedAssets.length > 0) {
+      prompt += `\n${reqIdx++}. UPLOADED ASSETS: The user has provided these assets — incorporate them into the scene using Img, MockupFrame, or as background src: ${passedAssets.join(", ")}`;
+    }
+
     if (scene.audioTrack) {
-      prompt += `\n9. AUDIO REQUIREMENT: Include this audio component anywhere in the scene JSX: <Audio src={staticFile("audio/${scene.audioTrack.trackId}.mp3")} volume={${scene.audioTrack.volume}} />. Import Audio and staticFile from "remotion".`;
+      prompt += `\n11. AUDIO REQUIREMENT: Include this audio component anywhere in the scene JSX: <Audio src={staticFile("audio/${scene.audioTrack.trackId}.mp3")} volume={${scene.audioTrack.volume}} />. Import Audio and staticFile from "remotion".`;
     }
 
     prompt += `\n\nStart with the think tool to plan your approach, then writeSceneCode → triggerPreview → renderScene.`;
@@ -844,7 +871,7 @@ Requirements:
             </TabsContent>
             
             <TabsContent value="assets" className="flex-1 mt-0 overflow-hidden outline-none">
-              <AssetList />
+              <AssetList sceneAssets={[...passedAssets, ...brandLogos, ...brandBackdrops].filter((v, i, a) => a.indexOf(v) === i)} />
             </TabsContent>
 
             <TabsContent value="music" className="flex-1 mt-0 overflow-hidden outline-none">

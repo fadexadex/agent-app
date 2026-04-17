@@ -13,7 +13,11 @@ interface Asset {
   prompt?: string;
 }
 
-const AssetList = () => {
+interface AssetListProps {
+  sceneAssets?: string[];
+}
+
+const AssetList = ({ sceneAssets = [] }: AssetListProps) => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -48,8 +52,23 @@ const AssetList = () => {
       }
 
       // Sort newest first
-      allAssets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setAssets(allAssets);
+      let sortedAssets = allAssets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      // Merge sceneAssets
+      if (sceneAssets.length > 0) {
+        const existingUrls = new Set(sortedAssets.map(a => a.url));
+        const additional = sceneAssets
+          .filter(url => !existingUrls.has(url))
+          .map(url => ({
+            name: url.split('/').pop() || "External Asset",
+            url,
+            mimeType: url.match(/\.(jpeg|jpg|gif|png|webp|svg)/i) ? "image/auto" : "application/octet-stream",
+            createdAt: new Date().toISOString()
+          }));
+        sortedAssets = [...additional, ...sortedAssets];
+      }
+
+      setAssets(sortedAssets);
     } catch (err) {
       console.error("Failed to fetch assets", err);
     } finally {
@@ -59,7 +78,7 @@ const AssetList = () => {
 
   useEffect(() => {
     fetchAssets();
-  }, []);
+  }, [sceneAssets]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;

@@ -123,15 +123,28 @@ export type ProgressEvent =
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
+interface BrandFont { role?: string; family: string; }
+
 function buildSystemPrompt(
   assets: string[] = [],
   brandColors: string[] = [],
   brandName?: string,
   generationMode?: string,
+  brandFonts: BrandFont[] = [],
+  brandLogos: string[] = [],
+  brandBackdrops: string[] = [],
 ): string {
+  // Split assets into local uploads vs external brand URLs
+  const localAssets = assets.filter(u => !/^https?:\/\//i.test(u));
+  const externalAssets = assets.filter(u => /^https?:\/\//i.test(u));
+
   let assetInstruction = "";
-  if (assets.length > 0) {
-    assetInstruction = `\n\nThe user has uploaded the following assets:\n${assets.join("\n")}\nYou can reference these exact URLs in the scene elements (e.g., for MockupFrame, Image, or custom components). Utilize these assets directly in the scenes.`;
+  if (localAssets.length > 0) {
+    assetInstruction = `\n\nUPLOADED ASSETS (use these in scene elements — MockupFrame, Img, or custom components):\n${localAssets.join("\n")}`;
+  }
+  if (externalAssets.length > 0 || brandLogos.length > 0 || brandBackdrops.length > 0) {
+    const allExternal = [...new Set([...externalAssets, ...brandLogos, ...brandBackdrops])];
+    assetInstruction += `\n\nBRAND ASSET URLs (reference these directly as src/url values in scene elements):\n${allExternal.join("\n")}`;
   }
 
   const trimmedBrand = brandName?.trim();
@@ -146,6 +159,12 @@ function buildSystemPrompt(
 YOU MUST use these colors in scene backgrounds. For solid backgrounds, pick one of these colors.
 For gradient backgrounds, combine 2-3 of these colors. DO NOT use random colors when brand colors are provided.
 Use these colors for text accents and UI elements where appropriate.`;
+  }
+
+  let fontInstruction = "";
+  if (brandFonts.length > 0) {
+    const fontList = brandFonts.map(f => `${f.family}${f.role ? ` (${f.role})` : ""}`).join(", ");
+    fontInstruction = `\n\nBrand Fonts: Apply these font families in text element props where applicable: ${fontList}.`;
   }
 
   let modeInstruction = "";
@@ -169,7 +188,7 @@ Rules:
 - For custom elements, set component to a Remotion component name (e.g. "FeaturePill", "VoiceIndicatorPill", "AnimatedText", "MockupFrame")
 - notes: concise exit order + stagger timing guidance (e.g. "Exit order: mockup first, label last. Stagger 3 frames.")
 - id: unique kebab-case slug per scene
-- Make element descriptions vivid and specific — the Remotion developer uses them to build the component${assetInstruction}${brandInstruction}${colorInstruction}${modeInstruction}`;
+- Make element descriptions vivid and specific — the Remotion developer uses them to build the component${assetInstruction}${brandInstruction}${colorInstruction}${fontInstruction}${modeInstruction}`;
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
@@ -182,6 +201,9 @@ export async function generateSceneScript(
   onProgress: (event: ProgressEvent) => void,
   brandName?: string,
   generationMode?: string,
+  brandFonts: BrandFont[] = [],
+  brandLogos: string[] = [],
+  brandBackdrops: string[] = [],
 ): Promise<void> {
   const google = createGoogleGenerativeAI({
     apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -239,7 +261,7 @@ export async function generateSceneScript(
     model: google(modelId),
     output: "array",
     schema: SceneSchema,
-    system: buildSystemPrompt(assets, brandColors, brandName, generationMode),
+    system: buildSystemPrompt(assets, brandColors, brandName, generationMode, brandFonts, brandLogos, brandBackdrops),
     messages: [
       { role: "user", content: mappedParts as any }
     ],

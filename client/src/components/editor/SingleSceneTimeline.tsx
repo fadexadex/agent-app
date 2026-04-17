@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useId, useMemo, useEffect } from "react";
-import { Play, Pause, SkipBack, RotateCcw, Music, Film } from "lucide-react";
+import { Play, Pause, SkipBack, RotateCcw, Music, Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Scene, framesToSeconds } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
@@ -20,7 +20,6 @@ interface SingleSceneTimelineProps {
   onSpeedChange?: (speed: 0.5 | 1 | 2) => void;
   audioUrl?: string | null;
   audioTrackName?: string | null;
-  /** Native video element ref — enables zero-rerender real-time playhead tracking */
   videoRef?: React.RefObject<HTMLVideoElement>;
 }
 
@@ -32,15 +31,6 @@ const formatTime = (seconds: number): string => {
 };
 
 const SPEEDS = [0.5, 1, 2] as const;
-type Speed = (typeof SPEEDS)[number];
-
-// ─── Track definitions ────────────────────────────────────────────────────────
-// Inspired by @xzdarcy/react-timeline-editor's `TimelineRow` + `effects` model:
-// each "track" has a label, color, and an icon to distinguish clip types visually.
-const TRACK_HEIGHT = 32; // px — consistent with xzdarcy's default row height
-const RULER_HEIGHT = 20; // px
-
-// How many sub-ticks to show between major ticks (scaleSplitCount from xzdarcy docs)
 const SCALE_SPLIT_COUNT = 4;
 
 const SingleSceneTimeline = ({
@@ -52,8 +42,6 @@ const SingleSceneTimeline = ({
   onTimestampSelect,
   isPlaying,
   onTogglePlay,
-  previewUrl,
-  videoUrl,
   speed = 1,
   onSpeedChange,
   audioUrl,
@@ -64,11 +52,10 @@ const SingleSceneTimeline = ({
   const playheadRef = useRef<HTMLDivElement>(null);
   const isDraggingRef = useRef(false);
   const [zoom, setZoom] = useState(1);
-  const uid = useId(); // unique per-instance — fixes the duplicate clipPath id bug
+  const uid = useId();
 
   const duration = framesToSeconds(scene.duration);
 
-  // ── Real-time playhead via RAF (zero React re-renders during playback) ────────
   useEffect(() => {
     if (!videoRef?.current) return;
     let rafId: number;
@@ -82,32 +69,13 @@ const SingleSceneTimeline = ({
     rafId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafId);
   }, [videoRef, duration]);
+
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const markerPosition =
     selectedTimestamp !== null && duration > 0
       ? (selectedTimestamp / duration) * 100
       : null;
 
-  // ── Track rows ──────────────────────────────────────────────────────────────
-  // We model tracks like xzdarcy's TimelineRow concept — video track always
-  // present, audio track conditionally added.
-  const tracks = useMemo(() => {
-    const base = [
-      {
-        id: "video",
-        label: scene.name,
-        icon: <Film className="h-2.5 w-2.5" />,
-        color: "bg-blue-500",
-        activeColor: "bg-blue-400 ring-1 ring-blue-300 ring-inset",
-        dimColor: "bg-blue-500/70",
-        borderColor: "border-blue-400/40",
-      },
-    ] as const;
-    return base;
-  }, [scene.name]);
-
-  // ── Ruler ticks (respects scaleSplitCount) ──────────────────────────────────
-  // Inspired by xzdarcy's `scale`, `scaleWidth`, `scaleSplitCount` props.
   const majorInterval = zoom >= 4 ? 0.5 : zoom >= 2 ? 1 : 2;
   const minorInterval = majorInterval / SCALE_SPLIT_COUNT;
 
@@ -123,7 +91,6 @@ const SingleSceneTimeline = ({
     return result;
   }, [duration, majorInterval, minorInterval]);
 
-  // ── Time ↔ pointer conversion ───────────────────────────────────────────────
   const computeTimeFromPointer = useCallback(
     (e: React.PointerEvent): number => {
       const container = scrollContainerRef.current;
@@ -146,7 +113,6 @@ const SingleSceneTimeline = ({
     [duration],
   );
 
-  // ── Auto-scroll at viewport edges while dragging (xzdarcy's autoScroll) ─────
   const autoScrollRaf = useRef<number | null>(null);
   const startAutoScroll = useCallback((direction: "left" | "right") => {
     const step = () => {
@@ -167,7 +133,6 @@ const SingleSceneTimeline = ({
     }
   }, []);
 
-  // ── Pointer events ──────────────────────────────────────────────────────────
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     isDraggingRef.current = true;
@@ -182,19 +147,13 @@ const SingleSceneTimeline = ({
     const time = computeTimeFromPointer(e);
     movePlayheadImperative(time);
     onScrub?.(time);
-
-    // Auto-scroll near edges (xzdarcy autoScroll behavior)
     const container = scrollContainerRef.current;
     if (container) {
       const rect = container.getBoundingClientRect();
-      const edge = 40; // px — snap zone near edge
-      if (e.clientX < rect.left + edge) {
-        startAutoScroll("left");
-      } else if (e.clientX > rect.right - edge) {
-        startAutoScroll("right");
-      } else {
-        stopAutoScroll();
-      }
+      const edge = 40;
+      if (e.clientX < rect.left + edge) startAutoScroll("left");
+      else if (e.clientX > rect.right - edge) startAutoScroll("right");
+      else stopAutoScroll();
     }
   };
 
@@ -220,61 +179,62 @@ const SingleSceneTimeline = ({
     scrollContainerRef.current?.scrollTo({ left: 0, behavior: "smooth" });
   };
 
-  const LABEL_COL_WIDTH = 96; // px — synced left-label column width
-
   return (
     <div className="h-full flex flex-col bg-card border-t border-border select-none">
 
-      {/* ── Controls bar ────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 px-3 py-1 border-b border-border shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-muted-foreground hover:text-foreground"
-          onClick={() => { onSeek(0); onScrub?.(0); }}
-          title="Go to start"
-        >
-          <SkipBack className="h-3 w-3" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-muted-foreground hover:text-foreground"
-          onClick={onTogglePlay}
-        >
-          {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6 text-muted-foreground hover:text-foreground"
-          onClick={() => { onSeek(0); onScrub?.(0); }}
-          title="Replay"
-        >
-          <RotateCcw className="h-3 w-3" />
-        </Button>
+      {/* Controls bar */}
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground bg-muted/50 hover:bg-muted"
+            onClick={() => { onSeek(0); onScrub?.(0); }}
+            title="Go to start"
+          >
+            <SkipBack className="h-4 w-4" fill="currentColor" />
+          </Button>
+          <Button
+            variant="default"
+            size="icon"
+            className="h-8 w-8 bg-black text-white hover:bg-black/90 rounded-md dark:bg-white dark:text-black dark:hover:bg-white/90"
+            onClick={onTogglePlay}
+          >
+            {isPlaying ? <Pause className="h-4 w-4" fill="currentColor" /> : <Play className="h-4 w-4" fill="currentColor" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground bg-muted/50 hover:bg-muted"
+            onClick={() => { onSeek(0); onScrub?.(0); }}
+            title="Replay"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </Button>
+        </div>
 
-        <span className="text-[10px] font-mono text-muted-foreground tabular-nums w-28">
-          {formatTime(currentTime)} / {formatTime(duration)}
-        </span>
-
-        <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
-          {scene.name}
-        </span>
+        <div className="flex items-center gap-4 text-sm font-mono ml-2">
+          <span className="text-muted-foreground tabular-nums">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+          <span className="text-foreground font-sans text-sm font-medium">
+            {scene.name}
+          </span>
+        </div>
 
         <div className="flex-1" />
 
         {/* Speed pills */}
-        <div className="flex items-center gap-0.5 bg-muted rounded-md p-0.5">
+        <div className="flex items-center gap-0.5 bg-muted/40 p-1 rounded-md border border-border/50">
           {SPEEDS.map((s) => (
             <button
               key={s}
               onClick={() => onSpeedChange?.(s)}
               className={cn(
-                "text-[10px] px-2 py-0.5 rounded transition-colors",
+                "text-xs px-2.5 py-1 rounded-sm transition-colors",
                 speed === s
-                  ? "bg-card text-foreground shadow-sm font-medium"
-                  : "text-muted-foreground hover:text-foreground",
+                  ? "bg-black text-white shadow-sm font-medium dark:bg-white dark:text-black"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted",
               )}
             >
               {s}×
@@ -282,129 +242,62 @@ const SingleSceneTimeline = ({
           ))}
         </div>
 
-        <div className="w-px h-3.5 bg-border mx-1" />
+        <div className="w-px h-4 bg-border mx-1" />
 
         {/* Zoom controls */}
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setZoom((z) => Math.max(1, parseFloat((z - 0.5).toFixed(1))))}
-            className="text-[10px] w-5 h-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            −
-          </button>
+        <div className="flex items-center gap-0.5 bg-muted/40 p-1 rounded-md border border-border/50">
           <button
             onClick={handleZoomReset}
             className={cn(
-              "text-[9px] px-1.5 py-0.5 rounded transition-colors font-medium",
-              zoom === 1 ? "text-muted-foreground" : "text-foreground bg-muted",
+              "text-xs px-2.5 py-1 rounded-sm transition-colors font-medium",
+              zoom === 1
+                ? "bg-black text-white dark:bg-white dark:text-black"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted",
             )}
           >
-            {zoom === 1 ? "Fit" : `${zoom}×`}
+            Fit
+          </button>
+          <button
+            onClick={() => setZoom((z) => Math.max(1, parseFloat((z - 0.5).toFixed(1))))}
+            className="text-muted-foreground hover:text-foreground hover:bg-muted w-7 h-6 flex items-center justify-center rounded-sm transition-colors"
+          >
+            <Minus className="h-3 w-3" />
           </button>
           <button
             onClick={() => setZoom((z) => Math.min(8, parseFloat((z + 0.5).toFixed(1))))}
-            className="text-[10px] w-5 h-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted w-7 h-6 flex items-center justify-center rounded-sm transition-colors"
           >
-            +
+            <Plus className="h-3 w-3" />
           </button>
         </div>
       </div>
 
-      {/* ── Timeline body ────────────────────────────────────────────────────── */}
-      <div className="flex-1 bg-[#0d0f14] overflow-hidden flex min-h-0">
-
-        {/* Left: track label column — always visible, not scrolled */}
-        <div
-          className="shrink-0 border-r border-white/10 flex flex-col z-10"
-          style={{ width: LABEL_COL_WIDTH }}
-        >
-          {/* Ruler spacer */}
-          <div style={{ height: RULER_HEIGHT }} className="shrink-0 border-b border-white/10" />
-
-          {/* Video track label */}
-          {tracks.map((track) => (
-            <div
-              key={track.id}
-              className="flex items-center gap-1.5 px-2 border-b border-white/10 text-white/50 shrink-0"
-              style={{ height: TRACK_HEIGHT }}
-            >
-              <span className="text-[9px] truncate leading-none">{track.label}</span>
-            </div>
-          ))}
-
-          {/* Audio track label */}
-          {audioUrl && (
-            <div
-              className="flex items-center gap-1.5 px-2 border-b border-white/10 text-white/50 shrink-0"
-              style={{ height: TRACK_HEIGHT }}
-            >
-              <span className="flex items-center justify-center h-4 w-4 rounded-sm bg-emerald-500 text-white">
-                <Music className="h-2.5 w-2.5" />
-              </span>
-              <span className="text-[9px] truncate leading-none">
-                {audioTrackName || "Audio"}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Right: scrollable ruler + tracks + playhead */}
+      {/* Timeline body */}
+      <div className="flex-1 flex flex-col bg-[#0a0a0a] min-h-0 relative px-4 py-6">
         <div
           ref={scrollContainerRef}
-          className="flex-1 overflow-x-auto overflow-y-hidden relative cursor-ew-resize"
+          className="flex-1 overflow-x-auto overflow-y-hidden relative cursor-ew-resize [&::-webkit-scrollbar]:hidden"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onDoubleClick={handleDoubleClick}
         >
           <div
-            style={{ width: `${zoom * 100}%`, minWidth: "100%", position: "relative" }}
-            className="h-full flex flex-col"
+            style={{ width: `${zoom * 100}%`, minWidth: "100%" }}
+            className="flex flex-col h-full relative"
           >
-
-            {/* ── Time ruler with major + minor ticks (scaleSplitCount) ── */}
-            <div
-              className="shrink-0 border-b border-white/10 relative bg-[#0d0f14] z-10"
-              style={{ height: RULER_HEIGHT }}
-            >
-              {ticks.map(({ time, major }) => (
-                <div
-                  key={time}
-                  className="absolute top-0 flex flex-col items-center pointer-events-none"
-                  style={{ left: `${(time / (duration || 1)) * 100}%`, transform: "translateX(-50%)" }}
-                >
-                  <div
-                    className={cn(
-                      "w-px",
-                      major ? "h-3 bg-white/30" : "h-1.5 bg-white/12",
-                    )}
-                  />
-                  {major && (
-                    <span className="text-[8px] font-mono text-white/35 mt-0.5 whitespace-nowrap">
-                      {formatTime(time)}
-                    </span>
-                  )}
-                </div>
-              ))}
+            {/* Top time labels */}
+            <div className="flex justify-between items-end mb-2 text-[10px] text-white/50 font-mono select-none px-2 shrink-0">
+              <span>0:00.0</span>
+              <span>{formatTime(duration)}.0</span>
             </div>
 
-            {/* ── Video track row ── */}
-            {tracks.map((track) => (
-              <div
-                key={track.id}
-                className="shrink-0 relative border-b border-white/[0.06]"
-                style={{ height: TRACK_HEIGHT }}
-              >
-                {/* Scene clip block */}
-                <div className="absolute top-1 bottom-1 left-0 right-0 rounded-sm overflow-hidden pointer-events-none">
-                  <div className={cn("absolute inset-0 rounded-sm", track.activeColor)} />
-                  {/* Clip label inside the block */}
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[9px] font-medium text-white/80 truncate pointer-events-none select-none">
-                    {scene.name}
-                  </span>
-                </div>
-
-                {/* Refinement marker */}
+            {/* Track block */}
+            <div className="relative h-14 bg-black/50 border border-white/10 rounded-sm w-full flex overflow-hidden shrink-0">
+              <div className="h-full w-full bg-[#5326a6] flex items-center px-3 relative overflow-hidden">
+                <span className="text-[11px] text-white/90 font-medium truncate pointer-events-none select-none z-10">
+                  {scene.name}
+                </span>
                 {markerPosition !== null && (
                   <div
                     className="absolute top-0 bottom-0 z-10 pointer-events-none"
@@ -415,67 +308,86 @@ const SingleSceneTimeline = ({
                   </div>
                 )}
               </div>
-            ))}
 
-            {/* ── Audio track row ── */}
-            {audioUrl && (
-              <div
-                className="shrink-0 relative border-b border-white/[0.06]"
-                style={{ height: TRACK_HEIGHT }}
-              >
-                <div className="absolute inset-x-0 top-1 bottom-1 overflow-hidden rounded-sm bg-emerald-900/20">
-                  <AudioWaveform
-                    audioUrl={audioUrl}
-                    width={scrollContainerRef.current?.scrollWidth || 800}
-                    height={TRACK_HEIGHT - 8}
-                    currentTime={currentTime}
-                    duration={duration}
-                    color="#10B981"
-                    backgroundColor="rgba(16, 185, 129, 0.15)"
-                    clipPathId={`progress-${uid}`}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* ── Playhead ── */}
-            {duration > 0 && (
-              <div
-                ref={playheadRef}
-                className="absolute inset-y-0 z-20 pointer-events-none"
-                style={{ left: `${progress}%`, willChange: "left" }}
-              >
-                <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-red-500" />
-                {/* Home-plate playhead handle — identical to Remotion Studio */}
-                <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto cursor-ew-resize"
-                  style={{ top: -RULER_HEIGHT }}
+              {/* Playhead */}
+              {duration > 0 && (
+                <div
+                  ref={playheadRef}
+                  className="absolute top-0 bottom-0 z-20 pointer-events-none"
+                  style={{ left: `${progress}%`, willChange: "left" }}
                 >
-                  <svg width="11" height="14" viewBox="0 0 11 14" className="drop-shadow-sm">
-                    <path
-                      d="M1 0h9a1 1 0 011 1v5.5a1 1 0 01-.4.8L6 11a1.5 1.5 0 01-1 0L.4 7.3A1 1 0 010 6.5V1a1 1 0 011-1z"
-                      fill="#ef4444"
-                    />
-                  </svg>
+                  <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.5)]" />
+                  <div className="absolute left-1/2 -translate-x-1/2 pointer-events-auto cursor-ew-resize -top-2">
+                    <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-red-500" />
+                  </div>
                 </div>
+              )}
+            </div>
+
+            {/* Audio track */}
+            {audioUrl && (
+              <div className="relative h-10 mt-1 bg-black/50 border border-white/10 rounded-sm overflow-hidden shrink-0">
+                <div className="flex items-center gap-1.5 absolute left-2 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
+                  <span className="flex items-center justify-center h-4 w-4 rounded-sm bg-emerald-500 text-white">
+                    <Music className="h-2.5 w-2.5" />
+                  </span>
+                  <span className="text-[9px] text-white/50 truncate">
+                    {audioTrackName || "Audio"}
+                  </span>
+                </div>
+                <AudioWaveform
+                  audioUrl={audioUrl}
+                  width={scrollContainerRef.current?.scrollWidth || 800}
+                  height={40}
+                  currentTime={currentTime}
+                  duration={duration}
+                  color="#10B981"
+                  backgroundColor="rgba(16, 185, 129, 0.15)"
+                  clipPathId={`progress-${uid}`}
+                />
               </div>
             )}
+
+            {/* Bottom ruler */}
+            <div className="relative h-6 mt-1 text-[10px] text-white/40 font-mono select-none shrink-0">
+              {ticks.map(({ time, major }) =>
+                major ? (
+                  <div
+                    key={time}
+                    className="absolute top-0 flex flex-col"
+                    style={{ left: `${(time / (duration || 1)) * 100}%` }}
+                  >
+                    <div className="w-px h-1.5 bg-white/20" />
+                    <span className="mt-0.5 pl-1 whitespace-nowrap">{formatTime(time)}</span>
+                  </div>
+                ) : (
+                  <div
+                    key={time}
+                    className="absolute top-0"
+                    style={{ left: `${(time / (duration || 1)) * 100}%` }}
+                  >
+                    <div className="w-px h-1 bg-white/10" />
+                  </div>
+                )
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* ── Hint bar ──────────────────────────────────────────────────────── */}
-      <div className="shrink-0 px-3 py-1 border-t border-white/5">
-        <p className="text-[9px] text-white/40 text-center">
-          Double-click timeline to mark a timestamp for refinement · Press Space to play/pause
-          {selectedTimestamp !== null && (
-            <button
-              onClick={() => onTimestampSelect(null)}
-              className="ml-2 text-emerald-400/70 hover:text-emerald-400 transition-colors"
-            >
-              × clear mark
-            </button>
-          )}
-        </p>
+        {/* Footer hint */}
+        <div className="mt-auto flex justify-center pb-2 shrink-0">
+          <span className="text-[11px] text-white/30 font-sans">
+            Double-click timeline to mark a timestamp for refinement · Press Space to play/pause
+            {selectedTimestamp !== null && (
+              <button
+                onClick={() => onTimestampSelect(null)}
+                className="ml-2 text-emerald-400/70 hover:text-emerald-400 transition-colors"
+              >
+                × clear mark
+              </button>
+            )}
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -210,6 +210,11 @@ const AnimationEditorPageInner = () => {
   const state = location.state as Record<string, unknown> | undefined;
   const initialPrompt = (state?.prompt as string) || "";
   const initialAssets = (state?.assets as string[]) || [];
+  const brandColors = (state?.brandColors as string[]) || [];
+  const brandName = (state?.brandName as string) || "";
+  const brandFonts = (state?.brandFonts as { role?: string; family: string }[]) || [];
+  const brandLogos = (state?.brandLogos as string[]) || [];
+  const brandBackdrops = (state?.brandBackdrops as string[]) || [];
   const [assets, setAssets] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -242,7 +247,7 @@ const AnimationEditorPageInner = () => {
     messages: existingChat?.messages || [],
     transport: new DefaultChatTransport({
       api: "/api/agent/chat",
-      body: { assets: initialAssets },
+      body: { assets: initialAssets, sceneContext: { brandColors, brandName, brandFonts, brandLogos, brandBackdrops } },
     }),
   }));
 
@@ -503,7 +508,7 @@ const AnimationEditorPageInner = () => {
       messages: messages,
       transport: new DefaultChatTransport({
         api: "/api/agent/chat",
-        body: { assets: currentAssets },
+        body: { assets: currentAssets, sceneContext: { brandColors, brandName } },
       }),
     });
     setChat(updatedChat);

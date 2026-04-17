@@ -23,6 +23,9 @@ const GeneratingPage = () => {
     assets?: string[];
     brandColors?: string[];
     brandName?: string;
+    brandFonts?: { role?: string; family: string; source?: string; weights?: number[] }[];
+    brandLogos?: string[];
+    brandBackdrops?: string[];
     generationMode?: string;
   } | null;
 
@@ -30,6 +33,9 @@ const GeneratingPage = () => {
   const assets = state?.assets || [];
   const brandColors = state?.brandColors || [];
   const brandName = state?.brandName;
+  const brandFonts = state?.brandFonts || [];
+  const brandLogos = state?.brandLogos || [];
+  const brandBackdrops = state?.brandBackdrops || [];
   const generationMode = state?.generationMode || "product-video";
 
   useEffect(() => {
@@ -39,7 +45,7 @@ const GeneratingPage = () => {
       const response = await fetch("/api/scenes/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, assets, brandColors, brandName, generationMode }),
+        body: JSON.stringify({ prompt, assets, brandColors, brandName, brandFonts, brandLogos, brandBackdrops, generationMode }),
         signal: controller.signal,
       });
 
@@ -78,7 +84,7 @@ const GeneratingPage = () => {
           if (event.step === "complete") {
             setCurrentStep(4);
             navigate("/storyboard", {
-              state: { prompt, scenes: collectedScenesRef.current },
+              state: { prompt, scenes: collectedScenesRef.current, assets, brandColors, brandName, brandFonts, brandLogos, brandBackdrops, generationMode },
             });
           }
           if (event.step === "error") {
@@ -95,7 +101,7 @@ const GeneratingPage = () => {
     });
 
     return () => controller.abort();
-  }, [prompt, assets, brandColors, brandName, generationMode, navigate]);
+  }, [prompt, assets, brandColors, brandName, brandFonts, brandLogos, brandBackdrops, generationMode, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">

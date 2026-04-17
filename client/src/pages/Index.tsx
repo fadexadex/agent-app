@@ -27,16 +27,24 @@ const Index = () => {
   const navigate = useNavigate();
 
   const handleGenerate = () => {
-    if (!prompt.trim() && assets.length === 0) return;
+    if (!prompt.trim() && assets.length === 0 && (!brand || (brand.logos?.length === 0 && brand.backdrops?.length === 0))) return;
+
+    const combinedAssets = [
+      ...assets,
+      ...(brand?.logos || []),
+      ...(brand?.backdrops || []),
+    ];
+
     const targetRoute = generationMode === "animate-media" ? "/animate" : "/generating";
     navigate(targetRoute, {
       state: {
         prompt,
-        assets,
+        assets: combinedAssets,
         brandColors: brand?.colors ?? [],
         brandName: brand?.brandName,
         brandFonts: brand?.fonts,
         brandLogos: brand?.logos,
+        brandBackdrops: brand?.backdrops,
         generationMode,
       },
     });
