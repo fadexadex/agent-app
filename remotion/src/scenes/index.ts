@@ -107,3 +107,5 @@ export { FeatureCommandBar } from "./feature-videos/FeatureCommandBar";
 export { FeatureAutomationFlow } from "./feature-automation/FeatureAutomationFlow";
 export { BenefitReclaimTime } from "./showcase/BenefitReclaimTime";
 export { CtaSignUp } from "./cta/CtaSignUp";
+export { IntroTextScene } from "./voiceos-intro/IntroTextScene";
+export { InterswitchLogoReveal } from "./InterswitchPromo/InterswitchLogoReveal";

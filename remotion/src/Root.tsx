@@ -2,7 +2,7 @@ import React from "react";
 import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 
-import { EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, HookProblemIntro, APIIntegrationScene, VerificationSecurity, TestScene, FeatureApiIntegration, FeatureProcessingDelivery, BenefitVerificationSecurity, InterswitchBrandOutro, ProblemIntro, APIIntegration, ProcessingDeliveryScene, SceneOutroBrand, CtaGetStarted, CTAGetStarted, ProblemIntroMinimal, ProblemProductIntro, ApiIntegration, ProcessingDelivery, BenefitsOutro, AppleParticleReveal, AppleParticleRevealSmart, LinearMotion, LinearReveal, LinearLogoAnimation, LinearLogo, LinearLogoReveal, AIAutomationScene, FeatureTeamCollaboration, BenefitTimeFocus, MotionArtScene, CleanTestScene, ChatGPTLogoScene, DigitalChaosHook, HookUnseenForce, IntroRedefined, FeatureIntegration, AIPoweredThinkingHook, ChatGPTCTA, KineticTypography, Scene1ProblemHook, TheSolutionIntro, Scene3ApiRequest, FlowAnimationScene, Scene5UserInteraction, BenefitsCta, ProblemHookScene, SolutionIntroScene, HookVerificationProblem, TheWhatsAppSolution, ApiPower, SuccessInteraction, TheBenefits, InterswitchClosing, InterswitchLogoAnimation, SampleLogoScene, SampleLogo, HookChaos, IntroCogniflow, FeatureCommandBar, FeatureAutomationFlow, BenefitReclaimTime, CtaSignUp } from "./scenes";
+import { EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, HookProblemIntro, APIIntegrationScene, VerificationSecurity, TestScene, FeatureApiIntegration, FeatureProcessingDelivery, BenefitVerificationSecurity, InterswitchBrandOutro, ProblemIntro, APIIntegration, ProcessingDeliveryScene, SceneOutroBrand, CtaGetStarted, CTAGetStarted, ProblemIntroMinimal, ProblemProductIntro, ApiIntegration, ProcessingDelivery, BenefitsOutro, AppleParticleReveal, AppleParticleRevealSmart, LinearMotion, LinearReveal, LinearLogoAnimation, LinearLogo, LinearLogoReveal, AIAutomationScene, FeatureTeamCollaboration, BenefitTimeFocus, MotionArtScene, CleanTestScene, ChatGPTLogoScene, DigitalChaosHook, HookUnseenForce, IntroRedefined, FeatureIntegration, AIPoweredThinkingHook, ChatGPTCTA, KineticTypography, Scene1ProblemHook, TheSolutionIntro, Scene3ApiRequest, FlowAnimationScene, Scene5UserInteraction, BenefitsCta, ProblemHookScene, SolutionIntroScene, HookVerificationProblem, TheWhatsAppSolution, ApiPower, SuccessInteraction, TheBenefits, InterswitchClosing, InterswitchLogoAnimation, SampleLogoScene, SampleLogo, HookChaos, IntroCogniflow, FeatureCommandBar, FeatureAutomationFlow, BenefitReclaimTime, CtaSignUp, IntroTextScene, InterswitchLogoReveal } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -860,6 +860,22 @@ export const RemotionRoot: React.FC = () => {
         id="benefit-reclaim-time"
         component={BenefitReclaimTime}
         durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="intro-text"
+        component={IntroTextScene}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="interswitch-logo-reveal"
+        component={InterswitchLogoReveal}
+        durationInFrames={180}
         fps={30}
         width={1920}
         height={1080}

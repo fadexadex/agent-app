@@ -5,24 +5,47 @@ import { ArrowLeft, Download, Play, Pause, Film, Check, Loader2 } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { getProjectVideoUrl } from "@/lib/export-video-url";
 import { Scene, generateMockScenes, framesToSeconds } from "@/lib/mockData";
 import { getProject } from "@/lib/storage";
 import { AgentStep } from "@/lib/agentTypes";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 
+interface ExportSceneStatus {
+  previewSceneId?: string;
+  videoUrl?: string;
+}
+
+interface ExportLocationState {
+  prompt?: string;
+  scenes?: Scene[];
+  projectId?: string;
+  sceneStatuses?: ExportSceneStatus[];
+  audioTrack?: { trackId: string; volume: number };
+  sceneSteps?: Record<number, AgentStep[]>;
+}
+
 const ExportPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const prompt = (location.state as any)?.prompt || "Your product";
-  const scenes: Scene[] = (location.state as any)?.scenes || generateMockScenes(prompt);
-  const projectId: string | undefined = (location.state as any)?.projectId;
-  const sceneStatuses = (location.state as any)?.sceneStatuses;
-  const audioTrack = (location.state as any)?.audioTrack;
+  const state = (location.state as ExportLocationState | null) ?? null;
+  const prompt = state?.prompt || "Your product";
+  const projectId = state?.projectId;
+  const savedProject = projectId ? getProject(projectId) : null;
+  const scenes: Scene[] = state?.scenes || savedProject?.scenes || generateMockScenes(prompt);
+  const initialSceneStatuses: ExportSceneStatus[] =
+    state?.sceneStatuses ||
+    savedProject?.scenes.map((scene) => ({
+      previewSceneId: scene.id,
+      videoUrl: scene.videoUrl,
+    })) ||
+    [];
+  const audioTrack = state?.audioTrack;
 
   // Get sceneSteps from navigation state, fallback to localStorage
   const getSceneSteps = (): Record<number, AgentStep[]> => {
-    const stateSteps = (location.state as any)?.sceneSteps;
+    const stateSteps = state?.sceneSteps;
     if (stateSteps) return stateSteps;
 
     // Fallback: load from localStorage if projectId exists
@@ -47,6 +70,7 @@ const ExportPage = () => {
   const [exportProgress, setExportProgress] = useState(0);
   const [exportJobId, setExportJobId] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [resolvedSceneStatuses, setResolvedSceneStatuses] = useState<ExportSceneStatus[]>(initialSceneStatuses);
 
   // Video preview states - sequential playback through all scenes
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -100,17 +124,36 @@ const ExportPage = () => {
     setVideoError(false);
   }, [activeScene]);
 
-  const totalDuration = scenes.reduce((a, s) => a + framesToSeconds(s.duration), 0);
+  useEffect(() => {
+    if (!projectId) return;
+    if (resolvedSceneStatuses.length > 0 && resolvedSceneStatuses.every((status) => status.videoUrl)) {
+      return;
+    }
 
-  // Returns the versioned video URL for a scene (e.g. /previews/projId/sceneId/v2.mp4).
-  // Falls back to the legacy flat path if no versioned URL is stored yet.
-  const getSceneVideoUrl = (index: number): string => {
-    const status = sceneStatuses?.[index] as any;
-    if (status?.videoUrl) return status.videoUrl;
-    // Legacy fallback: construct from previewSceneId or scene.id
-    const id = status?.previewSceneId || scenes[index]?.id || "";
-    return id ? `/previews/${id}.mp4` : "";
-  };
+    const syncFromProject = () => {
+      const project = getProject(projectId);
+      if (!project) return;
+
+      setResolvedSceneStatuses(
+        project.scenes.map((scene) => ({
+          previewSceneId: scene.id,
+          videoUrl: scene.videoUrl,
+        })),
+      );
+    };
+
+    syncFromProject();
+
+    const intervalId = setInterval(() => {
+      syncFromProject();
+    }, 1500);
+
+    return () => clearInterval(intervalId);
+  }, [projectId, resolvedSceneStatuses]);
+
+  const totalDuration = scenes.reduce((a, s) => a + framesToSeconds(s.duration), 0);
+  const getSceneVideoUrl = (index: number): string =>
+    getProjectVideoUrl(index, scenes, resolvedSceneStatuses, Boolean(projectId));
 
   const handleDownload = async () => {
     const videoUrls = scenes.map((_, i) => getSceneVideoUrl(i)).filter(Boolean);
@@ -202,7 +245,7 @@ const ExportPage = () => {
             onClick={() =>
               projectId
                 ? navigate("/editor", {
-                    state: { prompt, scenes, projectId, sceneStatuses, sceneSteps, fromVideos: false },
+                    state: { prompt, scenes, projectId, sceneStatuses: resolvedSceneStatuses, sceneSteps, fromVideos: false },
                   })
                 : navigate("/storyboard", { state: { prompt, scenes } })
             }
