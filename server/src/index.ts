@@ -9,6 +9,7 @@ import exportRouter from "./routes/export.js";
 import uploadRouter from "./routes/upload.js";
 import assetsRouter from "./routes/assets.js";
 import brandRouter from "./routes/brand.js";
+import { apiErrorHandler, DEFAULT_JSON_BODY_LIMIT } from "./lib/http-errors.js";
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -34,7 +35,8 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json());
+app.use(express.json({ limit: DEFAULT_JSON_BODY_LIMIT }));
+app.use(express.urlencoded({ extended: true, limit: DEFAULT_JSON_BODY_LIMIT }));
 
 // Serve rendered Remotion MP4 previews
 // Files land at  server/public/previews/<sceneId>.mp4
@@ -110,6 +112,8 @@ app.use("/api/assets", assetsRouter);
 
 // Brand color extraction routes
 app.use("/api/brand", brandRouter);
+
+app.use(apiErrorHandler);
 
 // Serve the React frontend (client/dist)
 const CLIENT_DIST_DIR = path.resolve(process.cwd(), "../client/dist");

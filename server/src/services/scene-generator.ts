@@ -3,6 +3,12 @@ import { streamObject } from "ai";
 import { z } from "zod";
 import { readFileSync } from "fs";
 import { resolve } from "path";
+import {
+  buildReferenceAssetsBlock,
+  resolveUploadedAssets,
+  toModelAssetPart,
+  type UploadedAssetDescriptor,
+} from "../lib/uploaded-assets.js";
 
 // ─── Load few-shot example once at startup ────────────────────────────────────
 
@@ -124,14 +130,25 @@ export type ProgressEvent =
 // ─── System prompt ────────────────────────────────────────────────────────────
 
 function buildSystemPrompt(
-  assets: string[] = [],
+  assets: UploadedAssetDescriptor[] = [],
   brandColors: string[] = [],
   brandName?: string,
   generationMode?: string,
 ): string {
   let assetInstruction = "";
   if (assets.length > 0) {
-    assetInstruction = `\n\nThe user has uploaded the following assets:\n${assets.join("\n")}\nYou can reference these exact URLs in the scene elements (e.g., for MockupFrame, Image, or custom components). Utilize these assets directly in the scenes.`;
+    const assetLines = assets
+      .map(
+        (asset) =>
+          `- "${asset.filename}" -> source "${asset.sourceUrl}" and scene-code path staticFile('${asset.staticFilePath}')`,
+      )
+      .join("\n");
+    assetInstruction =
+      `\n\nThe user uploaded the following grounded assets:\n${assetLines}\n` +
+      `Use these exact assets when planning the scenes. Do not substitute different logos, filenames, or placeholder imagery.\n` +
+      `CRITICAL: For every element that should display an uploaded asset, set its type to "mockup" or "custom" and place the EXACT staticFile path string ` +
+      `(e.g. staticFile('uploads/filename.jpg')) inside that element's \`props.src\` or \`content\` field. ` +
+      `This is how the downstream code generator knows to embed the asset in the Remotion scene code.`;
   }
 
   const trimmedBrand = brandName?.trim();
@@ -189,57 +206,29 @@ export async function generateSceneScript(
 
   onProgress({ step: "analyzing", message: "Analyzing your product..." });
 
-  const UPLOADS_DIR = resolve(process.cwd(), "../remotion/public");
-  const contentParts: any[] = [{ type: "text", text: `Generate 5-6 Remotion video scenes for this product: ${prompt}` }];
-
-  // Inject base64 data for each asset so Gemini can "see" them
-  if (assets.length > 0) {
-    const fs = await import("fs/promises");
-    const mime = await import("mime-types");
-    for (const assetUrl of assets) {
-      try {
-        const localPath = resolve(UPLOADS_DIR, assetUrl.replace(/^\//, ""));
-        const fileData = await fs.readFile(localPath);
-        const base64Data = fileData.toString("base64");
-        const mimeType = mime.lookup(localPath) || "application/octet-stream";
-        contentParts.push({
-          type: "file",
-          data: base64Data, // Some models might need data URL format depending on AI SDK version, but google sdk usually expects base64 or DataURL. We'll use data URL to be safe, per documentation.
-          mimeType,
-        });
-      } catch (err) {
-        console.error(`[scene-generator] Failed to read asset ${assetUrl}:`, err);
-      }
-    }
-  }
-
-  // We map file part correctly for AI SDK Core
-  const mappedParts = contentParts.map(part => {
-    if (part.type === "file") {
-      const isImage = part.mimeType && part.mimeType.startsWith('image/');
-      // AI SDK 3.x+ expects the actual binary data or a URL, not a data URL string.
-      // We pass the raw Uint8Array buffer here
-      if (isImage) {
-        return {
-          type: "image",
-          image: Buffer.from(part.data, "base64"),
-          mediaType: part.mimeType,
-        };
-      }
-      return {
-        type: "file",
-        data: Buffer.from(part.data, "base64"),
-        mediaType: part.mimeType,
-      };
-    }
-    return part;
-  });
+  const resolvedAssets = await resolveUploadedAssets(
+    assets.map((url) => ({ url })),
+  );
+  const referenceAssetsBlock = buildReferenceAssetsBlock(resolvedAssets);
+  const mappedParts: any[] = [
+    {
+      type: "text",
+      text:
+        `${referenceAssetsBlock}Generate 5-6 Remotion video scenes for this product: ${prompt}`,
+    },
+    ...resolvedAssets.map((asset) => toModelAssetPart(asset)),
+  ];
 
   const result = streamObject({
     model: google(modelId),
     output: "array",
     schema: SceneSchema,
-    system: buildSystemPrompt(assets, brandColors, brandName, generationMode),
+    system: buildSystemPrompt(
+      resolvedAssets,
+      brandColors,
+      brandName,
+      generationMode,
+    ),
     messages: [
       { role: "user", content: mappedParts as any }
     ],

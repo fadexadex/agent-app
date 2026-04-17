@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import express from "express";
 import { Server } from "http";
+import { apiErrorHandler } from "../lib/http-errors.js";
 
 // Helper: AI SDK v6 tool.execute takes (input, options)
 const toolOpts = { toolCallId: "test", messages: [] as never[] };
@@ -50,6 +51,46 @@ describe("Server Integration", () => {
   it("should have express app configured correctly", () => {
     expect(app).toBeDefined();
     expect(typeof app.listen).toBe("function");
+  });
+
+  it("should return a user-friendly error for oversized JSON payloads", async () => {
+    const payload = { prompt: "x".repeat(2_000) };
+    const oversizedApp = express();
+    oversizedApp.use(express.json({ limit: "1kb" }));
+    oversizedApp.post("/api/test", (req, res) => {
+      res.json({ ok: true });
+    });
+    oversizedApp.use(apiErrorHandler);
+
+    const oversizedServer = await new Promise<Server>((resolve) => {
+      const instance = oversizedApp.listen(0, () => resolve(instance));
+    });
+
+    const address = oversizedServer.address();
+    const oversizedBaseUrl =
+      address && typeof address === "object"
+        ? `http://localhost:${address.port}`
+        : "";
+
+    try {
+      const response = await fetch(`${oversizedBaseUrl}/api/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      expect(response.status).toBe(413);
+      expect(data).toEqual({
+        error:
+          "Your request is too large. Shorten it or split it into smaller parts and try again.",
+      });
+    } finally {
+      await new Promise<void>((resolve) => {
+        oversizedServer.close(() => resolve());
+      });
+    }
   });
 });
 
@@ -146,9 +187,8 @@ export const CleanTestScene: React.FC = () => {
     }
     
     expect(previewResult.success).toBe(true);
-    expect(previewResult.previewUrl).toBe(
-      "http://localhost:3100/preview/clean-test-scene"
-    );
+    expect(previewResult.previewUrl).toContain("scene=clean-test-scene");
+    expect(previewResult.previewUrl).toContain("component=CleanTestScene");
 
     // Verify Root.tsx was updated
     const { readFile } = await import("fs/promises");

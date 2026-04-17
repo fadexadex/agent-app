@@ -943,30 +943,51 @@ Requirements:
 
         <ResizableHandle withHandle />
 
-        {/* Right: Agent Thoughts */}
+        {/* Right: Agent Thoughts — one isolated instance per scene + one for "all" */}
         <ResizablePanel defaultSize={30} minSize={20} collapsible>
-          <AgentThoughts
-            steps={displaySteps}
-            isGenerating={isGenerating}
-            isComplete={isComplete}
-            selectedScene={selectedScene}
-            allDone={allDone}
-            selectedTimestamp={selectedTimestamp}
-            onClearTimestamp={() => setSelectedTimestamp(null)}
-            sceneContext={displayScene || undefined}
-            allScenes={scenes}
-            onRefinementStart={handleRefinementStart}
-            onRefinementComplete={handleRefinementComplete}
-            versions={currentSceneVersions}
-            currentVersion={currentSceneVersionNumber}
-            onRestoreVersion={(versionIndex) => {
-              if (typeof selectedScene === "number") {
-                handleRestoreVersion(selectedScene, versionIndex);
-              }
-            }}
-            projectId={currentProjectIdRef.current ?? undefined}
-            allSceneStatuses={sceneStatuses}
-          />
+          {/* "All Scenes" instance — keeps its own chat/refinement state */}
+          <div style={{ display: selectedScene === "all" ? "flex" : "none", height: "100%", flexDirection: "column" }}>
+            <AgentThoughts
+              steps={[]}
+              isGenerating={anyGenerating}
+              isComplete={allDone}
+              selectedScene="all"
+              allDone={allDone}
+              selectedTimestamp={selectedTimestamp}
+              onClearTimestamp={() => setSelectedTimestamp(null)}
+              sceneContext={undefined}
+              allScenes={scenes}
+              onRefinementStart={handleRefinementStart}
+              onRefinementComplete={handleRefinementComplete}
+              versions={[]}
+              currentVersion={1}
+              projectId={currentProjectIdRef.current ?? undefined}
+              allSceneStatuses={sceneStatuses}
+            />
+          </div>
+          {/* Per-scene instances — each stays mounted so chat history is isolated */}
+          {scenes.map((scene, i) => (
+            <div key={scene.id} style={{ display: selectedScene === i ? "flex" : "none", height: "100%", flexDirection: "column" }}>
+              <AgentThoughts
+                steps={sceneSteps[i] || []}
+                isGenerating={sceneStatuses[i]?.status === "generating"}
+                isComplete={sceneStatuses[i]?.status === "complete"}
+                selectedScene={i}
+                allDone={allDone}
+                selectedTimestamp={selectedTimestamp}
+                onClearTimestamp={() => setSelectedTimestamp(null)}
+                sceneContext={scene}
+                allScenes={scenes}
+                onRefinementStart={handleRefinementStart}
+                onRefinementComplete={handleRefinementComplete}
+                versions={currentProjectIdRef.current ? getSceneVersions(currentProjectIdRef.current, i) : []}
+                currentVersion={currentProjectIdRef.current ? getSceneCurrentVersion(currentProjectIdRef.current, i) : 1}
+                onRestoreVersion={(versionIndex) => handleRestoreVersion(i, versionIndex)}
+                projectId={currentProjectIdRef.current ?? undefined}
+                allSceneStatuses={sceneStatuses}
+              />
+            </div>
+          ))}
         </ResizablePanel>
       </ResizablePanelGroup>
 

@@ -1,253 +1,191 @@
 import React from 'react';
 import {
-	AbsoluteFill,
-	useCurrentFrame,
-	useVideoConfig,
-	interpolate,
-	spring,
-	Sequence,
+  AbsoluteFill,
+  interpolate,
+  spring,
+  useCurrentFrame,
+  useVideoConfig,
 } from 'remotion';
-import { loadFont } from '@remotion/google-fonts/Montserrat';
+import { loadFont } from "@remotion/google-fonts/Montserrat";
 
 const { fontFamily } = loadFont();
 
 // --- Components ---
 
 const ChaosSphere: React.FC = () => {
-	const frame = useCurrentFrame();
-	const { fps } = useVideoConfig();
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
 
-	const icons = [
-		'M20 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H20c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2zm16 4-8 5-8-5v10h16V8z', // Email
-		'M21 15h11l5 5V5H16v10l5 5z', // Chat
-		'M19 3h2v2h-2V3zm0 4h2v2h-2V7zm0 4h2v2h-2v-2zm-4-8h2v2h-2V3zm0 4h2v2h-2V7zm0 4h2v2h-2v-2zm-4-8h2v2h-2V3zm0 4h2v2h-2V7zm0 4h2v2h-2v-2z', // Calendar/Grid
-		'M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z', // Doc
-	];
+  const icons = ['✉️', '💬', '📅', '📄', '📁', '🔔', '📧', '📎'];
+  const count = 24;
 
-	const entrance = spring({
-		frame,
-		fps,
-		config: { damping: 20 },
-	});
+  const entrance = spring({
+    frame: frame - 15,
+    fps,
+    config: { damping: 200 },
+  });
 
-	return (
-		<div
-			style={{
-				position: 'absolute',
-				width: 400,
-				height: 400,
-				left: '50%',
-				top: '55%',
-				transform: `translate(-50%, -50%) scale(${entrance})`,
-				display: 'flex',
-				justifyContent: 'center',
-				alignItems: 'center',
-			}}
-		>
-			{[...Array(12)].map((_, i) => {
-				const angle = (frame / 60) * Math.PI * 2 + (i * Math.PI) / 6;
-				const radius = 120 + Math.sin(frame * 0.05 + i) * 20;
-				const x = Math.cos(angle) * radius;
-				const y = Math.sin(angle) * radius;
-				const iconScale = interpolate(Math.sin(frame * 0.1 + i), [-1, 1], [0.8, 1.2]);
-				const opacity = interpolate(Math.sin(frame * 0.08 + i), [-1, 1], [0.3, 0.7]);
-				const glitchX = Math.random() > 0.95 ? (Math.random() - 0.5) * 10 : 0;
-
-				return (
-					<svg
-						key={i}
-						viewBox="0 0 40 40"
-						style={{
-							position: 'absolute',
-							width: 40,
-							height: 40,
-							transform: `translate(${x + glitchX}px, ${y}px) scale(${iconScale})`,
-							opacity,
-							fill: i % 2 === 0 ? '#666' : '#888',
-							filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.1))',
-						}}
-					>
-						<path d={icons[i % icons.length]} />
-					</svg>
-				);
-			})}
-			<div
-				style={{
-					width: 150,
-					height: 150,
-					borderRadius: '50%',
-					background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)',
-					filter: 'blur(20px)',
-				}}
-			/>
-		</div>
-	);
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: '60%',
+        left: '50%',
+        transform: `translate(-50%, -50%) scale(${entrance})`,
+        width: 400,
+        height: 400,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      {new Array(count).fill(0).map((_, i) => {
+        const angle = (i / count) * Math.PI * 2 + (frame * 0.02);
+        const radius = 120 + Math.sin(frame * 0.05 + i) * 30;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius;
+        const glitchX = Math.random() > 0.95 ? (Math.random() - 0.5) * 10 : 0;
+        
+        return (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              fontSize: 40,
+              opacity: 0.6,
+              transform: `translate(${x + glitchX}px, ${y}px) rotate(${frame * (i % 2 === 0 ? 1 : -1)}deg)`,
+              filter: 'grayscale(0.5) blur(1px)',
+            }}
+          >
+            {icons[i % icons.length]}
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 const GlitchOverlay: React.FC = () => {
-	const frame = useCurrentFrame();
-	const opacity = interpolate(
-		Math.sin(frame * 0.2),
-		[0.8, 1],
-		[0, 0.05],
-		{ extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }
-	);
+  const frame = useCurrentFrame();
+  
+  // Periodic glitch every 45 frames
+  const isGlitching = (frame % 45) > 40;
+  if (!isGlitching) return null;
 
-	if (Math.random() < 0.98) return null;
-
-	return (
-		<AbsoluteFill
-			style={{
-				backgroundColor: 'white',
-				opacity: 0.1,
-				mixBlendMode: 'overlay',
-			}}
-		/>
-	);
+  return (
+    <AbsoluteFill style={{ pointerEvents: 'none' }}>
+      <div
+        style={{
+          position: 'absolute',
+          top: Math.random() * 100 + '%',
+          left: 0,
+          right: 0,
+          height: 2,
+          background: 'rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 0 10px rgba(255, 255, 255, 0.5)',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          bottom: 0,
+          left: Math.random() * 100 + '%',
+          width: 1,
+          background: 'rgba(255, 255, 255, 0.1)',
+        }}
+      />
+    </AbsoluteFill>
+  );
 };
 
-const HookQuestion: React.FC<{ text: string }> = ({ text }) => {
-	const frame = useCurrentFrame();
-	const { fps } = useVideoConfig();
+export const DigitalChaosHook: React.FC = () => {
+  const frame = useCurrentFrame();
+  const { fps, width, height } = useVideoConfig();
 
-	const words = text.split(' ');
-	
-	return (
-		<div
-			style={{
-				fontFamily,
-				fontSize: 70,
-				fontWeight: 800,
-				color: 'white',
-				textAlign: 'center',
-				width: '100%',
-				letterSpacing: '-2px',
-				textTransform: 'uppercase',
-			}}
-		>
-			{words.map((word, i) => {
-				const wordStart = 10 + i * 5;
-				const wordSpring = spring({
-					frame: frame - wordStart,
-					fps,
-					config: { damping: 12 },
-				});
+  // Entrance animations
+  const textEntrance = spring({
+    frame: frame - 10,
+    fps,
+    config: { damping: 200 },
+  });
 
-				const opacity = interpolate(wordSpring, [0, 1], [0, 1]);
-				const translateY = interpolate(wordSpring, [0, 1], [20, 0]);
-				const blur = interpolate(wordSpring, [0, 1], [10, 0]);
+  // Typewriter effect
+  const text = "Tired of the Digital Chaos?";
+  const charCount = Math.floor(
+    interpolate(frame, [10, 45], [0, text.length], {
+      extrapolateRight: 'clamp',
+    })
+  );
+  const displayText = text.slice(0, charCount);
 
-				// Glitch logic
-				const isGlitching = Math.random() > 0.97;
-				const glitchOffset = isGlitching ? (Math.random() - 0.5) * 5 : 0;
+  // Exit animations (staggered)
+  const exitFrame = 85;
+  const exitText = spring({
+    frame: frame - exitFrame,
+    fps,
+    config: { damping: 200 },
+  });
+  
+  const exitSphere = spring({
+    frame: frame - (exitFrame + 3),
+    fps,
+    config: { damping: 200 },
+  });
 
-				return (
-					<span
-						key={i}
-						style={{
-							display: 'inline-block',
-							marginRight: '15px',
-							opacity,
-							transform: `translateY(${translateY}px) translateX(${glitchOffset}px)`,
-							filter: `blur(${blur}px)`,
-							position: 'relative',
-						}}
-					>
-						{word}
-						{isGlitching && (
-							<span
-								style={{
-									position: 'absolute',
-									left: 2,
-									top: 0,
-									color: '#ff00ff',
-									opacity: 0.5,
-									mixBlendMode: 'screen',
-								}}
-							>
-								{word}
-							</span>
-						)}
-					</span>
-				);
-			})}
-		</div>
-	);
-};
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundColor: '#1A1A1A',
+        background: 'radial-gradient(circle, #333333 0%, #1A1A1A 100%)',
+        fontFamily,
+        color: 'white',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Elements */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '35%',
+          width: '100%',
+          textAlign: 'center',
+          fontSize: 72,
+          fontWeight: 800,
+          transform: `translateY(${-80}px) scale(${textEntrance - exitText})`,
+          opacity: interpolate(textEntrance - exitText, [0, 1], [0, 1]),
+          textShadow: '0 0 20px rgba(255,255,255,0.2)',
+        }}
+      >
+        {displayText}
+      </div>
 
-// --- Main Scene ---
+      <div style={{ opacity: 1 - exitSphere }}>
+        <ChaosSphere />
+      </div>
 
-export const HookDigitalChaos: React.FC = () => {
-	const frame = useCurrentFrame();
-	const { fps, width, height, durationInFrames } = useVideoConfig();
+      <GlitchOverlay />
 
-	// Global exit animations
-	const exitStart = 90;
-	const getExitScale = (offset: number) =>
-		interpolate(frame, [exitStart + offset, exitStart + offset + 10], [1, 0.8], {
-			extrapolateLeft: 'clamp',
-			extrapolateRight: 'clamp',
-		});
-	const getExitOpacity = (offset: number) =>
-		interpolate(frame, [exitStart + offset, exitStart + offset + 10], [1, 0], {
-			extrapolateLeft: 'clamp',
-			extrapolateRight: 'clamp',
-		});
-
-	// Swipe transition at the end
-	const swipeProgress = spring({
-		frame: frame - (durationInFrames - 20),
-		fps,
-		config: { damping: 200 },
-	});
-	const swipeX = interpolate(swipeProgress, [0, 1], [0, -width]);
-
-	return (
-		<AbsoluteFill
-			style={{
-				backgroundColor: '#1A1A1A',
-				background: 'radial-gradient(circle, #333333 0%, #1A1A1A 100%)',
-				transform: `translateX(${swipeX}px)`,
-			}}
-		>
-			<GlitchOverlay />
-
-			<Sequence from={0} durationInFrames={durationInFrames}>
-				<div
-					style={{
-						position: 'absolute',
-						width: '100%',
-						top: '50%',
-						transform: `translateY(-240px) scale(${getExitScale(0)})`,
-						opacity: getExitOpacity(0),
-					}}
-				>
-					<HookQuestion text="Tired of the Digital Chaos?" />
-				</div>
-			</Sequence>
-
-			<Sequence from={5} durationInFrames={durationInFrames}>
-				<div
-					style={{
-						transform: `scale(${getExitScale(3)})`,
-						opacity: getExitOpacity(3),
-					}}
-				>
-					<ChaosSphere />
-				</div>
-			</Sequence>
-
-			{/* Swipe Overlay */}
-			<div
-				style={{
-					position: 'absolute',
-					top: 0,
-					left: width,
-					width: width,
-					height: height,
-					backgroundColor: '#FFFFFF',
-				}}
-			/>
-		</AbsoluteFill>
-	);
+      {/* Swipe Transition Overlay (End) */}
+      {frame > 85 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            backgroundColor: '#000',
+            transform: `translateX(${interpolate(
+              frame,
+              [85, 105],
+              [width, 0],
+              { extrapolateRight: 'clamp' }
+            )}px)`,
+            zIndex: 100,
+          }}
+        />
+      )}
+    </AbsoluteFill>
+  );
 };

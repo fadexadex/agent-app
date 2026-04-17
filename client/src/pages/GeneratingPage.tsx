@@ -1,9 +1,11 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Loader2, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { apiFetch, toUserFacingErrorMessage } from "@/lib/api";
 import { RichScene } from "@/lib/mockData";
+import { getUploadedAssetUrl, type UploadedAssetLike } from "@/lib/upload";
 
 const steps = [
   { label: "Analyzing your product", icon: "🔍" },
@@ -11,6 +13,12 @@ const steps = [
   { label: "Designing scenes", icon: "🎨" },
   { label: "Composing visuals", icon: "🎬" },
 ];
+
+interface GenerationEvent {
+  step?: "analyzing" | "writing" | "designing" | "scene" | "complete" | "error";
+  scene?: RichScene;
+  message?: string;
+}
 
 const GeneratingPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -20,15 +28,19 @@ const GeneratingPage = () => {
   const location = useLocation();
   const state = location.state as {
     prompt?: string;
-    assets?: string[];
+    assets?: UploadedAssetLike[];
     brandColors?: string[];
     brandName?: string;
     generationMode?: string;
   } | null;
 
   const prompt = state?.prompt || "Your product";
-  const assets = state?.assets || [];
-  const brandColors = state?.brandColors || [];
+  const assets = useMemo(() => state?.assets || [], [state?.assets]);
+  const assetUrls = useMemo(
+    () => assets.map((asset) => getUploadedAssetUrl(asset)),
+    [assets],
+  );
+  const brandColors = useMemo(() => state?.brandColors || [], [state?.brandColors]);
   const brandName = state?.brandName;
   const generationMode = state?.generationMode || "product-video";
 
@@ -36,18 +48,18 @@ const GeneratingPage = () => {
     const controller = new AbortController();
 
     async function streamGeneration() {
-      const response = await fetch("/api/scenes/generate", {
+      const response = await apiFetch("/api/scenes/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, assets, brandColors, brandName, generationMode }),
+        body: JSON.stringify({ prompt, assets: assetUrls, brandColors, brandName, generationMode }),
         signal: controller.signal,
       });
 
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
+      if (!response.body) {
+        throw new Error("The server returned an empty response.");
       }
 
-      const reader = response.body!.getReader();
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
 
@@ -60,8 +72,7 @@ const GeneratingPage = () => {
 
         for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          let event: any;
+          let event: GenerationEvent;
           try {
             event = JSON.parse(line.slice(6));
           } catch {
@@ -90,12 +101,12 @@ const GeneratingPage = () => {
 
     streamGeneration().catch((e) => {
       if (e.name !== "AbortError") {
-        setError(e.message || "Something went wrong");
+        setError(toUserFacingErrorMessage(e));
       }
     });
 
     return () => controller.abort();
-  }, [prompt, assets, brandColors, brandName, generationMode, navigate]);
+  }, [prompt, assetUrls, brandColors, brandName, generationMode, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">

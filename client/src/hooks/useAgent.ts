@@ -1,7 +1,8 @@
 import { useChat, Chat } from "@ai-sdk/react";
 import { DefaultChatTransport, isToolUIPart, getToolName, UIMessage } from "ai";
-import { useState, useCallback, useEffect, useRef, useDeferredValue } from "react";
+import { useState, useCallback, useEffect, useRef, useDeferredValue, useMemo } from "react";
 import { AgentStep } from "@/lib/agentTypes";
+import { apiFetch, toUserFacingErrorMessage } from "@/lib/api";
 
 interface UseAgentOptions {
   sceneId?: number | string | "all";
@@ -30,7 +31,7 @@ interface UseAgentReturn {
 
 function makeChat(
   sceneId: number | string | "all" | undefined,
-  sceneContext: any | undefined,
+  sceneContext: Record<string, unknown> | undefined,
   assets?: string[],
   projectId?: string
 ) {
@@ -38,6 +39,7 @@ function makeChat(
     transport: new DefaultChatTransport({
       api: "/api/agent/chat",
       body: { sceneId, sceneContext, assets, projectId },
+      fetch: (input, init) => apiFetch(input as RequestInfo | URL, init),
     }),
   });
 }
@@ -78,15 +80,24 @@ export function useAgent(options: UseAgentOptions = {}): UseAgentReturn {
     messages,
   } = useChat({ chat: currentChat });
 
+  const normalizedError = useMemo(() => {
+    if (!error) {
+      return null;
+    }
+
+    return new Error(toUserFacingErrorMessage(error));
+  }, [error]);
+
   const isProcessing = status === "streaming" || status === "submitted";
 
   // Cleanup polling intervals on unmount
   useEffect(() => {
+    const activeIntervals = renderPollIntervalsRef.current;
     return () => {
-      renderPollIntervalsRef.current.forEach((interval) =>
+      activeIntervals.forEach((interval) =>
         clearInterval(interval),
       );
-      renderPollIntervalsRef.current.clear();
+      activeIntervals.clear();
     };
   }, []);
 
@@ -248,7 +259,7 @@ export function useAgent(options: UseAgentOptions = {}): UseAgentReturn {
     }
 
     setSteps(newSteps);
-  }, [messages, isProcessing]);
+  }, [messages, isProcessing, startRenderPolling]);
 
   const sendMessage = useCallback(
     (content: string, overrides?: SendMessageOverrides) => {
@@ -295,7 +306,7 @@ export function useAgent(options: UseAgentOptions = {}): UseAgentReturn {
 
     isProcessing,
     sendMessage,
-    error: error || null,
+    error: normalizedError,
     latestPreviewUrl,
     latestPreviewSceneId,
     latestVideoUrl,

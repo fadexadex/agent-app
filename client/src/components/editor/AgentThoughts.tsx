@@ -7,7 +7,7 @@ import { AgentStep } from "@/lib/agentTypes";
 import { useAgent } from "@/hooks/useAgent";
 import { useState, useEffect, useRef } from "react";
 import AgentStepItem from "./AgentStepItem";
-import { uploadFile } from "@/lib/upload";
+import { getUploadedAssetUrl, uploadFile, type UploadedAsset } from "@/lib/upload";
 import SceneVersionHistory from "./SceneVersionHistory";
 import { SceneVersion } from "@/lib/storage";
 import { Scene } from "@/lib/mockData";
@@ -63,7 +63,7 @@ interface UseRefinementChatResult {
   agentSteps: AgentStep[];
   isProcessing: boolean;
   error: Error | null;
-  assets: string[];
+  assets: UploadedAsset[];
   isUploading: boolean;
   fileInputRef: React.RefObject<HTMLInputElement>;
   handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -97,7 +97,7 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [messageIdCounter, setMessageIdCounter] = useState(0);
-  const [assets, setAssets] = useState<string[]>([]);
+  const [assets, setAssets] = useState<UploadedAsset[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const lastPromptRef = useRef<string>("");
@@ -233,10 +233,9 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
 
     setIsUploading(true);
     try {
-      const newAssets = [];
+      const newAssets: UploadedAsset[] = [];
       for (let i = 0; i < files.length; i++) {
-        const url = await uploadFile(files[i]);
-        newAssets.push(url);
+        newAssets.push(await uploadFile(files[i]));
       }
       setAssets((prev) => [...prev, ...newAssets]);
     } catch (err) {
@@ -275,6 +274,7 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
 
     // Store current assets to send, then clear input
     const currentAssets = [...assets];
+    const currentAssetUrls = currentAssets.map((asset) => getUploadedAssetUrl(asset));
     setChatInput("");
     setAssets([]);
 
@@ -308,7 +308,7 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
       sendMessage(buildEditPrefix(firstCompositionId) + message, {
         sceneId: firstCompositionId,
         sceneContext: first.scene as any,
-        assets: currentAssets,
+        assets: currentAssetUrls,
         projectId,
       });
       return;
@@ -326,7 +326,7 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
     }
 
     sendMessage(compositionId ? buildEditPrefix(compositionId) + message : message, {
-      assets: currentAssets,
+      assets: currentAssetUrls,
       projectId,
     });
   };
@@ -448,7 +448,7 @@ interface RefinementChatInputProps {
   onClearTimestamp?: () => void;
   chatInput: string;
   setChatInput: (value: string) => void;
-  assets: string[];
+  assets: UploadedAsset[];
   isUploading: boolean;
   isProcessing: boolean;
   fileInputRef: React.RefObject<HTMLInputElement>;
@@ -489,11 +489,11 @@ const RefinementChatInput = ({
         <div className="flex flex-wrap gap-1.5 pb-2">
           {assets.map((asset, i) => (
             <div key={i} className="relative group rounded-lg border border-border/50 overflow-hidden bg-muted h-10 w-10 flex items-center justify-center">
-              {asset.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
-                <img src={asset} alt="upload" className="w-full h-full object-cover" />
+              {asset.mediaType.startsWith("image/") ? (
+                <img src={asset.url} alt={asset.filename} className="w-full h-full object-cover" />
               ) : (
                 <div className="text-[8px] text-muted-foreground break-all p-1 text-center leading-tight">
-                  {asset.split('/').pop()?.slice(-6)}
+                  {asset.filename.slice(-6)}
                 </div>
               )}
               <button

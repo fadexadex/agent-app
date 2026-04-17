@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import BrandColorExtractor, { BrandData } from "@/components/BrandColorExtractor";
 import { examplePrompts } from "@/lib/mockData";
-import { uploadFile } from "@/lib/upload";
+import { getUploadedAssetUrl, uploadFile, type UploadedAsset } from "@/lib/upload";
 
 type GenerationMode = "product-video" | "animate-media";
 
@@ -19,7 +19,7 @@ const modes: { id: GenerationMode; label: string; icon: React.ReactNode }[] = [
 const Index = () => {
   const [prompt, setPrompt] = useState("");
   const [generationMode, setGenerationMode] = useState<GenerationMode>("product-video");
-  const [assets, setAssets] = useState<string[]>([]);
+  const [assets, setAssets] = useState<UploadedAsset[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [brand, setBrand] = useState<BrandData | null>(null);
   const [showBrandExtractor, setShowBrandExtractor] = useState(false);
@@ -48,10 +48,9 @@ const Index = () => {
 
     setIsUploading(true);
     try {
-      const newAssets = [];
+      const newAssets: UploadedAsset[] = [];
       for (let i = 0; i < files.length; i++) {
-        const url = await uploadFile(files[i]);
-        newAssets.push(url);
+        newAssets.push(await uploadFile(files[i]));
       }
       setAssets((prev) => [...prev, ...newAssets]);
     } catch (err) {
@@ -135,11 +134,11 @@ const Index = () => {
                 <div className="flex flex-wrap gap-2 px-4 pb-3">
                   {assets.map((asset, i) => (
                     <div key={i} className="relative group rounded-lg border border-zinc-200 overflow-hidden bg-zinc-50 h-16 w-16 flex items-center justify-center">
-                      {asset.match(/\.(jpeg|jpg|gif|png|webp)$/i) ? (
-                        <img src={asset} alt="upload" className="w-full h-full object-cover" />
+                      {asset.mediaType.startsWith("image/") ? (
+                        <img src={getUploadedAssetUrl(asset)} alt={asset.filename} className="w-full h-full object-cover" />
                       ) : (
                         <div className="text-xs text-zinc-500 break-all p-1 text-center leading-tight">
-                          {asset.split("/").pop()?.slice(-10)}
+                          {asset.filename.slice(-10)}
                         </div>
                       )}
                       <button

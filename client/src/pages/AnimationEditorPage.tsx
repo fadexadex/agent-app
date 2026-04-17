@@ -9,7 +9,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { uploadFile } from "@/lib/upload";
+import {
+  getUploadedAssetUrl,
+  isUploadedAssetObject,
+  uploadFile,
+  type UploadedAsset,
+  type UploadedAssetLike,
+} from "@/lib/upload";
 import MainPreview from "@/components/editor/MainPreview";
 import AnimationControls from "@/components/editor/AnimationControls";
 import AgentStepItem from "@/components/editor/AgentStepItem";
@@ -237,10 +243,14 @@ const AnimationEditorPageInner = () => {
   const existingChat = chatId ? getAnimationChat(chatId) : null;
   const state = location.state as Record<string, unknown> | undefined;
   const initialPrompt = (state?.prompt as string) || "";
-  const initialAssets = (state?.assets as string[]) || [];
+  const rawInitialAssets = (state?.assets as UploadedAssetLike[]) || [];
+  const initialAssets = rawInitialAssets.filter(isUploadedAssetObject);
+  const initialLegacyAssetUrls = rawInitialAssets
+    .filter((asset): asset is string => typeof asset === "string")
+    .map((asset) => getUploadedAssetUrl(asset));
 
   type PendingFile = {
-    serverUrl: string;
+    url: string;
     previewUrl: string; // data URL for images, "" for others
     filename: string;
     mediaType: string;
@@ -294,8 +304,9 @@ const AnimationEditorPageInner = () => {
     messages: existingChat?.messages || [],
     transport: new DefaultChatTransport({
       api: "/api/agent/chat",
-      // initialAssets from navigation state are passed as legacy body param for backward compat
-      ...(initialAssets.length > 0 ? { body: { assets: initialAssets } } : {}),
+      ...(initialLegacyAssetUrls.length > 0
+        ? { body: { assets: initialLegacyAssetUrls } }
+        : {}),
     }),
   }));
 
@@ -523,12 +534,30 @@ const AnimationEditorPageInner = () => {
 
   // Initial trigger for new chats
   useEffect(() => {
-    if (!hasStartedRef.current && initialPrompt && messages.length === 0) {
+    const hasInitialAssets =
+      initialAssets.length > 0 || initialLegacyAssetUrls.length > 0;
+
+    if (
+      !hasStartedRef.current &&
+      messages.length === 0 &&
+      (initialPrompt || hasInitialAssets)
+    ) {
       hasStartedRef.current = true;
-      chat.sendMessage({ text: initialPrompt });
+      chat.sendMessage({
+        text: initialPrompt || "Use these uploaded assets.",
+        files:
+          initialAssets.length > 0
+            ? initialAssets.map<FileUIPart>((asset) => ({
+                type: "file",
+                mediaType: asset.mediaType,
+                filename: asset.filename,
+                url: asset.url,
+              }))
+            : undefined,
+      });
       window.history.replaceState({}, '', `/animate/${activeChatId.current}`);
     }
-  }, [initialPrompt, initialAssets, chat, messages.length]);
+  }, [initialPrompt, initialAssets, initialLegacyAssetUrls, chat, messages.length]);
 
   // Auto-Save feature
   useEffect(() => {
@@ -586,10 +615,16 @@ const AnimationEditorPageInner = () => {
       const newPending: PendingFile[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
-        const serverUrl = await uploadFile(file);
+        const uploadedAsset = await uploadFile(file);
         const isImage = file.type.startsWith("image/");
         const previewUrl = isImage ? await readFileAsDataUrl(file) : "";
-        newPending.push({ serverUrl, previewUrl, filename: file.name, mediaType: file.type, size: file.size });
+        newPending.push({
+          url: uploadedAsset.url,
+          previewUrl,
+          filename: uploadedAsset.filename,
+          mediaType: uploadedAsset.mediaType,
+          size: uploadedAsset.size,
+        });
       }
       setPendingFiles((prev) => [...prev, ...newPending]);
     } catch (err) {
@@ -632,7 +667,7 @@ const AnimationEditorPageInner = () => {
       type: "file" as const,
       mediaType: f.mediaType,
       filename: f.filename,
-      url: f.serverUrl,
+      url: f.url,
     }));
 
     const updatedChat = new Chat<UIMessage>({

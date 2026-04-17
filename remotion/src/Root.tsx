@@ -2,7 +2,7 @@ import React from "react";
 import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 
-import { EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, HookProblemIntro, APIIntegrationScene, VerificationSecurity, TestScene, FeatureApiIntegration, FeatureProcessingDelivery, BenefitVerificationSecurity, InterswitchBrandOutro, ProblemIntro, APIIntegration, ProcessingDeliveryScene, SceneOutroBrand, CtaGetStarted, ProblemIntroMinimal, ProblemProductIntro, ApiIntegration, ProcessingDelivery, BenefitsOutro, AppleParticleReveal, AppleParticleRevealSmart, LinearMotion, LinearReveal, LinearLogoAnimation, LinearLogo, LinearLogoReveal, AIAutomationScene, FeatureTeamCollaboration, BenefitTimeFocus, MotionArtScene } from "./scenes";
+import { EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, HookProblemIntro, APIIntegrationScene, VerificationSecurity, TestScene, FeatureApiIntegration, FeatureProcessingDelivery, BenefitVerificationSecurity, InterswitchBrandOutro, ProblemIntro, APIIntegration, ProcessingDeliveryScene, SceneOutroBrand, CtaGetStarted, ProblemIntroMinimal, ProblemProductIntro, ApiIntegration, ProcessingDelivery, BenefitsOutro, AppleParticleReveal, AppleParticleRevealSmart, LinearMotion, LinearReveal, LinearLogoAnimation, LinearLogo, LinearLogoReveal, AIAutomationScene, FeatureTeamCollaboration, BenefitTimeFocus, MotionArtScene, CleanTestScene, ChatGPTLogoScene, DigitalChaosHook, HookUnseenForce, IntroRedefined, FeatureIntegration, AIPoweredThinkingHook, ChatGPTCTA } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -287,7 +287,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+                <Composition
         id="intro-voiceos"
         component={IntroVoiceOS}
         durationInFrames={120}
@@ -327,10 +327,10 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                      <Composition
+                                  <Composition
         id="hook-digital-chaos"
         component={HookDigitalChaos}
-        durationInFrames={105}
+        durationInFrames={120}
         fps={30}
         width={1920}
         height={1080}
@@ -612,6 +612,86 @@ export const RemotionRoot: React.FC = () => {
         id="motion-art-01"
         component={MotionArtScene}
         durationInFrames={660}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="clean-test-scene"
+        component={CleanTestScene}
+        durationInFrames={90}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="logo-animation"
+        component={ChatGPTLogoScene}
+        durationInFrames={120}
+        fps={30}
+        width={1080}
+        height={1080}
+      />
+          <Composition
+        id="logo-morph-spin"
+        component={ChatGPTLogoScene}
+        durationInFrames={120}
+        fps={30}
+        width={1080}
+        height={1080}
+      />
+          <Composition
+        id="logo-morph-spin-black-text"
+        component={ChatGPTLogoScene}
+        durationInFrames={120}
+        fps={30}
+        width={1080}
+        height={1080}
+      />
+          <Composition
+        id="logo-morph-spin-black-text-full-bg"
+        component={ChatGPTLogoScene}
+        durationInFrames={120}
+        fps={30}
+        width={1080}
+        height={1080}
+      />
+          <Composition
+        id="hook-unseen-force"
+        component={HookUnseenForce}
+        durationInFrames={90}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="intro-redefined"
+        component={IntroRedefined}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-integration"
+        component={FeatureIntegration}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="ai-powered-thinking-hook"
+        component={AIPoweredThinkingHook}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                                  <Composition
+        id="scene-1776414629803"
+        component={ChatGPTCTA}
+        durationInFrames={150}
         fps={30}
         width={1920}
         height={1080}

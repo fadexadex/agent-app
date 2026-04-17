@@ -17,7 +17,7 @@ describe("Remotion Agent", () => {
     expect(toolNames).toContain("writeSceneCode");
     expect(toolNames).toContain("triggerPreview");
     expect(toolNames).toContain("renderScene");
-    expect(toolNames).toContain("generateImage");
+    expect(toolNames).toContain("awaitRender");
     expect(toolNames.length).toBeGreaterThanOrEqual(7);
   });
 

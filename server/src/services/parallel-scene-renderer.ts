@@ -9,6 +9,12 @@ import { renderSceneTool } from "../tools/render-scene.js";
 import { awaitRenderTool } from "../tools/await-render.js";
 import { generateImageTool } from "../tools/generate-image.js";
 import { config } from "../lib/config.js";
+import {
+  buildReferenceAssetsBlock,
+  resolveUploadedAssets,
+  toModelAssetPart,
+  type UploadedAssetDescriptor,
+} from "../lib/uploaded-assets.js";
 
 /**
  * Task for generating a single scene.
@@ -44,6 +50,46 @@ export interface SceneProgressUpdate {
   progress?: number;
   videoUrl?: string;
   error?: string;
+}
+
+export function buildSceneGenerationUserMessage(params: {
+  sceneId: string;
+  sceneIndex: number;
+  sceneContext: Record<string, unknown>;
+  prompt: string;
+  assets?: UploadedAssetDescriptor[];
+}) {
+  const {
+    sceneId,
+    sceneIndex,
+    sceneContext,
+    prompt,
+    assets = [],
+  } = params;
+  const referenceAssetsBlock = buildReferenceAssetsBlock(assets);
+
+  return {
+    role: "user" as const,
+    content: [
+      {
+        type: "text" as const,
+        text: `${referenceAssetsBlock}[SCENE_CONTEXT]
+Scene Index: ${sceneIndex}
+Scene ID: ${sceneId}
+Scene Data:
+\`\`\`json
+${JSON.stringify(sceneContext, null, 2)}
+\`\`\`
+[/SCENE_CONTEXT]
+
+${prompt}
+
+Generate this scene, write the code, register it, render it, and wait for the render to complete.
+`,
+      },
+      ...assets.map((asset) => toModelAssetPart(asset)),
+    ],
+  };
 }
 
 /**
@@ -94,38 +140,16 @@ async function generateSingleScene(
     });
 
     const agent = createSceneAgent(sceneId);
-
-    // Build reference assets block if assets were provided
-    let referenceAssetsBlock = "";
-    if (assets && assets.length > 0) {
-      const assetLines = assets
-        .map((url) => {
-          const normalized = url.replace(/^\//, "");
-          return `- staticFile('${normalized}')`;
-        })
-        .join("\n");
-      referenceAssetsBlock =
-        `[REFERENCE_ASSETS]\n` +
-        `Reference image(s) are available in the Remotion public folder. Use staticFile() to reference them (import { staticFile } from 'remotion'):\n\n` +
-        `${assetLines}\n` +
-        `[/REFERENCE_ASSETS]\n\n`;
-    }
-
-    // Build the prompt with scene context
-    const fullPrompt = `
-${referenceAssetsBlock}[SCENE_CONTEXT]
-Scene Index: ${sceneIndex}
-Scene ID: ${sceneId}
-Scene Data:
-\`\`\`json
-${JSON.stringify(sceneContext, null, 2)}
-\`\`\`
-[/SCENE_CONTEXT]
-
-${prompt}
-
-Generate this scene, write the code, register it, render it, and wait for the render to complete.
-`;
+    const resolvedAssets = await resolveUploadedAssets(
+      (assets || []).map((url) => ({ url })),
+    );
+    const userMessage = buildSceneGenerationUserMessage({
+      sceneId,
+      sceneIndex,
+      sceneContext,
+      prompt,
+      assets: resolvedAssets,
+    });
 
     onProgress?.({
       sceneId,
@@ -137,7 +161,7 @@ Generate this scene, write the code, register it, render it, and wait for the re
 
     // Generate with the agent
     const result = await agent.generate({
-      prompt: fullPrompt,
+      messages: [userMessage as any],
     });
 
     // Extract video URL from the result
