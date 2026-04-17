@@ -61,29 +61,51 @@ router.post("/chat", async (req: Request, res: Response) => {
 
     console.log(`[API] Processing chat with ${messages.length} messages. History length: ${JSON.stringify(messages).length} chars.`);
 
-    // Attach assets to the last user message
+    // Resolve FileUIPart server-relative URLs into raw base64 payloads across ALL user messages.
+    // For the agent streaming path, passing a data: URL causes the AI SDK to treat
+    // it as a downloadable URL and reject it before provider conversion. Raw base64
+    // keeps the part inline and lets the SDK use the declared media type.
+    // We must resolve ALL messages (not just the last) so that follow-up messages
+    // don't replay unresolved paths from earlier turns into the model, causing
+    // "Base64 decoding failed for /uploads/..." errors.
+    for (const msg of messages) {
+      if (msg?.role === "user" && Array.isArray(msg.parts)) {
+        for (const part of msg.parts) {
+          if (
+            part.type === "file" &&
+            typeof part.url === "string" &&
+            (part.url.startsWith("/uploads/") || part.url.startsWith("/generated/"))
+          ) {
+            try {
+              const localPath = join(UPLOADS_DIR, part.url.replace(/^\//, ""));
+              const fileData = await readFile(localPath);
+              const mimeType = mime.lookup(localPath) || part.mediaType || "application/octet-stream";
+              part.mediaType = mimeType;
+              part.url = fileData.toString("base64");
+              console.log(`[API] Resolved FileUIPart ${part.filename || localPath} → base64 bytes`);
+            } catch (err) {
+              console.error(`[API] Failed to resolve FileUIPart url ${part.url}:`, err);
+            }
+          }
+        }
+      }
+    }
+
+    // Legacy: Attach base64 data to the last user message if there are assets passed via body
     if (assets && assets.length > 0 && messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
       if (lastMessage.role === "user") {
         const textContent = typeof lastMessage.content === "string" ? lastMessage.content : "";
         const parts: any[] = [{ type: "text", text: textContent }];
-        const externalAssetUrls: string[] = [];
-
+        
         for (const assetUrl of assets) {
-          const isExternal = /^https?:\/\//i.test(assetUrl);
-          if (isExternal) {
-            // External URLs (brand logos, backdrops) — can't read from disk.
-            // Collect them so we can mention them in the prompt text instead.
-            externalAssetUrls.push(assetUrl);
-            continue;
-          }
           try {
-            // Local upload — read from disk and send as binary
+            // Assume assetUrl starts with /uploads/
             const localPath = join(UPLOADS_DIR, assetUrl.replace(/^\//, ""));
             const fileData = await readFile(localPath);
             const base64Data = fileData.toString("base64");
             const mimeType = mime.lookup(localPath) || "application/octet-stream";
-
+            
             const isImage = mimeType && mimeType.startsWith('image/');
             if (isImage) {
               parts.push({
@@ -102,12 +124,6 @@ router.post("/chat", async (req: Request, res: Response) => {
             console.error(`[API] Failed to read asset ${assetUrl}:`, err);
           }
         }
-
-        // Append external asset URLs as text so the agent can reference them
-        if (externalAssetUrls.length > 0) {
-          parts[0].text += `\n\n[BRAND_ASSET_URLS: The following external brand assets are available — use their URLs directly in Img src props or as background images in the scene code:\n${externalAssetUrls.join("\n")}]`;
-        }
-
         // Using any here as a quick bypass for the union type complexity of Message content
         lastMessage.content = parts as any;
       }
