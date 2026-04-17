@@ -13,7 +13,6 @@ import {
   getUploadedAssetUrl,
   isUploadedAssetObject,
   uploadFile,
-  type UploadedAsset,
   type UploadedAssetLike,
 } from "@/lib/upload";
 import MainPreview from "@/components/editor/MainPreview";
@@ -92,7 +91,7 @@ function MarkdownMessage({ text }: { text: string }) {
     }
 
     // Bullet list item
-    const bullet = line.match(/^[\*\-]\s+(.+)/);
+    const bullet = line.match(/^[-*]\s+(.+)/);
     if (bullet) {
       listItems.push(bullet[1]);
       continue;
@@ -245,9 +244,13 @@ const AnimationEditorPageInner = () => {
   const initialPrompt = (state?.prompt as string) || "";
   const rawInitialAssets = (state?.assets as UploadedAssetLike[]) || [];
   const initialAssets = rawInitialAssets.filter(isUploadedAssetObject);
-  const initialLegacyAssetUrls = rawInitialAssets
-    .filter((asset): asset is string => typeof asset === "string")
-    .map((asset) => getUploadedAssetUrl(asset));
+  const initialAssetUrls = rawInitialAssets.map((asset) => getUploadedAssetUrl(asset));
+  const brandColors = (state?.brandColors as string[]) || [];
+  const brandName = (state?.brandName as string) || "";
+  const brandFonts =
+    (state?.brandFonts as { role?: string; family: string }[]) || [];
+  const brandLogos = (state?.brandLogos as string[]) || [];
+  const brandBackdrops = (state?.brandBackdrops as string[]) || [];
 
   type PendingFile = {
     url: string;
@@ -304,9 +307,16 @@ const AnimationEditorPageInner = () => {
     messages: existingChat?.messages || [],
     transport: new DefaultChatTransport({
       api: "/api/agent/chat",
-      ...(initialLegacyAssetUrls.length > 0
-        ? { body: { assets: initialLegacyAssetUrls } }
-        : {}),
+      body: {
+        assets: initialAssetUrls,
+        sceneContext: {
+          brandColors,
+          brandName,
+          brandFonts,
+          brandLogos,
+          brandBackdrops,
+        },
+      },
     }),
   }));
 
@@ -342,9 +352,10 @@ const AnimationEditorPageInner = () => {
 
   // Clean polling intervals
   useEffect(() => {
+    const intervals = renderPollIntervalsRef.current;
     return () => {
-      renderPollIntervalsRef.current.forEach(clearInterval);
-      renderPollIntervalsRef.current.clear();
+      intervals.forEach(clearInterval);
+      intervals.clear();
     };
   }, []);
 
@@ -534,8 +545,7 @@ const AnimationEditorPageInner = () => {
 
   // Initial trigger for new chats
   useEffect(() => {
-    const hasInitialAssets =
-      initialAssets.length > 0 || initialLegacyAssetUrls.length > 0;
+    const hasInitialAssets = initialAssetUrls.length > 0;
 
     if (
       !hasStartedRef.current &&
@@ -557,7 +567,7 @@ const AnimationEditorPageInner = () => {
       });
       window.history.replaceState({}, '', `/animate/${activeChatId.current}`);
     }
-  }, [initialPrompt, initialAssets, initialLegacyAssetUrls, chat, messages.length]);
+  }, [initialPrompt, initialAssets, initialAssetUrls, chat, messages.length]);
 
   // Auto-Save feature
   useEffect(() => {
@@ -674,6 +684,16 @@ const AnimationEditorPageInner = () => {
       messages: messages,
       transport: new DefaultChatTransport({
         api: "/api/agent/chat",
+        body: {
+          assets: currentFiles.map((file) => file.url),
+          sceneContext: {
+            brandColors,
+            brandName,
+            brandFonts,
+            brandLogos,
+            brandBackdrops,
+          },
+        },
       }),
     });
     setChat(updatedChat);

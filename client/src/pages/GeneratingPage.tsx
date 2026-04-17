@@ -5,7 +5,7 @@ import { Check, Loader2, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch, toUserFacingErrorMessage } from "@/lib/api";
 import { RichScene } from "@/lib/mockData";
-import { getUploadedAssetUrl, type UploadedAssetLike } from "@/lib/upload";
+import { type UploadedAssetLike } from "@/lib/upload";
 
 const steps = [
   { label: "Analyzing your product", icon: "🔍" },
@@ -31,17 +31,22 @@ const GeneratingPage = () => {
     assets?: UploadedAssetLike[];
     brandColors?: string[];
     brandName?: string;
+    brandFonts?: { role?: string; family: string; source?: string; weights?: number[] }[];
+    brandLogos?: string[];
+    brandBackdrops?: string[];
     generationMode?: string;
   } | null;
 
   const prompt = state?.prompt || "Your product";
   const assets = useMemo(() => state?.assets || [], [state?.assets]);
-  const assetUrls = useMemo(
-    () => assets.map((asset) => getUploadedAssetUrl(asset)),
-    [assets],
-  );
   const brandColors = useMemo(() => state?.brandColors || [], [state?.brandColors]);
   const brandName = state?.brandName;
+  const brandFonts = useMemo(() => state?.brandFonts || [], [state?.brandFonts]);
+  const brandLogos = useMemo(() => state?.brandLogos || [], [state?.brandLogos]);
+  const brandBackdrops = useMemo(
+    () => state?.brandBackdrops || [],
+    [state?.brandBackdrops],
+  );
   const generationMode = state?.generationMode || "product-video";
 
   useEffect(() => {
@@ -51,7 +56,7 @@ const GeneratingPage = () => {
       const response = await apiFetch("/api/scenes/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, assets: assetUrls, brandColors, brandName, generationMode }),
+        body: JSON.stringify({ prompt, assets, brandColors, brandName, brandFonts, brandLogos, brandBackdrops, generationMode }),
         signal: controller.signal,
       });
 
@@ -89,7 +94,7 @@ const GeneratingPage = () => {
           if (event.step === "complete") {
             setCurrentStep(4);
             navigate("/storyboard", {
-              state: { prompt, scenes: collectedScenesRef.current },
+              state: { prompt, scenes: collectedScenesRef.current, assets, brandColors, brandName, brandFonts, brandLogos, brandBackdrops, generationMode },
             });
           }
           if (event.step === "error") {
@@ -106,7 +111,7 @@ const GeneratingPage = () => {
     });
 
     return () => controller.abort();
-  }, [prompt, assetUrls, brandColors, brandName, generationMode, navigate]);
+  }, [prompt, assets, brandColors, brandName, brandFonts, brandLogos, brandBackdrops, generationMode, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">

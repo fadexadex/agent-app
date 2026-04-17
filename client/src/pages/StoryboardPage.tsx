@@ -35,6 +35,13 @@ const StoryboardPage = () => {
   const location = useLocation();
   const prompt = (location.state as any)?.prompt || "Your product";
   const productName = prompt.split(" ").slice(0, 4).join(" ");
+  const assets = (location.state as any)?.assets || [];
+  const brandColors = (location.state as any)?.brandColors || [];
+  const brandName = (location.state as any)?.brandName;
+  const brandFonts = (location.state as any)?.brandFonts || [];
+  const brandLogos = (location.state as any)?.brandLogos || [];
+  const brandBackdrops = (location.state as any)?.brandBackdrops || [];
+  const generationMode = (location.state as any)?.generationMode;
 
   const passedScenes: RichScene[] = (location.state as any)?.scenes || [];
   const [scenes, setScenes] = useState<RichScene[]>(passedScenes);
@@ -91,7 +98,7 @@ const StoryboardPage = () => {
           <Button
             size="sm"
             className="gap-2 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground"
-            onClick={() => navigate("/editor", { state: { prompt, scenes } })}
+            onClick={() => navigate("/editor", { state: { prompt, scenes, assets, brandColors, brandName, brandFonts, brandLogos, brandBackdrops, generationMode } })}
           >
             Generate Video <ArrowRight className="h-3.5 w-3.5" />
           </Button>
@@ -228,7 +235,7 @@ const StoryboardPage = () => {
                 <Button
                   size="lg"
                   className="gap-2 rounded-xl px-8 bg-primary hover:bg-primary/90 text-primary-foreground"
-                  onClick={() => navigate("/editor", { state: { prompt, scenes } })}
+                  onClick={() => navigate("/editor", { state: { prompt, scenes, assets, brandColors, brandName, brandFonts, brandLogos, brandBackdrops, generationMode } })}
                 >
                   Generate Video <ArrowRight className="h-4 w-4" />
                 </Button>

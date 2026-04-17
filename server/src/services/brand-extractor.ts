@@ -289,6 +289,8 @@ export async function extractBrandColors(websiteUrl: string): Promise<BrandColor
       throw new Error("Invalid API response");
     }
 
+    console.log(`[BrandExtractor] Raw API response: ${JSON.stringify(json).slice(0, 500)}`);
+
     const payload = normalizePayload(json);
     return mapToBrandColors(payload, normalizedUrl);
   } catch (error) {

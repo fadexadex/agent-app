@@ -129,15 +129,75 @@ export type ProgressEvent =
 
 // ─── System prompt ────────────────────────────────────────────────────────────
 
+interface BrandFont { role?: string; family: string; }
+
+type SceneGenerationAssetInput =
+  | string
+  | {
+      url: string;
+      filename?: string;
+      mediaType?: string;
+    };
+
+function normalizeSceneGenerationAssets(
+  assets: SceneGenerationAssetInput[],
+): {
+  uploadedAssetInputs: {
+    url: string;
+    filename?: string;
+    mediaType?: string;
+  }[];
+  externalAssetUrls: string[];
+} {
+  const uploadedAssetInputs: {
+    url: string;
+    filename?: string;
+    mediaType?: string;
+  }[] = [];
+  const externalAssetUrls: string[] = [];
+
+  for (const asset of assets) {
+    if (typeof asset === "string") {
+      if (/^https?:\/\//i.test(asset)) {
+        externalAssetUrls.push(asset);
+      } else {
+        uploadedAssetInputs.push({ url: asset });
+      }
+      continue;
+    }
+
+    if (!asset?.url) {
+      continue;
+    }
+
+    if (/^https?:\/\//i.test(asset.url)) {
+      externalAssetUrls.push(asset.url);
+      continue;
+    }
+
+    uploadedAssetInputs.push({
+      url: asset.url,
+      filename: asset.filename,
+      mediaType: asset.mediaType,
+    });
+  }
+
+  return { uploadedAssetInputs, externalAssetUrls };
+}
+
 function buildSystemPrompt(
-  assets: UploadedAssetDescriptor[] = [],
+  uploadedAssets: UploadedAssetDescriptor[] = [],
+  externalAssetUrls: string[] = [],
   brandColors: string[] = [],
   brandName?: string,
   generationMode?: string,
+  brandFonts: BrandFont[] = [],
+  brandLogos: string[] = [],
+  brandBackdrops: string[] = [],
 ): string {
   let assetInstruction = "";
-  if (assets.length > 0) {
-    const assetLines = assets
+  if (uploadedAssets.length > 0) {
+    const assetLines = uploadedAssets
       .map(
         (asset) =>
           `- "${asset.filename}" -> source "${asset.sourceUrl}" and scene-code path staticFile('${asset.staticFilePath}')`,
@@ -149,6 +209,13 @@ function buildSystemPrompt(
       `CRITICAL: For every element that should display an uploaded asset, set its type to "mockup" or "custom" and place the EXACT staticFile path string ` +
       `(e.g. staticFile('uploads/filename.jpg')) inside that element's \`props.src\` or \`content\` field. ` +
       `This is how the downstream code generator knows to embed the asset in the Remotion scene code.`;
+  }
+
+  const allExternal = [...new Set([...externalAssetUrls, ...brandLogos, ...brandBackdrops])];
+  if (allExternal.length > 0) {
+    assetInstruction +=
+      `\n\nBRAND / EXTERNAL ASSET URLS:\n${allExternal.map((url) => `- ${url}`).join("\n")}\n` +
+      `Reference these URLs directly in element props when a scene needs the exact uploaded brand asset, logo, or backdrop.`;
   }
 
   const trimmedBrand = brandName?.trim();
@@ -163,6 +230,12 @@ function buildSystemPrompt(
 YOU MUST use these colors in scene backgrounds. For solid backgrounds, pick one of these colors.
 For gradient backgrounds, combine 2-3 of these colors. DO NOT use random colors when brand colors are provided.
 Use these colors for text accents and UI elements where appropriate.`;
+  }
+
+  let fontInstruction = "";
+  if (brandFonts.length > 0) {
+    const fontList = brandFonts.map(f => `${f.family}${f.role ? ` (${f.role})` : ""}`).join(", ");
+    fontInstruction = `\n\nBrand Fonts: Apply these font families in text element props where applicable: ${fontList}.`;
   }
 
   let modeInstruction = "";
@@ -186,7 +259,7 @@ Rules:
 - For custom elements, set component to a Remotion component name (e.g. "FeaturePill", "VoiceIndicatorPill", "AnimatedText", "MockupFrame")
 - notes: concise exit order + stagger timing guidance (e.g. "Exit order: mockup first, label last. Stagger 3 frames.")
 - id: unique kebab-case slug per scene
-- Make element descriptions vivid and specific — the Remotion developer uses them to build the component${assetInstruction}${brandInstruction}${colorInstruction}${modeInstruction}`;
+- Make element descriptions vivid and specific — the Remotion developer uses them to build the component${assetInstruction}${brandInstruction}${colorInstruction}${fontInstruction}${modeInstruction}`;
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
@@ -194,11 +267,14 @@ Rules:
 export async function generateSceneScript(
   prompt: string,
   modelId: string = "gemini-2.5-flash",
-  assets: string[] = [],
+  assets: SceneGenerationAssetInput[] = [],
   brandColors: string[] = [],
   onProgress: (event: ProgressEvent) => void,
   brandName?: string,
   generationMode?: string,
+  brandFonts: BrandFont[] = [],
+  brandLogos: string[] = [],
+  brandBackdrops: string[] = [],
 ): Promise<void> {
   const google = createGoogleGenerativeAI({
     apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -206,9 +282,9 @@ export async function generateSceneScript(
 
   onProgress({ step: "analyzing", message: "Analyzing your product..." });
 
-  const resolvedAssets = await resolveUploadedAssets(
-    assets.map((url) => ({ url })),
-  );
+  const { uploadedAssetInputs, externalAssetUrls } =
+    normalizeSceneGenerationAssets(assets);
+  const resolvedAssets = await resolveUploadedAssets(uploadedAssetInputs);
   const referenceAssetsBlock = buildReferenceAssetsBlock(resolvedAssets);
   const mappedParts: any[] = [
     {
@@ -225,9 +301,13 @@ export async function generateSceneScript(
     schema: SceneSchema,
     system: buildSystemPrompt(
       resolvedAssets,
+      externalAssetUrls,
       brandColors,
       brandName,
       generationMode,
+      brandFonts,
+      brandLogos,
+      brandBackdrops,
     ),
     messages: [
       { role: "user", content: mappedParts as any }

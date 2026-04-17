@@ -20,7 +20,6 @@ interface SingleSceneTimelineProps {
   onSpeedChange?: (speed: 0.5 | 1 | 2) => void;
   audioUrl?: string | null;
   audioTrackName?: string | null;
-  /** Native video element ref — enables zero-rerender real-time playhead tracking */
   videoRef?: React.RefObject<HTMLVideoElement>;
 }
 
@@ -32,8 +31,6 @@ const formatTime = (seconds: number): string => {
 };
 
 const SPEEDS = [0.5, 1, 2] as const;
-type Speed = (typeof SPEEDS)[number];
-
 const SCALE_SPLIT_COUNT = 4;
 
 const SingleSceneTimeline = ({
@@ -45,8 +42,6 @@ const SingleSceneTimeline = ({
   onTimestampSelect,
   isPlaying,
   onTogglePlay,
-  previewUrl,
-  videoUrl,
   speed = 1,
   onSpeedChange,
   audioUrl,
@@ -61,7 +56,6 @@ const SingleSceneTimeline = ({
 
   const duration = framesToSeconds(scene.duration);
 
-  // ── Real-time playhead via RAF ────────────────────────────────────────────────
   useEffect(() => {
     if (!videoRef?.current) return;
     let rafId: number;
@@ -82,7 +76,6 @@ const SingleSceneTimeline = ({
       ? (selectedTimestamp / duration) * 100
       : null;
 
-  // ── Ruler ticks ──────────────────────────────────────────────────────────────
   const majorInterval = zoom >= 4 ? 0.5 : zoom >= 2 ? 1 : 2;
   const minorInterval = majorInterval / SCALE_SPLIT_COUNT;
 
@@ -98,7 +91,6 @@ const SingleSceneTimeline = ({
     return result;
   }, [duration, majorInterval, minorInterval]);
 
-  // ── Time ↔ pointer conversion ─────────────────────────────────────────────────
   const computeTimeFromPointer = useCallback(
     (e: React.PointerEvent): number => {
       const container = scrollContainerRef.current;
@@ -121,7 +113,6 @@ const SingleSceneTimeline = ({
     [duration],
   );
 
-  // ── Auto-scroll at edges while dragging ──────────────────────────────────────
   const autoScrollRaf = useRef<number | null>(null);
   const startAutoScroll = useCallback((direction: "left" | "right") => {
     const step = () => {
@@ -142,7 +133,6 @@ const SingleSceneTimeline = ({
     }
   }, []);
 
-  // ── Pointer events ────────────────────────────────────────────────────────────
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     isDraggingRef.current = true;
@@ -157,7 +147,6 @@ const SingleSceneTimeline = ({
     const time = computeTimeFromPointer(e);
     movePlayheadImperative(time);
     onScrub?.(time);
-
     const container = scrollContainerRef.current;
     if (container) {
       const rect = container.getBoundingClientRect();
@@ -193,7 +182,7 @@ const SingleSceneTimeline = ({
   return (
     <div className="h-full flex flex-col bg-card border-t border-border select-none">
 
-      {/* ── Controls bar — matches multi-scene style ─────────────────────────── */}
+      {/* Controls bar */}
       <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-1.5">
           <Button
@@ -283,10 +272,8 @@ const SingleSceneTimeline = ({
         </div>
       </div>
 
-      {/* ── Timeline body — matches multi-scene style ────────────────────────── */}
+      {/* Timeline body */}
       <div className="flex-1 flex flex-col bg-[#0a0a0a] min-h-0 relative px-4 py-6">
-
-        {/* Scrollable container */}
         <div
           ref={scrollContainerRef}
           className="flex-1 overflow-x-auto overflow-y-hidden relative cursor-ew-resize [&::-webkit-scrollbar]:hidden"
@@ -305,15 +292,12 @@ const SingleSceneTimeline = ({
               <span>{formatTime(duration)}.0</span>
             </div>
 
-            {/* Track container — full-width single scene block */}
+            {/* Track block */}
             <div className="relative h-14 bg-black/50 border border-white/10 rounded-sm w-full flex overflow-hidden shrink-0">
-              {/* Scene clip */}
               <div className="h-full w-full bg-[#5326a6] flex items-center px-3 relative overflow-hidden">
                 <span className="text-[11px] text-white/90 font-medium truncate pointer-events-none select-none z-10">
                   {scene.name}
                 </span>
-
-                {/* Refinement timestamp marker */}
                 {markerPosition !== null && (
                   <div
                     className="absolute top-0 bottom-0 z-10 pointer-events-none"
@@ -340,7 +324,7 @@ const SingleSceneTimeline = ({
               )}
             </div>
 
-            {/* Audio waveform track */}
+            {/* Audio track */}
             {audioUrl && (
               <div className="relative h-10 mt-1 bg-black/50 border border-white/10 rounded-sm overflow-hidden shrink-0">
                 <div className="flex items-center gap-1.5 absolute left-2 top-1/2 -translate-y-1/2 z-10 pointer-events-none">
@@ -364,7 +348,7 @@ const SingleSceneTimeline = ({
               </div>
             )}
 
-            {/* Bottom ruler — major ticks with time labels */}
+            {/* Bottom ruler */}
             <div className="relative h-6 mt-1 text-[10px] text-white/40 font-mono select-none shrink-0">
               {ticks.map(({ time, major }) =>
                 major ? (

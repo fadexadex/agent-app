@@ -49,6 +49,7 @@ export { BenefitVerificationSecurity } from "./interswitch-benefit/benefit-verif
 export { InterswitchBrandOutro } from "./interswitch-cta/cta-brand-outro";
 export { SceneOutroBrand } from "./interswitch-outro/scene-outro-brand";
 export { CtaGetStarted } from "./voiceos-cta/cta-get-started";
+export { CTAGetStarted } from "./cta-get-started/CTAGetStarted";
 export { ProblemIntroMinimal } from "./interswitch-otp/ProblemIntroMinimal";
 export { ProblemIntro } from "./interswitch-otp/scene-problem-intro";
 export { HookComplexityChallenge } from "./voiceos-complexity/hook-complexity-challenge";
@@ -82,3 +83,4 @@ export { IntroRedefined } from "./voiceos-intro/intro-redefined";
 export { FeatureIntegration } from "./voice-os-feature-integration/feature-integration";
 export { AIPoweredThinkingHook } from "./ai-thinking-hook/ai-powered-thinking-hook";
 export { ChatGPTCTA } from "./chatgpt-cta/scene-1776414629803";
+export { KineticTypography } from "./kinetic-text-demo/KineticTypography";
