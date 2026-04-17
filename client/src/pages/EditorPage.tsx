@@ -4,6 +4,7 @@ import { Play, Pause, Download, Loader2, Check, ArrowLeft, Maximize } from "luci
 import { Button } from "@/components/ui/button";
 import { Scene, framesToSeconds } from "@/lib/mockData";
 import { AgentStep } from "@/lib/agentTypes";
+import { getUploadedAssetUrl, type UploadedAssetLike } from "@/lib/upload";
 import {
   createProjectFromScenes,
   saveProject,
@@ -55,7 +56,7 @@ const EditorPage = () => {
   const fromVideos: boolean = (location.state as any)?.fromVideos || false;
   const passedSceneStatuses: SceneStatus[] | undefined = (location.state as any)?.sceneStatuses;
   const passedSceneSteps: Record<number, AgentStep[]> | undefined = (location.state as any)?.sceneSteps;
-  const passedAssets: string[] = (location.state as any)?.assets || [];
+  const passedAssets: string[] = ((location.state as any)?.assets as UploadedAssetLike[] || []).map(getUploadedAssetUrl);
   const brandColors: string[] = (location.state as any)?.brandColors || [];
   const brandName: string | undefined = (location.state as any)?.brandName;
   const brandFonts: { role?: string; family: string }[] = (location.state as any)?.brandFonts || [];

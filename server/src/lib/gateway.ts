@@ -3,6 +3,7 @@ import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGroq } from "@ai-sdk/groq";
 import { createVertex } from "@ai-sdk/google-vertex";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 // ==============================================================================
 // PROVIDER CONFIGURATION - Choose your provider below
@@ -52,8 +53,19 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
 });
-const Agent_model = process.env.AGENT_MODEL || "gemini-3.1-pro-preview";
+const Agent_model = process.env.AGENT_MODEL || "gemini-2.5-pro";
 export const model = google(Agent_model);
+
+
+// OPTION 6: OpenRouter (free models, unified API gateway)
+// Set OPENROUTER_API_KEY in your .env file
+// Pros: Free tier models available, multimodal vision support, native function calling
+// Cons: Rate limits on free tier, model availability may vary
+// Active model: google/gemma-4-31b-it:free (262K ctx, vision + image input, native function calling)
+// const openrouter = createOpenRouter({
+//   apiKey: process.env.OPENROUTER_API_KEY,
+// });
+// export const model = openrouter.chat("google/gemma-4-31b-it:free");
 
 
 // ==============================================================================

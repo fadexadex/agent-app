@@ -1,8 +1,9 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamObject } from "ai";
+import { model as gatewayModel } from "../lib/gateway.js";
 import { z } from "zod";
 import { readFileSync } from "fs";
 import { resolve } from "path";
+import { config } from "../lib/config.js";
 import {
   buildReferenceAssetsBlock,
   resolveUploadedAssets,
@@ -266,7 +267,6 @@ Rules:
 
 export async function generateSceneScript(
   prompt: string,
-  modelId: string = "gemini-2.5-flash",
   assets: SceneGenerationAssetInput[] = [],
   brandColors: string[] = [],
   onProgress: (event: ProgressEvent) => void,
@@ -276,10 +276,6 @@ export async function generateSceneScript(
   brandLogos: string[] = [],
   brandBackdrops: string[] = [],
 ): Promise<void> {
-  const google = createGoogleGenerativeAI({
-    apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-  });
-
   onProgress({ step: "analyzing", message: "Analyzing your product..." });
 
   const { uploadedAssetInputs, externalAssetUrls } =
@@ -296,9 +292,10 @@ export async function generateSceneScript(
   ];
 
   const result = streamObject({
-    model: google(modelId),
+    model: gatewayModel,
     output: "array",
     schema: SceneSchema,
+    maxRetries: config.geminiMaxRetries,
     system: buildSystemPrompt(
       resolvedAssets,
       externalAssetUrls,

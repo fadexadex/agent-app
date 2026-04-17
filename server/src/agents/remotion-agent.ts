@@ -7,6 +7,7 @@ import { writeSceneCodeTool } from "../tools/write-scene.js";
 import { triggerPreviewTool } from "../tools/trigger-preview.js";
 import { renderSceneTool } from "../tools/render-scene.js";
 import { awaitRenderTool } from "../tools/await-render.js";
+import { config } from "../lib/config.js";
 // import { generateImageTool } from "../tools/generate-image.js";
 
 /**
@@ -22,6 +23,7 @@ import { awaitRenderTool } from "../tools/await-render.js";
 export const remotionAgent = new ToolLoopAgent({
   id: "remotion-scene-agent",
   model,
+  maxRetries: config.geminiMaxRetries,
   instructions: loadDirectorPrompt(),
   tools: {
     think: thinkTool,

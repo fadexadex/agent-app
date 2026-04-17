@@ -18,6 +18,7 @@ import {
 import MainPreview from "@/components/editor/MainPreview";
 import AnimationControls from "@/components/editor/AnimationControls";
 import AgentStepItem from "@/components/editor/AgentStepItem";
+import SceneVersionHistory from "@/components/editor/SceneVersionHistory";
 import { AgentStep } from "@/lib/agentTypes";
 import { 
   getAllAnimationChats, 
@@ -30,6 +31,82 @@ import {
   restoreChatVersion,
   SceneVersion
 } from "@/lib/storage";
+
+interface StoredChatDisplayState {
+  currentVersion: number;
+  versions: SceneVersion[];
+  videoUrl: string | null;
+  previewUrl: string | null;
+  sceneId: string | null;
+}
+
+function getMessageText(
+  message: Pick<UIMessage, "parts"> & { text?: string; content?: string } | null | undefined,
+): string {
+  if (!message) return "";
+  const parts = Array.isArray(message.parts) ? message.parts : [];
+  const partText =
+    parts
+      ?.filter((part): part is { type: "text"; text: string } => part.type === "text")
+      .map((part) => part.text)
+      .join("") || "";
+
+  return partText || message.text || message.content || "";
+}
+
+function getMessageParts(message: Pick<UIMessage, "parts"> | null | undefined): unknown[] {
+  return Array.isArray(message?.parts) ? message.parts : [];
+}
+
+function getStoredChatDisplayState(chat: StoredAnimationChat | null): StoredChatDisplayState {
+  const versions = chat?.versions || [];
+
+  if (versions.length === 0) {
+    return {
+      currentVersion: 1,
+      versions,
+      videoUrl: chat?.latestVideoUrl || null,
+      previewUrl: chat?.latestPreviewUrl || null,
+      sceneId: chat?.latestSceneId || null,
+    };
+  }
+
+  const requestedVersion = chat?.currentVersion || versions.length;
+  const clampedVersion = Math.min(Math.max(requestedVersion, 1), versions.length);
+  const activeVersion = versions[clampedVersion - 1];
+
+  return {
+    currentVersion: clampedVersion,
+    versions,
+    videoUrl: activeVersion.videoUrl || null,
+    previewUrl: activeVersion.previewUrl || null,
+    sceneId: activeVersion.sceneId || chat?.latestSceneId || null,
+  };
+}
+
+function isTextMessagePart(part: unknown): part is { type: "text"; text: string } {
+  return (
+    typeof part === "object" &&
+    part !== null &&
+    "type" in part &&
+    part.type === "text" &&
+    "text" in part &&
+    typeof part.text === "string"
+  );
+}
+
+function isFileMessagePart(
+  part: unknown,
+): part is { type: "file"; url: string; filename?: string; mediaType?: string } {
+  return (
+    typeof part === "object" &&
+    part !== null &&
+    "type" in part &&
+    part.type === "file" &&
+    "url" in part &&
+    typeof part.url === "string"
+  );
+}
 
 // ─── Simple inline markdown renderer ─────────────────────────────────────────
 // Handles: **bold**, *italic*, `code`, headings (#/##/###), bullet lists (- / *)
@@ -240,6 +317,7 @@ const AnimationEditorPageInner = () => {
   const { chatId } = useParams<{ chatId: string }>();
   
   const existingChat = chatId ? getAnimationChat(chatId) : null;
+  const initialDisplayState = getStoredChatDisplayState(existingChat);
   const state = location.state as Record<string, unknown> | undefined;
   const initialPrompt = (state?.prompt as string) || "";
   const rawInitialAssets = (state?.assets as UploadedAssetLike[]) || [];
@@ -263,12 +341,18 @@ const AnimationEditorPageInner = () => {
   const [input, setInput] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  const [latestVideoUrl, setLatestVideoUrl] = useState<string | null>(existingChat?.latestVideoUrl || null);
-  const [latestPreviewUrl, setLatestPreviewUrl] = useState<string | null>(existingChat?.latestPreviewUrl || null);
-  const [latestSceneId, setLatestSceneId] = useState<string | null>(existingChat?.latestSceneId || null);
-  const [currentVersion, setCurrentVersion] = useState(existingChat?.currentVersion || (existingChat?.versions?.length || 0));
-  const [versions, setVersions] = useState<SceneVersion[]>(existingChat?.versions || []);
+
+  const hasStartedRef = useRef(false);
+  const activeChatId = useRef(chatId || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString()));
+  const existingChatTitleRef = useRef(existingChat?.title || "Studio");
+  const createdAtRef = useRef(existingChat?.createdAt || Date.now());
+  const stableProjectId = useRef(existingChat?.projectId || activeChatId.current);
+
+  const [latestVideoUrl, setLatestVideoUrl] = useState<string | null>(initialDisplayState.videoUrl);
+  const [latestPreviewUrl, setLatestPreviewUrl] = useState<string | null>(initialDisplayState.previewUrl);
+  const [latestSceneId, setLatestSceneId] = useState<string | null>(initialDisplayState.sceneId);
+  const [currentVersion, setCurrentVersion] = useState(initialDisplayState.currentVersion);
+  const [versions, setVersions] = useState<SceneVersion[]>(initialDisplayState.versions);
   const [isRendering, setIsRendering] = useState(false);
   // True once triggerPreview fires during a refinement round — signals the live
   // preview should be shown instead of the (stale) last rendered video.
@@ -280,10 +364,8 @@ const AnimationEditorPageInner = () => {
   const [selectedTimestamp, setSelectedTimestamp] = useState<number | null>(null);
   const [speed, setSpeed] = useState<0.5 | 1 | 2>(1);
 
-  const hasStartedRef = useRef(false);
-  const activeChatId = useRef(chatId || (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString()));
   const renderPollIntervalsRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
-  const completedRenderIdsRef = useRef<Set<string>>(new Set());
+  const activeRenderPollBySceneRef = useRef<Map<string, string>>(new Map());
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   // Refs to avoid re-running the RAF loop when duration/time change
@@ -292,9 +374,13 @@ const AnimationEditorPageInner = () => {
   // Refs that shadow latestPreviewUrl/latestVideoUrl/latestSceneId state — used in the
   // messages effect so the effect only re-runs when `messages` changes, not when those
   // states change (which would create an infinite update cascade on loaded chats).
-  const latestPreviewUrlRef = useRef<string | null>(existingChat?.latestPreviewUrl || null);
-  const latestVideoUrlRef = useRef<string | null>(existingChat?.latestVideoUrl || null);
-  const latestSceneIdRef = useRef<string | null>(existingChat?.latestSceneId || null);
+  const latestPreviewUrlRef = useRef<string | null>(initialDisplayState.previewUrl);
+  const latestVideoUrlRef = useRef<string | null>(initialDisplayState.videoUrl);
+  const latestSceneIdRef = useRef<string | null>(initialDisplayState.sceneId);
+  const lastSubmittedPromptRef = useRef(initialPrompt || existingChat?.title || "");
+  const committedRenderUrlsRef = useRef<Set<string>>(
+    new Set(initialDisplayState.versions.map((version) => version.videoUrl).filter(Boolean)),
+  );
   // Ref mirrors for use inside the messages effect (avoids adding state to deps)
   const isProcessingRef = useRef(false);
   const prevIsProcessingRef = useRef(false);
@@ -308,6 +394,7 @@ const AnimationEditorPageInner = () => {
     transport: new DefaultChatTransport({
       api: "/api/agent/chat",
       body: {
+        projectId: stableProjectId.current,
         assets: initialAssetUrls,
         sceneContext: {
           brandColors,
@@ -323,6 +410,90 @@ const AnimationEditorPageInner = () => {
   const { messages, status, error } = useChat({ chat });
 
   const isProcessing = status === "streaming" || status === "submitted";
+
+  const applyDisplayedMedia = useCallback(
+    ({
+      videoUrl,
+      previewUrl,
+      sceneId,
+    }: {
+      videoUrl?: string | null;
+      previewUrl?: string | null;
+      sceneId?: string | null;
+    }) => {
+      latestVideoUrlRef.current = videoUrl ?? null;
+      latestPreviewUrlRef.current = previewUrl ?? null;
+      latestSceneIdRef.current = sceneId ?? null;
+      setLatestVideoUrl(videoUrl ?? null);
+      setLatestPreviewUrl(previewUrl ?? null);
+      setLatestSceneId(sceneId ?? null);
+    },
+    [],
+  );
+
+  const syncVersionStateFromChat = useCallback(
+    (storedChat: StoredAnimationChat | null) => {
+      const displayState = getStoredChatDisplayState(storedChat);
+      setVersions(displayState.versions);
+      setCurrentVersion(displayState.currentVersion);
+      committedRenderUrlsRef.current = new Set(
+        displayState.versions.map((version) => version.videoUrl).filter(Boolean),
+      );
+      applyDisplayedMedia({
+        videoUrl: displayState.videoUrl,
+        previewUrl: displayState.previewUrl,
+        sceneId: displayState.sceneId,
+      });
+    },
+    [applyDisplayedMedia],
+  );
+
+  const commitRenderedVersion = useCallback(
+    ({
+      videoUrl,
+      previewUrl,
+      sceneId,
+      prompt,
+    }: {
+      videoUrl: string;
+      previewUrl?: string | null;
+      sceneId?: string | null;
+      prompt?: string;
+    }) => {
+      if (committedRenderUrlsRef.current.has(videoUrl)) {
+        applyDisplayedMedia({
+          videoUrl,
+          previewUrl: previewUrl ?? latestPreviewUrlRef.current,
+          sceneId: sceneId ?? latestSceneIdRef.current,
+        });
+        setIsRendering(false);
+        setRefinementPreviewReady(false);
+        return;
+      }
+
+      const updatedChat = addChatVersion(activeChatId.current, {
+        videoUrl,
+        previewUrl: previewUrl ?? latestPreviewUrlRef.current ?? undefined,
+        sceneId: sceneId ?? latestSceneIdRef.current ?? undefined,
+        prompt: prompt || lastSubmittedPromptRef.current || "Refinement",
+      });
+
+      if (updatedChat) {
+        syncVersionStateFromChat(updatedChat);
+      } else {
+        applyDisplayedMedia({
+          videoUrl,
+          previewUrl: previewUrl ?? latestPreviewUrlRef.current,
+          sceneId: sceneId ?? latestSceneIdRef.current,
+        });
+        committedRenderUrlsRef.current.add(videoUrl);
+      }
+
+      setIsRendering(false);
+      setRefinementPreviewReady(false);
+    },
+    [applyDisplayedMedia, syncVersionStateFromChat],
+  );
 
   // Keep isProcessingRef in sync so the messages effect can read it without
   // adding isProcessing as a dep (which would create an update cascade).
@@ -353,9 +524,11 @@ const AnimationEditorPageInner = () => {
   // Clean polling intervals
   useEffect(() => {
     const intervals = renderPollIntervalsRef.current;
+    const activeRenderPolls = activeRenderPollBySceneRef.current;
     return () => {
       intervals.forEach(clearInterval);
       intervals.clear();
+      activeRenderPolls.clear();
     };
   }, []);
 
@@ -439,39 +612,66 @@ const AnimationEditorPageInner = () => {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const startRenderPolling = useCallback((renderSceneId: string, videoUrl: string) => {
-    setIsRendering(true);
-    const existing = renderPollIntervalsRef.current.get(renderSceneId);
-    if (existing) clearInterval(existing);
+  const startRenderPolling = useCallback(
+    (
+      renderSceneId: string,
+      videoUrl: string,
+      metadata?: { previewUrl?: string | null; sceneId?: string | null; prompt?: string },
+    ) => {
+      setIsRendering(true);
 
-    const pollInterval = setInterval(async () => {
-      try {
-        const response = await fetch(`/api/agent/render-status/${renderSceneId}`);
-        const data = (await response.json()) as { status: string; videoUrl?: string };
+      const renderKey = videoUrl || `${renderSceneId}:${Date.now()}`;
+      const previousRenderKey = activeRenderPollBySceneRef.current.get(renderSceneId);
 
-        if (data.status === "complete") {
-          const completedUrl = data.videoUrl || videoUrl;
-          latestVideoUrlRef.current = completedUrl;
-          setLatestVideoUrl(completedUrl);
-          setIsRendering(false);
-          clearInterval(pollInterval);
-          renderPollIntervalsRef.current.delete(renderSceneId);
-          completedRenderIdsRef.current.add(renderSceneId);
-        } else if (data.status === "failed") {
-          // Render failed — stop polling, clear rendering state so the agent can retry
-          console.warn(`[Poll] Render failed for ${renderSceneId}`);
-          setIsRendering(false);
-          clearInterval(pollInterval);
-          renderPollIntervalsRef.current.delete(renderSceneId);
-          completedRenderIdsRef.current.add(renderSceneId);
-        }
-      } catch (err) {
-        console.error("Poll error:", err);
+      if (previousRenderKey) {
+        const previousInterval = renderPollIntervalsRef.current.get(previousRenderKey);
+        if (previousInterval) clearInterval(previousInterval);
+        renderPollIntervalsRef.current.delete(previousRenderKey);
       }
-    }, 2000);
 
-    renderPollIntervalsRef.current.set(renderSceneId, pollInterval);
-  }, []);
+      activeRenderPollBySceneRef.current.set(renderSceneId, renderKey);
+
+      const stopPolling = () => {
+        const interval = renderPollIntervalsRef.current.get(renderKey);
+        if (interval) clearInterval(interval);
+        renderPollIntervalsRef.current.delete(renderKey);
+        if (activeRenderPollBySceneRef.current.get(renderSceneId) === renderKey) {
+          activeRenderPollBySceneRef.current.delete(renderSceneId);
+        }
+      };
+
+      const pollInterval = setInterval(async () => {
+        try {
+          if (activeRenderPollBySceneRef.current.get(renderSceneId) !== renderKey) {
+            stopPolling();
+            return;
+          }
+
+          const response = await fetch(`/api/agent/render-status/${renderSceneId}`);
+          const data = (await response.json()) as { status: string; videoUrl?: string };
+
+          if (data.status === "complete") {
+            stopPolling();
+            commitRenderedVersion({
+              videoUrl: data.videoUrl || videoUrl,
+              previewUrl: metadata?.previewUrl,
+              sceneId: metadata?.sceneId || renderSceneId,
+              prompt: metadata?.prompt,
+            });
+          } else if (data.status === "failed") {
+            console.warn(`[Poll] Render failed for ${renderSceneId}`);
+            stopPolling();
+            setIsRendering(false);
+          }
+        } catch (err) {
+          console.error("Poll error:", err);
+        }
+      }, 2000);
+
+      renderPollIntervalsRef.current.set(renderKey, pollInterval);
+    },
+    [commitRenderedVersion],
+  );
 
   // Parse messages to extract tool outputs (like video/preview URLs).
   // Uses refs for URL comparisons instead of state deps to prevent cascade:
@@ -481,6 +681,10 @@ const AnimationEditorPageInner = () => {
     if (messages.length === 0) return;
     const lastMessage = messages[messages.length - 1];
     if (lastMessage.role !== "assistant" || !lastMessage.parts) return;
+    const latestUserPrompt =
+      lastSubmittedPromptRef.current ||
+      getMessageText([...messages].reverse().find((message) => message.role === "user") as UIMessage | undefined) ||
+      "Refinement";
 
     for (const part of lastMessage.parts) {
       if (isToolUIPart(part) && part.state === "output-available" && part.output) {
@@ -488,9 +692,15 @@ const AnimationEditorPageInner = () => {
 
         if (toolName === "triggerPreview") {
           const result = part.output as { previewUrl?: string; sceneId?: string };
-          if (result.previewUrl && result.previewUrl !== latestPreviewUrlRef.current) {
-            latestPreviewUrlRef.current = result.previewUrl;
-            setLatestPreviewUrl(result.previewUrl);
+          if (
+            (result.previewUrl && result.previewUrl !== latestPreviewUrlRef.current) ||
+            (result.sceneId && result.sceneId !== latestSceneIdRef.current)
+          ) {
+            applyDisplayedMedia({
+              videoUrl: latestVideoUrlRef.current,
+              previewUrl: result.previewUrl ?? latestPreviewUrlRef.current,
+              sceneId: result.sceneId ?? latestSceneIdRef.current,
+            });
             // If this triggerPreview fires during a refinement (agent is running and
             // there is already a rendered video), mark the live preview as ready so
             // MainPreview can switch to showing the new code immediately.
@@ -498,50 +708,40 @@ const AnimationEditorPageInner = () => {
               setRefinementPreviewReady(true);
             }
           }
-          if (result.sceneId && result.sceneId !== latestSceneIdRef.current) {
-            latestSceneIdRef.current = result.sceneId;
-            setLatestSceneId(result.sceneId);
-          }
         }
 
         if (toolName === "renderScene") {
           const result = part.output as { success?: boolean; status?: string; sceneId?: string; videoUrl?: string };
           if (result.success && result.status === "rendering" && result.sceneId) {
-            if (
-              !renderPollIntervalsRef.current.has(result.sceneId) &&
-              !completedRenderIdsRef.current.has(result.sceneId)
-            ) {
-              startRenderPolling(result.sceneId, result.videoUrl || "");
-            }
-            if (result.sceneId && result.sceneId !== latestSceneIdRef.current) {
-              latestSceneIdRef.current = result.sceneId;
-              setLatestSceneId(result.sceneId);
-            }
-          } else if (result.success && result.videoUrl && result.videoUrl !== latestVideoUrlRef.current) {
-            // New version detected!
-            const lastUserMsg = [...messages].reverse().find((m: any) => m.role === 'user');
-            let versionPrompt = "";
-            if (lastUserMsg) {
-              versionPrompt = (lastUserMsg as any).text || (lastUserMsg.parts ? (lastUserMsg.parts as any[]).find((p: any) => p.type === 'text')?.text : "");
-            }
-
-            addChatVersion(activeChatId.current, {
-              videoUrl: result.videoUrl,
-              previewUrl: latestPreviewUrlRef.current || undefined,
-              prompt: versionPrompt || "Refinement"
+            startRenderPolling(result.sceneId, result.videoUrl || "", {
+              previewUrl: latestPreviewUrlRef.current,
+              sceneId: latestSceneIdRef.current || result.sceneId,
+              prompt: latestUserPrompt,
             });
-            const updated = getAnimationChat(activeChatId.current);
-            if (updated) {
-              setVersions(updated.versions || []);
-              setCurrentVersion(updated.currentVersion || 0);
+            if (result.sceneId && result.sceneId !== latestSceneIdRef.current) {
+              applyDisplayedMedia({
+                videoUrl: latestVideoUrlRef.current,
+                previewUrl: latestPreviewUrlRef.current,
+                sceneId: result.sceneId,
+              });
             }
-            latestVideoUrlRef.current = result.videoUrl;
-            setLatestVideoUrl(result.videoUrl);
+          } else if (
+            result.success &&
+            result.videoUrl &&
+            !committedRenderUrlsRef.current.has(result.videoUrl) &&
+            result.videoUrl !== latestVideoUrlRef.current
+          ) {
+            commitRenderedVersion({
+              videoUrl: result.videoUrl,
+              previewUrl: latestPreviewUrlRef.current,
+              sceneId: latestSceneIdRef.current || result.sceneId,
+              prompt: latestUserPrompt,
+            });
           }
         }
       }
     }
-  }, [messages, startRenderPolling]);
+  }, [applyDisplayedMedia, commitRenderedVersion, messages, startRenderPolling]);
 
   // Initial trigger for new chats
   useEffect(() => {
@@ -553,6 +753,7 @@ const AnimationEditorPageInner = () => {
       (initialPrompt || hasInitialAssets)
     ) {
       hasStartedRef.current = true;
+      lastSubmittedPromptRef.current = initialPrompt || "Use these uploaded assets.";
       chat.sendMessage({
         text: initialPrompt || "Use these uploaded assets.",
         files:
@@ -573,31 +774,29 @@ const AnimationEditorPageInner = () => {
   useEffect(() => {
     if (messages.length > 0) {
       let activeTitle = "New Animation";
-      const firstUserMsg = messages.find((m: any) => m.role === 'user') as any;
-      let msgText = "";
-      if (firstUserMsg) {
-        msgText = firstUserMsg.text || (firstUserMsg.parts ? (firstUserMsg.parts as any[]).find((p: any) => p.type === 'text')?.text : "");
-      }
+      const firstUserMsg = messages.find((message) => message.role === "user");
+      const msgText = getMessageText(firstUserMsg);
       
       if (initialPrompt) activeTitle = initialPrompt;
       else if (msgText) activeTitle = msgText.slice(0, 30) + "...";
-      else if (existingChat) activeTitle = existingChat.title;
+      else activeTitle = existingChatTitleRef.current;
 
-        saveAnimationChat({
-          id: activeChatId.current,
-          title: activeTitle,
-          createdAt: existingChat ? existingChat.createdAt : Date.now(),
-          updatedAt: Date.now(),
-          messages,
-          latestVideoUrl,
-          latestPreviewUrl,
-          latestSceneId,
-          currentVersion,
-          versions,
-        });
-        setHistoryChats(getAllAnimationChats());
-      }
-    }, [messages, latestVideoUrl, latestPreviewUrl, latestSceneId, currentVersion, versions]);
+      saveAnimationChat({
+        id: activeChatId.current,
+        title: activeTitle,
+        createdAt: createdAtRef.current,
+        updatedAt: Date.now(),
+        messages,
+        projectId: stableProjectId.current,
+        latestVideoUrl,
+        latestPreviewUrl,
+        latestSceneId,
+        currentVersion,
+        versions,
+      });
+      setHistoryChats(getAllAnimationChats());
+    }
+  }, [currentVersion, initialPrompt, latestPreviewUrl, latestSceneId, latestVideoUrl, messages, versions]);
 
   const MAX_FILE_SIZE_MB = 20;
 
@@ -663,6 +862,7 @@ const AnimationEditorPageInner = () => {
     const messageContent = selectedTimestamp !== null
       ? `[At ${formatTimestamp(selectedTimestamp)}] ${baseContent || "Make a change at this timestamp."}`
       : baseContent;
+    lastSubmittedPromptRef.current = messageContent || "Use these files.";
     const currentFiles = [...pendingFiles];
     setInput("");
     setSelectedTimestamp(null);
@@ -685,6 +885,7 @@ const AnimationEditorPageInner = () => {
       transport: new DefaultChatTransport({
         api: "/api/agent/chat",
         body: {
+          projectId: stableProjectId.current,
           assets: currentFiles.map((file) => file.url),
           sceneContext: {
             brandColors,
@@ -702,6 +903,25 @@ const AnimationEditorPageInner = () => {
     if (!chatId) {
       window.history.replaceState({}, '', `/animate/${activeChatId.current}`);
     }
+  };
+
+  const handleRestoreVersion = useCallback(
+    (versionIndex: number) => {
+      const updatedChat = restoreChatVersion(activeChatId.current, versionIndex);
+      if (updatedChat) {
+        syncVersionStateFromChat(updatedChat);
+      }
+    },
+    [syncVersionStateFromChat],
+  );
+
+  const previewScene: Scene = {
+    id: latestSceneId || "animation",
+    name: "Custom Animation",
+    category: "feature",
+    duration: 150,
+    elements: [],
+    background: { type: "solid", colors: ["#000"] },
   };
 
   return (
@@ -781,7 +1001,7 @@ const AnimationEditorPageInner = () => {
             className="font-bold text-sm text-background"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            {initialPrompt ? initialPrompt.split(" ").slice(0, 5).join(" ") : existingChat ? existingChat.title : "Studio"}
+            {initialPrompt ? initialPrompt.split(" ").slice(0, 5).join(" ") : existingChatTitleRef.current}
           </span>
           {(isProcessing || isRendering) && (
             <span className="flex items-center gap-1.5 text-xs text-primary-foreground bg-primary/80 px-2 py-0.5 rounded-full">
@@ -798,13 +1018,13 @@ const AnimationEditorPageInner = () => {
           <MessageErrorBoundary>
           <ScrollArea className="flex-1 p-4" ref={chatScrollRef}>
             <div className="space-y-6 pb-4">
-              {messages.map((m: any) => (
+              {messages.map((m) => (
                 <div key={m.id}>
                   {m.role === "user" ? (
                     <div className="flex justify-end">
                       <div className="max-w-[85%] flex flex-col gap-2 items-end">
                         {/* File attachments */}
-                        {m.parts?.filter((p: any) => p.type === 'file').map((p: any, fi: number) => {
+                        {getMessageParts(m).filter(isFileMessagePart).map((p, fi: number) => {
                           const isImage = (p.mediaType as string)?.startsWith("image/");
                           const isPdf = p.mediaType === "application/pdf";
                           return (
@@ -828,7 +1048,7 @@ const AnimationEditorPageInner = () => {
                         })}
                         {/* Text bubble */}
                         {(() => {
-                          const text = (m.parts ? (m.parts as any[]).filter(p => p.type === 'text').map(p => p.text).join('') : "") || m.content || "";
+                          const text = getMessageText(m);
                           return text ? (
                             <div className="bg-primary text-primary-foreground px-4 py-2.5 rounded-[1.25rem] rounded-tr-sm text-sm shadow-sm leading-relaxed whitespace-pre-wrap">
                               {text}
@@ -839,35 +1059,39 @@ const AnimationEditorPageInner = () => {
                     </div>
                   ) : (
                     <div className="flex flex-col space-y-3">
-                      {m.parts?.map((part: any, i: number) => {
-                        if (part.type === "text") {
-                          const cleanText = part.text.trim();
-                          if (!cleanText) return null;
-                          return (
-                            <div key={i} className="pl-1 border-l-2 border-primary/20 p-3 rounded-lg bg-muted/20">
-                              <MarkdownMessage text={cleanText} />
-                            </div>
-                          );
-                        }
-                        if (isToolUIPart(part)) {
-                          const toolName = getToolName(part);
-                          const step = toolCallToAgentStep(
-                            toolName,
-                            (part.state === "input-available" || part.state === "output-available") ? part.input as Record<string, unknown> : {},
-                            i,
-                            part.state === "output-available" ? part.output : undefined
-                          );
-                          // Dont show trigger preview or render scene tools if they are instant
-                          if ((toolName === "triggerPreview" || toolName === "renderScene") && part.state === "output-available") {
-                              return null;
+                      {getMessageParts(m).map((part, i: number) => {
+                        try {
+                          if (isTextMessagePart(part)) {
+                            const cleanText = part.text.trim();
+                            if (!cleanText) return null;
+                            return (
+                              <div key={i} className="pl-1 border-l-2 border-primary/20 p-3 rounded-lg bg-muted/20">
+                                <MarkdownMessage text={cleanText} />
+                              </div>
+                            );
                           }
-                          return (
-                            <motion.div key={i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}>
-                              <AgentStepItem step={step} isActive={part.state !== "output-available"} />
-                            </motion.div>
-                          );
+                          if (isToolUIPart(part)) {
+                            const toolName = getToolName(part);
+                            const step = toolCallToAgentStep(
+                              toolName,
+                              (part.state === "input-available" || part.state === "output-available") ? part.input as Record<string, unknown> : {},
+                              i,
+                              part.state === "output-available" ? part.output : undefined
+                            );
+                            if ((toolName === "triggerPreview" || toolName === "renderScene") && part.state === "output-available") {
+                                return null;
+                            }
+                            return (
+                              <motion.div key={i} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}>
+                                <AgentStepItem step={step} isActive={part.state !== "output-available"} />
+                              </motion.div>
+                            );
+                          }
+                          return null;
+                        } catch (partError) {
+                          console.error("Failed to render assistant message part", partError, part);
+                          return null;
                         }
-                        return null;
                       })}
                     </div>
                   )}
@@ -1000,43 +1224,12 @@ const AnimationEditorPageInner = () => {
                 {/* Version Switcher */}
                 {versions.length > 1 && (
                   <div className="flex items-center justify-center pt-3 shrink-0">
-                    <div className="flex items-center gap-3 bg-card/80 backdrop-blur-md px-4 py-1.5 rounded-full border border-border shadow-lg">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground disabled:opacity-30"
-                        disabled={currentVersion <= 1}
-                        onClick={() => {
-                          const newIdx = currentVersion - 2;
-                          restoreChatVersion(activeChatId.current, newIdx);
-                          setCurrentVersion(currentVersion - 1);
-                          const v = versions[newIdx];
-                          setLatestVideoUrl(v.videoUrl);
-                          if (v.previewUrl) setLatestPreviewUrl(v.previewUrl);
-                        }}
-                      >
-                        <ArrowLeft className="h-3.5 w-3.5" />
-                      </Button>
-                      <div className="text-[11px] font-bold tracking-tight uppercase text-muted-foreground select-none">
-                        Version <span className="text-foreground">{currentVersion}</span> / {versions.length}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 rounded-full text-muted-foreground hover:text-foreground disabled:opacity-30"
-                        disabled={currentVersion >= versions.length}
-                        onClick={() => {
-                          const newIdx = currentVersion;
-                          restoreChatVersion(activeChatId.current, newIdx);
-                          setCurrentVersion(currentVersion + 1);
-                          const v = versions[newIdx];
-                          setLatestVideoUrl(v.videoUrl);
-                          if (v.previewUrl) setLatestPreviewUrl(v.previewUrl);
-                        }}
-                      >
-                        <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
-                      </Button>
-                    </div>
+                    <SceneVersionHistory
+                      versions={versions}
+                      currentVersion={currentVersion}
+                      onRestore={handleRestoreVersion}
+                      disabled={isProcessing || isRendering}
+                    />
                   </div>
                 )}
 
@@ -1044,7 +1237,7 @@ const AnimationEditorPageInner = () => {
                   <div className="flex-1 min-h-0 p-4 pb-0">
                     <div className="h-full w-full rounded-xl overflow-hidden border border-border/30 bg-black shadow-2xl">
                       <MainPreview
-                        scene={{ id: latestSceneId || "animation", name: "Custom Animation", category: "Generated Scene", duration: 150, elements: [], background: { type: "solid", colors: ["#000"] } } as any}
+                        scene={previewScene}
                         isGenerating={isProcessing && !isRendering}
                         isQueued={false}
                         isComplete={!isProcessing && !isRendering}

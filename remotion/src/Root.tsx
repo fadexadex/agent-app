@@ -2,7 +2,7 @@ import React from "react";
 import { Composition } from "remotion";
 import { MyComposition } from "./Composition";
 
-import { EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, HookProblemIntro, APIIntegrationScene, VerificationSecurity, TestScene, FeatureApiIntegration, FeatureProcessingDelivery, BenefitVerificationSecurity, InterswitchBrandOutro, ProblemIntro, APIIntegration, ProcessingDeliveryScene, SceneOutroBrand, CtaGetStarted, CTAGetStarted, ProblemIntroMinimal, ProblemProductIntro, ApiIntegration, ProcessingDelivery, BenefitsOutro, AppleParticleReveal, AppleParticleRevealSmart, LinearMotion, LinearReveal, LinearLogoAnimation, LinearLogo, LinearLogoReveal, AIAutomationScene, FeatureTeamCollaboration, BenefitTimeFocus, MotionArtScene, CleanTestScene, ChatGPTLogoScene, DigitalChaosHook, HookUnseenForce, IntroRedefined, FeatureIntegration, AIPoweredThinkingHook, ChatGPTCTA, KineticTypography } from "./scenes";
+import { EmailFeature, SceneHook, SceneWorkspaceAssembly, Hook, SceneNotionAIMagic, Workspace, SceneOutro, IntroProductReveal, CustomerLTV, BenefitActionableGrowth, CTAStartGrowing, HappyFarmers, GrowthStruggleHook, SalesTrendsAnalysis, ActionableGrowth, MetricsQuestionHook, SalesOverviewScene, FeatureCustomerInsights, BenefitRevenueGrowth, CallToAction, GrowthInfo, EcommerceChallengeHook, SalesPerformanceTracker, HookComplexityChallenge, IntroTesting212, AutomatedAnalysis, CollaborativeWorkflows, BenefitTimeEfficiency, AutomatedAnalysisScene, HookProductivity, IntroVoiceOSAssistant, FeatureCalendar, EmailReplyFeature, BenefitTimeStress, HookManualCodingPain, EffortlessProductivityHook, IntroVoiceOS, VoiceCommandsScene, SmartMeetingSummaries, BenefitTimeSaving, BouncingBall, HookDigitalChaos, IntroTestOS, MovingLogo, HookProblemIntro, APIIntegrationScene, VerificationSecurity, TestScene, FeatureApiIntegration, FeatureProcessingDelivery, BenefitVerificationSecurity, InterswitchBrandOutro, ProblemIntro, APIIntegration, ProcessingDeliveryScene, SceneOutroBrand, CtaGetStarted, CTAGetStarted, ProblemIntroMinimal, ProblemProductIntro, ApiIntegration, ProcessingDelivery, BenefitsOutro, AppleParticleReveal, AppleParticleRevealSmart, LinearMotion, LinearReveal, LinearLogoAnimation, LinearLogo, LinearLogoReveal, AIAutomationScene, FeatureTeamCollaboration, BenefitTimeFocus, MotionArtScene, CleanTestScene, ChatGPTLogoScene, DigitalChaosHook, HookUnseenForce, IntroRedefined, FeatureIntegration, AIPoweredThinkingHook, ChatGPTCTA, KineticTypography, Scene1ProblemHook, TheSolutionIntro, Scene3ApiRequest, FlowAnimationScene, Scene5UserInteraction, BenefitsCta, ProblemHookScene, SolutionIntroScene, HookVerificationProblem, TheWhatsAppSolution, ApiPower, SuccessInteraction, TheBenefits, InterswitchClosing, InterswitchLogoAnimation, SampleLogoScene, SampleLogo, HookChaos, IntroCogniflow, FeatureCommandBar, FeatureAutomationFlow, BenefitReclaimTime, CtaSignUp } from "./scenes";
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -424,7 +424,7 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-                                        <Composition
+                                              <Composition
         id="scene-problem-intro"
         component={ProblemIntro}
         durationInFrames={120}
@@ -600,10 +600,10 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
       />
-          <Composition
+                <Composition
         id="cta-sign-up"
-        component={CallToAction}
-        durationInFrames={150}
+        component={CtaSignUp}
+        durationInFrames={90}
         fps={30}
         width={1920}
         height={1080}
@@ -707,6 +707,158 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="kinetic-typography-main"
         component={KineticTypography}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                            <Composition
+        id="scene-1-problem-hook"
+        component={ProblemHookScene}
+        durationInFrames={90}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="scene-2-solution-intro"
+        component={SolutionIntroScene}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="scene-3-api-request"
+        component={Scene3ApiRequest}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="scene-4-flow-animation"
+        component={FlowAnimationScene}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="scene-5-user-interaction"
+        component={Scene5UserInteraction}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="scene-6-benefits-cta"
+        component={BenefitsCta}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                                                    <Composition
+        id="hook-verification-problem"
+        component={HookVerificationProblem}
+        durationInFrames={90}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="intro-whatsapp-otp-solution"
+        component={TheWhatsAppSolution}
+        durationInFrames={90}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="feature-api-payload"
+        component={ApiPower}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="feature-verification-success"
+        component={SuccessInteraction}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="benefit-core-pillars"
+        component={TheBenefits}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="cta-interswitch-brand"
+        component={InterswitchClosing}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                      <Composition
+        id="interswitch-logo-animation"
+        component={InterswitchLogoAnimation}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                      <Composition
+        id="sample-logo"
+        component={SampleLogo}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="hook-chaos"
+        component={HookChaos}
+        durationInFrames={120}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="intro-cogniflow"
+        component={IntroCogniflow}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-command-bar"
+        component={FeatureCommandBar}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+          <Composition
+        id="feature-automation-flow"
+        component={FeatureAutomationFlow}
+        durationInFrames={150}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
+                <Composition
+        id="benefit-reclaim-time"
+        component={BenefitReclaimTime}
         durationInFrames={120}
         fps={30}
         width={1920}

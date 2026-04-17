@@ -215,13 +215,12 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
     hasCompletedRef.current = false;
     refiningSceneRef.current = index;
     lastPromptRef.current = message;
-    sceneIndexMapRef.current.set(scene.id, index);
+    // Use the actual Remotion composition ID as the map key so handleRenderComplete
+    // can find the correct scene slot when the render finishes.
+    const compositionId = allSceneStatuses?.[index]?.previewSceneId || scene.id;
+    sceneIndexMapRef.current.set(compositionId, index);
     setRefinementSceneIndex(index);
     onRefinementStart?.(index, message);
-
-    // Use the actual Remotion composition ID (previewSceneId) if available,
-    // otherwise fall back to scene.id
-    const compositionId = allSceneStatuses?.[index]?.previewSceneId || scene.id;
     const editPrefix = buildEditPrefix(compositionId);
     sendMessage(editPrefix + message, { sceneId: compositionId, sceneContext: scene as any, projectId });
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -300,11 +299,10 @@ function useRefinementChat(options: UseRefinementChatOptions): UseRefinementChat
       refiningSceneRef.current = first.index;
       lastPromptRef.current = message;
       isStartingNextSceneRef.current = true;
-      sceneIndexMapRef.current.set(first.scene.id, first.index);
+      const firstCompositionId = allSceneStatuses?.[first.index]?.previewSceneId || first.scene.id;
+      sceneIndexMapRef.current.set(firstCompositionId, first.index);
       setRefinementSceneIndex(first.index);
       onRefinementStart?.(first.index, message);
-
-      const firstCompositionId = allSceneStatuses?.[first.index]?.previewSceneId || first.scene.id;
       sendMessage(buildEditPrefix(firstCompositionId) + message, {
         sceneId: firstCompositionId,
         sceneContext: first.scene as any,
@@ -586,9 +584,7 @@ const AgentThoughts = ({
   // When generating, the last step is always the "active" one
   const activeStepIndex = isGenerating ? steps.length - 1 : -1;
 
-  const showRefinement = allDone && (isComplete || selectedScene === "all");
-
-  // Use refinement chat hook (only active when showRefinement is true)
+  // Use refinement chat hook (must come before showRefinement so we can read chatMessages)
   const refinementChat = useRefinementChat({
     selectedScene,
     sceneContext,
@@ -598,6 +594,14 @@ const AgentThoughts = ({
     onRefinementComplete,
     projectId,
   });
+
+  // Stay visible once the user has sent a message, even while the scene is re-rendering
+  const showRefinement =
+    allDone &&
+    (isComplete ||
+      selectedScene === "all" ||
+      refinementChat.chatMessages.length > 0 ||
+      refinementChat.isProcessing);
 
   // When the user clicks a specific scene while a multi-scene edit is running,
   // only show the refinement steps if they belong to this scene.

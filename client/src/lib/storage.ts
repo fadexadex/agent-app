@@ -8,6 +8,7 @@ export interface SceneVersion {
   id: string;
   videoUrl: string;
   previewUrl?: string;
+  sceneId?: string;
   createdAt: number;
   prompt?: string; // refinement prompt that created this version
 }
@@ -209,6 +210,7 @@ export interface StoredAnimationChat {
   createdAt: number;
   updatedAt: number;
   messages: UIMessage[];
+  projectId?: string;
   latestVideoUrl?: string | null;
   latestPreviewUrl?: string | null;
   latestSceneId?: string | null;
@@ -219,11 +221,51 @@ export interface StoredAnimationChat {
 
 const ANIMATION_CHATS_KEY = "fusion_animation_chats";
 
+function sanitizeAnimationChat(chat: StoredAnimationChat): StoredAnimationChat {
+  const sanitizedProjectId = chat.projectId || chat.id;
+  const validVersions = (chat.versions || []).filter(
+    (version): version is SceneVersion => Boolean(version?.videoUrl),
+  );
+
+  const seenVideoUrls = new Set<string>();
+  const dedupedVersions = validVersions.filter((version) => {
+    if (seenVideoUrls.has(version.videoUrl)) {
+      return false;
+    }
+
+    seenVideoUrls.add(version.videoUrl);
+    return true;
+  });
+
+  if (dedupedVersions.length === 0) {
+    return {
+      ...chat,
+      projectId: sanitizedProjectId,
+      currentVersion: 1,
+      versions: [],
+    };
+  }
+
+  const requestedVersion = chat.currentVersion || dedupedVersions.length;
+  const currentVersion = Math.min(Math.max(requestedVersion, 1), dedupedVersions.length);
+  const activeVersion = dedupedVersions[currentVersion - 1];
+
+  return {
+    ...chat,
+    projectId: sanitizedProjectId,
+    currentVersion,
+    versions: dedupedVersions,
+    latestVideoUrl: activeVersion.videoUrl,
+    latestPreviewUrl: activeVersion.previewUrl || null,
+    latestSceneId: activeVersion.sceneId || chat.latestSceneId || null,
+  };
+}
+
 export function getAllAnimationChats(): StoredAnimationChat[] {
   try {
     const data = localStorage.getItem(ANIMATION_CHATS_KEY);
     if (!data) return [];
-    const chats: StoredAnimationChat[] = JSON.parse(data);
+    const chats: StoredAnimationChat[] = JSON.parse(data).map(sanitizeAnimationChat);
     return chats.sort((a, b) => b.updatedAt - a.updatedAt);
   } catch {
     return [];
@@ -237,12 +279,13 @@ export function getAnimationChat(id: string): StoredAnimationChat | null {
 
 export function saveAnimationChat(chat: StoredAnimationChat): void {
   const chats = getAllAnimationChats();
+  const sanitizedChat = sanitizeAnimationChat(chat);
   const existingIndex = chats.findIndex((c) => c.id === chat.id);
 
   if (existingIndex >= 0) {
-    chats[existingIndex] = chat;
+    chats[existingIndex] = sanitizedChat;
   } else {
-    chats.unshift(chat);
+    chats.unshift(sanitizedChat);
   }
 
   // Prune if over limit
@@ -379,14 +422,29 @@ export function getSceneCurrentVersion(
 export function addChatVersion(
   chatId: string,
   version: Omit<SceneVersion, "id" | "createdAt">
-): void {
+): StoredAnimationChat | null {
   const chat = getAnimationChat(chatId);
-  if (!chat) return;
+  if (!chat) return null;
+
+  const existingVersionIndex = (chat.versions || []).findIndex(
+    (storedVersion) => storedVersion.videoUrl === version.videoUrl,
+  );
+
+  if (existingVersionIndex >= 0) {
+    chat.currentVersion = existingVersionIndex + 1;
+    chat.latestVideoUrl = version.videoUrl;
+    chat.latestPreviewUrl = version.previewUrl;
+    chat.latestSceneId = version.sceneId || chat.latestSceneId;
+    chat.updatedAt = Date.now();
+    saveAnimationChat(chat);
+    return getAnimationChat(chatId);
+  }
 
   const newVersion: SceneVersion = {
     id: generateProjectId(),
     videoUrl: version.videoUrl,
     previewUrl: version.previewUrl,
+    sceneId: version.sceneId,
     createdAt: Date.now(),
     prompt: version.prompt,
   };
@@ -395,18 +453,23 @@ export function addChatVersion(
     chat.versions = [];
   }
 
-  // If this is the first version and chat already has media, save current as v1
-  if (chat.versions.length === 0 && (chat.latestVideoUrl || chat.latestPreviewUrl)) {
+  // If the chat already has a completed render but no explicit history yet,
+  // preserve that rendered output as version 1 before appending the new one.
+  if (chat.versions.length === 0 && chat.latestVideoUrl === version.videoUrl) {
+    chat.versions.push(newVersion);
+  } else if (chat.versions.length === 0 && chat.latestVideoUrl) {
     chat.versions.push({
       id: generateProjectId(),
-      videoUrl: chat.latestVideoUrl || "",
+      videoUrl: chat.latestVideoUrl,
       previewUrl: chat.latestPreviewUrl || undefined,
+      sceneId: chat.latestSceneId || undefined,
       createdAt: chat.createdAt,
       prompt: undefined,
     });
+    chat.versions.push(newVersion);
+  } else {
+    chat.versions.push(newVersion);
   }
-
-  chat.versions.push(newVersion);
 
   if (chat.versions.length > MAX_VERSIONS_PER_SCENE) {
     chat.versions = chat.versions.slice(-MAX_VERSIONS_PER_SCENE);
@@ -415,9 +478,11 @@ export function addChatVersion(
   chat.currentVersion = chat.versions.length;
   chat.latestVideoUrl = version.videoUrl;
   chat.latestPreviewUrl = version.previewUrl;
+  chat.latestSceneId = version.sceneId || chat.latestSceneId;
 
   chat.updatedAt = Date.now();
   saveAnimationChat(chat);
+  return getAnimationChat(chatId);
 }
 
 /**
@@ -426,16 +491,18 @@ export function addChatVersion(
 export function restoreChatVersion(
   chatId: string,
   versionIndex: number
-): void {
+): StoredAnimationChat | null {
   const chat = getAnimationChat(chatId);
-  if (!chat || !chat.versions || !chat.versions[versionIndex]) return;
+  if (!chat || !chat.versions || !chat.versions[versionIndex]) return null;
 
   const targetVersion = chat.versions[versionIndex];
 
   chat.latestVideoUrl = targetVersion.videoUrl;
   chat.latestPreviewUrl = targetVersion.previewUrl;
+  chat.latestSceneId = targetVersion.sceneId || chat.latestSceneId;
   chat.currentVersion = versionIndex + 1;
 
   chat.updatedAt = Date.now();
   saveAnimationChat(chat);
+  return getAnimationChat(chatId);
 }

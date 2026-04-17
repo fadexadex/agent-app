@@ -117,12 +117,14 @@ export async function prepareChatMessagesForAgent(params: {
   legacyAssetUrls?: string[];
   sceneContext?: Record<string, unknown>;
   projectId?: string;
+  supportsVision?: boolean;
 }): Promise<PreparedChatMessagesResult> {
   const {
     rawMessages,
     legacyAssetUrls = [],
     sceneContext,
     projectId,
+    supportsVision = true,
   } = params;
 
   const messages = sanitizeAssistantMessages(
@@ -149,6 +151,12 @@ export async function prepareChatMessagesForAgent(params: {
     }
 
     const parts = ensureMessageParts(message);
+
+    if (!supportsVision) {
+      message.parts = parts.filter((p: any) => p?.type !== "file");
+      continue;
+    }
+
     for (const part of parts) {
       if (part?.type !== "file" || typeof part.url !== "string") {
         continue;
@@ -191,7 +199,9 @@ export async function prepareChatMessagesForAgent(params: {
   }
 
   const lastMessage = messages[lastUserMsgIndex];
-  upsertLegacyAssetParts(lastMessage, legacyAssets, lastMessageSourceUrls);
+  if (supportsVision) {
+    upsertLegacyAssetParts(lastMessage, legacyAssets, lastMessageSourceUrls);
+  }
 
   const referenceAssets = Array.from(combinedAssets.values());
   const referenceAssetsText = buildReferenceAssetsBlock(referenceAssets);

@@ -4,9 +4,8 @@ import { generateSceneScript, ProgressEvent } from "../services/scene-generator.
 const router = Router();
 
 router.post("/generate", async (req: Request, res: Response) => {
-  const { prompt, model, assets, brandColors, brandName, generationMode, brandFonts, brandLogos, brandBackdrops } = req.body as {
+  const { prompt, assets, brandColors, brandName, generationMode, brandFonts, brandLogos, brandBackdrops } = req.body as {
     prompt?: string;
-    model?: string;
     assets?: Array<
       | string
       | {
@@ -42,7 +41,6 @@ router.post("/generate", async (req: Request, res: Response) => {
   try {
     await generateSceneScript(
       prompt.trim(),
-      model,
       assets || [],
       brandColors || [],
       send,

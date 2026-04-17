@@ -33,6 +33,7 @@ router.post("/chat", async (req: Request, res: Response) => {
       legacyAssetUrls: assets,
       sceneContext,
       projectId,
+      supportsVision: config.supportsVision,
     });
 
     console.log(

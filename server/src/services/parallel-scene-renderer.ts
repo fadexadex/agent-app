@@ -100,6 +100,7 @@ function createSceneAgent(sceneId: string) {
   return new ToolLoopAgent({
     id: `scene-agent-${sceneId}`,
     model,
+    maxRetries: config.geminiMaxRetries,
     instructions: loadDirectorPrompt(),
     tools: {
       think: thinkTool,
